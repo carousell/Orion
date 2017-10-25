@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package echo_proto;
+
+service EchoService{
+    // Echo echos the request back
+    rpc Echo (EchoRequest) returns (EchoResponse){
+    }
+
+    // Upper echos the request back in all caps
+    rpc upper (UpperRequest) returns (UpperResponse){
+    }
+
+    rpc ABC(UpperRequest) returns (UpperResponse){
+    }
+}
+
+message EchoRequest {
+    string msg = 1;
+}
+
+message EchoResponse {
+    string msg = 1;
+}
+
+message UpperRequest {
+    string msg = 1;
+}
+
+message UpperResponse {
+    string msg = 1;
+}
