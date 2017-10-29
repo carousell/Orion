@@ -96,7 +96,7 @@ func generate(g *generator.Generator, file *descriptor.FileDescriptorProto) {
 
 		P(g, "func Register", servName, "OrionServer(s *", grpcPkg, ".Server, srv ", serverType, ", orionServer orion.Server) {")
 		//g.P("s.RegisterService(&", serviceDescVar, `, srv)`)
-		P(g, "\torion.RegisterService(&", serviceDescVar, `, srv, orionServer)`)
+		P(g, "\torionServer.RegisterService(&", serviceDescVar, `, srv)`)
 		P(g, "}")
 		P(g)
 	}
