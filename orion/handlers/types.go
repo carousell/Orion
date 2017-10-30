@@ -3,7 +3,7 @@ package handlers
 import (
 	"context"
 	"net"
-	"net/http"
+	"time"
 
 	"google.golang.org/grpc"
 )
@@ -20,5 +20,6 @@ type Interceptor interface {
 
 type Handler interface {
 	Add(sd *grpc.ServiceDesc, ss interface{}) error
-	Run(httpListener net.Listener, httpSrv *http.Server) error
+	Run(httpListener net.Listener) error
+	Stop(timeout time.Duration) error
 }

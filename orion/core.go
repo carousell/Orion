@@ -1,12 +1,11 @@
 package orion
 
 import (
-	"errors"
 	"fmt"
 	"log"
-	"reflect"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/carousell/Orion/orion/handlers"
 	"github.com/carousell/go-utils/utils/listnerutils"
@@ -17,23 +16,8 @@ type DefaultServerImpl struct {
 	config      Config
 	mu          sync.Mutex
 	httpHandler handlers.Handler
+	grpcHandler handlers.Handler
 	wg          sync.WaitGroup
-	grpcServer  *grpc.Server
-}
-
-func decoder(in interface{}) error {
-	if in == nil {
-		return errors.New("No input object!")
-	}
-	t := reflect.TypeOf(in)
-	if t.Kind() != reflect.Struct {
-		return errors.New("decoder can only deserialize to structs, can not convert " + t.String() + " of kind " + t.Kind().String())
-	}
-	return nil
-}
-
-func (s *DefaultServerImpl) GetConfig() interface{} {
-	return nil
 }
 
 func (s *DefaultServerImpl) GetOrionConfig() Config {
@@ -41,7 +25,6 @@ func (s *DefaultServerImpl) GetOrionConfig() Config {
 }
 
 func (s *DefaultServerImpl) Start() {
-
 	if s.config.HTTPOnly && s.config.GRPCOnly {
 		panic("Error: at least one GRPC/HTTP server needs to be initialized")
 	}
@@ -59,7 +42,7 @@ func (s *DefaultServerImpl) Start() {
 			s.wg.Add(1)
 			go func(s *DefaultServerImpl) {
 				defer s.wg.Done()
-				s.httpHandler.Run(httpListener, nil)
+				s.httpHandler.Run(httpListener)
 			}(s)
 		}
 	}
@@ -74,7 +57,7 @@ func (s *DefaultServerImpl) Start() {
 		s.wg.Add(1)
 		go func(s *DefaultServerImpl) {
 			defer s.wg.Done()
-			s.grpcServer.Serve(grpcListener)
+			s.grpcHandler.Run(grpcListener)
 		}(s)
 	}
 }
@@ -87,9 +70,6 @@ func (s *DefaultServerImpl) Wait() error {
 func (s *DefaultServerImpl) RegisterService(sd *grpc.ServiceDesc, ss interface{}) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.grpcServer == nil {
-		s.grpcServer = grpc.NewServer()
-	}
 	if !s.config.GRPCOnly {
 		if s.httpHandler == nil {
 			s.httpHandler = handlers.NewHTTPHandler()
@@ -97,8 +77,31 @@ func (s *DefaultServerImpl) RegisterService(sd *grpc.ServiceDesc, ss interface{}
 		s.httpHandler.Add(sd, ss)
 	}
 	if !s.config.HTTPOnly {
-		s.grpcServer.RegisterService(sd, ss)
+		if s.grpcHandler == nil {
+			s.grpcHandler = handlers.NewGRPCHandler()
+		}
+		s.grpcHandler.Add(sd, ss)
 	}
+	return nil
+}
+
+func (s *DefaultServerImpl) Stop(timeout time.Duration) error {
+	var wg sync.WaitGroup
+	if s.grpcHandler != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			s.grpcHandler.Stop(timeout)
+		}()
+	}
+	if s.httpHandler != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			s.grpcHandler.Stop(timeout)
+		}()
+	}
+	wg.Wait()
 	return nil
 }
 

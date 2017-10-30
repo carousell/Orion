@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -32,7 +31,7 @@ func generateUrl(serviceName, method string) string {
 type serviceInfo struct {
 	desc         *grpc.ServiceDesc
 	svc          interface{}
-	interceptors []grpc.UnaryServerInterceptor
+	interceptors grpc.UnaryServerInterceptor
 }
 
 type pathInfo struct {
@@ -55,44 +54,6 @@ func writeResp(resp http.ResponseWriter, status int, data []byte) {
 	resp.Write(data)
 }
 
-// ChainUnaryServer creates a single interceptor out of a chain of many interceptors.
-//
-// Execution is done in left-to-right order, including passing of context.
-// For example ChainUnaryServer(one, two, three) will execute one before two before three, and three
-// will see context changes of one and two.
-func chainUnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
-	n := len(interceptors)
-
-	if n > 1 {
-		lastI := n - 1
-		return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-			var (
-				chainHandler grpc.UnaryHandler
-				curI         int
-			)
-
-			chainHandler = func(currentCtx context.Context, currentReq interface{}) (interface{}, error) {
-				if curI == lastI {
-					return handler(currentCtx, currentReq)
-				}
-				curI++
-				return interceptors[curI](currentCtx, currentReq, info, chainHandler)
-			}
-
-			return interceptors[0](ctx, req, info, chainHandler)
-		}
-	}
-
-	if n == 1 {
-		return interceptors[0]
-	}
-
-	// n == 0; Dummy interceptor maintained for backward compatibility to avoid returning nil.
-	return func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		return handler(ctx, req)
-	}
-}
-
 func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	defer func(resp http.ResponseWriter) {
 		// panic handler
@@ -112,7 +73,7 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 			decErr = jsonpb.Unmarshal(req.Body, protoReq)
 			return decErr
 		}
-		protoResponse, err := info.method(info.svc.svc, ctx, dec, chainUnaryServer(info.svc.interceptors...))
+		protoResponse, err := info.method(info.svc.svc, ctx, dec, info.svc.interceptors)
 		if err != nil {
 			if decErr != nil {
 				writeResp(resp, http.StatusBadRequest, []byte("Bad Request!"))
@@ -158,7 +119,7 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 
 	interceptor, ok := ss.(Interceptor)
 	if ok {
-		svcInfo.interceptors = interceptor.GetInterceptors()
+		svcInfo.interceptors = chainUnaryServer(interceptor.GetInterceptors()...)
 	}
 
 	h.services[sd.ServiceName] = svcInfo
@@ -175,17 +136,19 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 	return nil
 }
 
-func (h *httpHandler) Run(httpListener net.Listener, httpSrv *http.Server) error {
+func (h *httpHandler) Run(httpListener net.Listener) error {
 	fmt.Println("Mapped URLs: ")
 	for url, _ := range h.paths {
 		fmt.Println("\tPOST", url)
 	}
-	if httpSrv == nil {
-		httpSrv = &http.Server{
-			ReadTimeout:  5 * time.Second,
-			WriteTimeout: 10 * time.Second,
-			Handler:      h.r,
-		}
+	httpSrv := &http.Server{
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		Handler:      h.r,
 	}
 	return httpSrv.Serve(httpListener)
+}
+
+func (h *httpHandler) Stop(timeout time.Duration) error {
+	return nil
 }

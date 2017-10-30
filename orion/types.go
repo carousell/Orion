@@ -1,6 +1,8 @@
 package orion
 
 import (
+	"time"
+
 	"google.golang.org/grpc"
 )
 
@@ -33,19 +35,18 @@ type Config struct {
 // Server is the interface that needs to be implemented by any orion server
 // 'DefaultServerImpl' should be enough for most users.
 type Server interface {
-	// GetConfig fetches application config
-	GetConfig() interface{}
-	//Start function start the orion server, this will block forever
+	//Start starts the orion server, this is non blocking call
 	Start()
 	//RegisterService registers the service to origin server
 	RegisterService(sd *grpc.ServiceDesc, ss interface{}) error
 	//Wait waits for the Server loop to exit
 	Wait() error
+	//Stop stops the Server
+	Stop(timeout time.Duration) error
 }
 
-// OrionServviceInitializer is the interface that need to be implemented by any service that needs
-// to pass configuration before initializing a orion service
-type OrionServiceInitializer interface {
+// ServiceFactory is the interface that need to be implemented by client that provides with a new service object
+type ServiceFactory interface {
 	// Configure function parses configuration recieved from the orion server
-	Init(interface{}) bool
+	NewService(server Server) interface{}
 }
