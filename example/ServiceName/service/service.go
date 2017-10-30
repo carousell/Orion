@@ -51,6 +51,12 @@ func (g *sampleServiceImpl) Init(config Config) {
 func (g *sampleServiceImpl) Close() {
 }
 
+func (g *sampleServiceImpl) Reverse(ctx context.Context, req *ServiceName_proto.EchoRequest) (*ServiceName_proto.EchoResponse, error) {
+	resp := new(ServiceName_proto.EchoResponse)
+	resp.Msg = "Nope!!"
+	return resp, nil
+}
+
 func (g *sampleServiceImpl) Echo(ctx context.Context, req *ServiceName_proto.EchoRequest) (*ServiceName_proto.EchoResponse, error) {
 	resp := new(ServiceName_proto.EchoResponse)
 	resp.Msg = req.Msg

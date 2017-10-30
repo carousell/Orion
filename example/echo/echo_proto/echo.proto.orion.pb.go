@@ -5,10 +5,8 @@ package echo_proto
 
 import (
 	orion "github.com/carousell/Orion/orion"
-	grpc "google.golang.org/grpc"
 )
 
-func RegisterEchoServiceOrionServer(s *grpc.Server, srv EchoServiceServer, orionServer orion.Server) {
-	orion.RegisterService(&_EchoService_serviceDesc, srv, orionServer)
+func RegisterEchoServiceOrionServer(srv EchoServiceServer, orionServer orion.Server) {
+	orionServer.RegisterService(&_EchoService_serviceDesc, srv)
 }
-

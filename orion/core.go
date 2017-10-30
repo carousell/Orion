@@ -17,6 +17,8 @@ type DefaultServerImpl struct {
 	config      Config
 	mu          sync.Mutex
 	httpHandler handlers.Handler
+	wg          sync.WaitGroup
+	grpcServer  *grpc.Server
 }
 
 func decoder(in interface{}) error {
@@ -39,6 +41,10 @@ func (s *DefaultServerImpl) GetOrionConfig() Config {
 }
 
 func (s *DefaultServerImpl) Start() {
+
+	if s.config.HTTPOnly && s.config.GRPCOnly {
+		panic("Error: at least one GRPC/HTTP server needs to be initialized")
+	}
 	fmt.Println(BANNER)
 	// start http server
 	if !s.config.GRPCOnly {
@@ -50,19 +56,48 @@ func (s *DefaultServerImpl) Start() {
 				return
 			}
 			fmt.Println("HTTPListnerPort", httpPort)
-			go s.httpHandler.Run(httpListener, nil)
+			s.wg.Add(1)
+			go func(s *DefaultServerImpl) {
+				defer s.wg.Done()
+				s.httpHandler.Run(httpListener, nil)
+			}(s)
 		}
 	}
+	if !s.config.HTTPOnly {
+		grpcPort := strconv.Itoa(s.config.GRPCPort)
+		grpcListener, err := listnerutils.NewListener("tcp", ":"+grpcPort)
+		if err != nil {
+			log.Println("error", err)
+			return
+		}
+		fmt.Println("gRPCListnerPort", grpcPort)
+		s.wg.Add(1)
+		go func(s *DefaultServerImpl) {
+			defer s.wg.Done()
+			s.grpcServer.Serve(grpcListener)
+		}(s)
+	}
+}
+
+func (s *DefaultServerImpl) Wait() error {
+	s.wg.Wait()
+	return nil
 }
 
 func (s *DefaultServerImpl) RegisterService(sd *grpc.ServiceDesc, ss interface{}) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.grpcServer == nil {
+		s.grpcServer = grpc.NewServer()
+	}
 	if !s.config.GRPCOnly {
 		if s.httpHandler == nil {
 			s.httpHandler = handlers.NewHTTPHandler()
 		}
 		s.httpHandler.Add(sd, ss)
+	}
+	if !s.config.HTTPOnly {
+		s.grpcServer.RegisterService(sd, ss)
 	}
 	return nil
 }

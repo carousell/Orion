@@ -18,8 +18,10 @@ const (
 type Config struct {
 	//OrionServerName is the name of this orion server that is tracked
 	OrionServerName string
-	// GRPCOnly tells origin not to build HTTP/1.1 server and only initializes gRPC server
+	// GRPCOnly tells orion not to build HTTP/1.1 server and only initializes gRPC server
 	GRPCOnly bool
+	//HTTPOnly tells orion not to build gRPC server and only initializes HTTP/1.1 server
+	HTTPOnly bool
 	// HTTPPort is the port to bind for HTTP requests
 	HTTPPort int
 	// GRPCPost id the port to bind for gRPC requests
@@ -37,6 +39,8 @@ type Server interface {
 	Start()
 	//RegisterService registers the service to origin server
 	RegisterService(sd *grpc.ServiceDesc, ss interface{}) error
+	//Wait waits for the Server loop to exit
+	Wait() error
 }
 
 // OrionServviceInitializer is the interface that need to be implemented by any service that needs

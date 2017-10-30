@@ -8,6 +8,10 @@ service ServiceNameService{
     rpc Echo (EchoRequest) returns (EchoResponse){
     }
 
+    // Echo echos the request back
+    rpc Reverse (EchoRequest) returns (EchoResponse){
+    }
+
     // Uppercase uppercases the msg provided in the request
     rpc Uppercase (UppercaseRequest) returns (UppercaseResponse){
     }
