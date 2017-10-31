@@ -3,6 +3,9 @@ package handlers
 import (
 	"context"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
+	opentracing "github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
 )
 
@@ -42,4 +45,19 @@ func chainUnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnarySer
 	return func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		return handler(ctx, req)
 	}
+}
+
+func getInterceptors(svc interface{}) grpc.UnaryServerInterceptor {
+
+	opts := []grpc.UnaryServerInterceptor{
+		otgrpc.OpenTracingServerInterceptor(opentracing.GlobalTracer()),
+		grpc_prometheus.UnaryServerInterceptor,
+	}
+
+	interceptor, ok := svc.(Interceptor)
+	if ok {
+		opts = append(opts, interceptor.GetInterceptors()...)
+	}
+
+	return chainUnaryServer(opts...)
 }

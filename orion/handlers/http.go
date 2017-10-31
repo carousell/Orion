@@ -3,8 +3,10 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -44,8 +46,6 @@ type httpHandler struct {
 	paths    map[string]pathInfo
 	services map[string]serviceInfo
 	r        *mux.Router
-	before   []RequestFunc
-	after    []ServerResponseFunc
 	mar      jsonpb.Marshaler
 }
 
@@ -59,6 +59,8 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 		// panic handler
 		if r := recover(); r != nil {
 			writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
+			log.Println("panic", r)
+			log.Print(string(debug.Stack()))
 		}
 	}(resp)
 
@@ -117,10 +119,7 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 		svc:  ss,
 	}
 
-	interceptor, ok := ss.(Interceptor)
-	if ok {
-		svcInfo.interceptors = chainUnaryServer(interceptor.GetInterceptors()...)
-	}
+	svcInfo.interceptors = getInterceptors(ss)
 
 	h.services[sd.ServiceName] = svcInfo
 

@@ -42,7 +42,7 @@ func (d *DefaultServerImpl) InitZipkin() {
 				zipkinAddr,
 				zipkin.HTTPLogger(logger),
 			)
-			zipkin.HTTPBatchSize(200)
+			zipkin.HTTPBatchSize(1)
 		} else {
 			collector, err = zipkin.NewKafkaCollector(
 				strings.Split(zipkinAddr, ","),
@@ -52,13 +52,15 @@ func (d *DefaultServerImpl) InitZipkin() {
 		if err != nil {
 			logger.Log("err", err)
 		}
+
 		tracer, err := zipkin.NewTracer(
-			zipkin.NewRecorder(collector, false, getHostname(), serviceName),
+			zipkin.NewRecorder(collector, true, getHostname(), serviceName),
 		)
 		if err != nil {
 			logger.Log("err", err)
+		} else {
+			stdopentracing.SetGlobalTracer(tracer)
 		}
-		stdopentracing.SetGlobalTracer(tracer)
 	} else {
 		stdopentracing.SetGlobalTracer(stdopentracing.NoopTracer{})
 	}

@@ -20,15 +20,24 @@ type DefaultServerImpl struct {
 	grpcHandler handlers.Handler
 	wg          sync.WaitGroup
 	nrApp       newrelic.Application
+	inited      bool
 }
 
 func (s *DefaultServerImpl) GetOrionConfig() Config {
 	return s.config
 }
 
+func (s *DefaultServerImpl) init() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.inited != true {
+		doInit(s)
+		s.inited = true
+	}
+}
+
 func (s *DefaultServerImpl) Start() {
 	fmt.Println(BANNER)
-	doInit(s)
 	if s.config.HTTPOnly && s.config.GRPCOnly {
 		panic("Error: at least one GRPC or HTTP server needs to be initialized")
 	}
@@ -71,6 +80,7 @@ func (s *DefaultServerImpl) Wait() error {
 }
 
 func (s *DefaultServerImpl) RegisterService(sd *grpc.ServiceDesc, ss interface{}) error {
+	s.init() // make sure its called before lock
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if !s.config.GRPCOnly {

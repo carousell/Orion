@@ -49,6 +49,12 @@
 			"revisionTime": "2017-10-25T13:02:48Z"
 		},
 		{
+			"checksumSHA1": "spyv5/YFBjYyZLZa1U2LBfDR8PM=",
+			"path": "github.com/beorn7/perks/quantile",
+			"revision": "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9",
+			"revisionTime": "2016-08-04T10:47:26Z"
+		},
+		{
 			"checksumSHA1": "9xtoA1z4U3xBE/mStAD9JVZrmaM=",
 			"path": "github.com/bugsnag/bugsnag-go",
 			"revision": "3303ca0e0e2a90d1053d0ccead264c22de27f475",
@@ -235,8 +241,26 @@
 			"revisionTime": "2017-10-26T00:09:36Z"
 		},
 		{
+			"checksumSHA1": "8UEp6v0Dczw/SlasE0DivB0mAHA=",
+			"path": "github.com/gogo/protobuf/jsonpb",
+			"revision": "117892bf1866fbaa2318c03e50e40564c8845457",
+			"revisionTime": "2017-10-18T11:19:13Z"
+		},
+		{
 			"checksumSHA1": "wn2shNJMwRZpvuvkf1s7h0wvqHI=",
 			"path": "github.com/gogo/protobuf/proto",
+			"revision": "117892bf1866fbaa2318c03e50e40564c8845457",
+			"revisionTime": "2017-10-18T11:19:13Z"
+		},
+		{
+			"checksumSHA1": "HPVQZu059/Rfw2bAWM538bVTcUc=",
+			"path": "github.com/gogo/protobuf/sortkeys",
+			"revision": "117892bf1866fbaa2318c03e50e40564c8845457",
+			"revisionTime": "2017-10-18T11:19:13Z"
+		},
+		{
+			"checksumSHA1": "i5bzLJhJ7qoUaiFg95y9bfgyZv0=",
+			"path": "github.com/gogo/protobuf/types",
 			"revision": "117892bf1866fbaa2318c03e50e40564c8845457",
 			"revisionTime": "2017-10-18T11:19:13Z"
 		},
@@ -305,6 +329,42 @@
 			"path": "github.com/gorilla/mux",
 			"revision": "7625a85c14e615274a4ee4bc8654f72310a563e4",
 			"revisionTime": "2017-10-20T03:47:00Z"
+		},
+		{
+			"checksumSHA1": "ThM4ahoRKh7k2b0YqRrxRk7KlEU=",
+			"path": "github.com/grpc-ecosystem/go-grpc-middleware",
+			"revision": "82921fcf811d228d2fa202bc31238b356bf9f8d5",
+			"revisionTime": "2017-10-20T06:37:31Z"
+		},
+		{
+			"checksumSHA1": "3vb2ftEAl6BEmsi3grb7fIVLdDU=",
+			"path": "github.com/grpc-ecosystem/go-grpc-middleware/tags",
+			"revision": "82921fcf811d228d2fa202bc31238b356bf9f8d5",
+			"revisionTime": "2017-10-20T06:37:31Z"
+		},
+		{
+			"checksumSHA1": "Nvg0AjHbJaYW3af0e8IEyKvZXIs=",
+			"path": "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing",
+			"revision": "82921fcf811d228d2fa202bc31238b356bf9f8d5",
+			"revisionTime": "2017-10-20T06:37:31Z"
+		},
+		{
+			"checksumSHA1": "kozQMhxjHOOj3RCE6uKWABiJ4TA=",
+			"path": "github.com/grpc-ecosystem/go-grpc-middleware/util/metautils",
+			"revision": "82921fcf811d228d2fa202bc31238b356bf9f8d5",
+			"revisionTime": "2017-10-20T06:37:31Z"
+		},
+		{
+			"checksumSHA1": "s7J8PdKJFnoBFg6MowXLTvix7ug=",
+			"path": "github.com/grpc-ecosystem/go-grpc-prometheus",
+			"revision": "0dafe0d496ea71181bf2dd039e7e3f44b6bd11a7",
+			"revisionTime": "2017-08-26T09:06:48Z"
+		},
+		{
+			"checksumSHA1": "CVIUjJ9BOwdRbxfteYqJ3ANpnBk=",
+			"path": "github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc",
+			"revision": "a570af39704b9f3d4bb530d83192a99ea6337d5a",
+			"revisionTime": "2017-10-25T23:59:03Z"
 		},
 		{
 			"checksumSHA1": "O0r0hj4YL+jSRNjnshkeH4GY+4s=",
@@ -383,6 +443,12 @@
 			"path": "github.com/magiconair/properties",
 			"revision": "8d7837e64d3c1ee4e54a880c5a920ab4316fc90a",
 			"revisionTime": "2017-09-02T06:01:07Z"
+		},
+		{
+			"checksumSHA1": "bKMZjd2wPw13VwoE7mBeSv5djFA=",
+			"path": "github.com/matttproud/golang_protobuf_extensions/pbutil",
+			"revision": "c12348ce28de40eed0136aa2b644d0ee0650e56c",
+			"revisionTime": "2016-04-24T11:30:07Z"
 		},
 		{
 			"checksumSHA1": "gILp4IL+xwXLH6tJtRLrnZ56F24=",
@@ -529,6 +595,48 @@
 			"path": "github.com/pkg/errors",
 			"revision": "f15c970de5b76fac0b59abb32d62c17cc7bed265",
 			"revisionTime": "2017-10-18T19:55:50Z"
+		},
+		{
+			"checksumSHA1": "hu0MsbTdFzZxNRyAxe2HmTFFFak=",
+			"path": "github.com/prometheus/client_golang/prometheus",
+			"revision": "5cec1d0429b02e4323e042eb04dafdb079ddf568",
+			"revisionTime": "2017-10-05T11:29:15Z"
+		},
+		{
+			"checksumSHA1": "DvwvOlPNAgRntBzt3b3OSRMS2N4=",
+			"path": "github.com/prometheus/client_model/go",
+			"revision": "6f3806018612930941127f2a7c6c453ba2c527d2",
+			"revisionTime": "2017-02-16T18:52:47Z"
+		},
+		{
+			"checksumSHA1": "xfnn0THnqNwjwimeTClsxahYrIo=",
+			"path": "github.com/prometheus/common/expfmt",
+			"revision": "1bab55dd05dbff384524a6a1c99006d9eb5f139b",
+			"revisionTime": "2017-10-06T14:14:18Z"
+		},
+		{
+			"checksumSHA1": "GWlM3d2vPYyNATtTFgftS10/A9w=",
+			"path": "github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg",
+			"revision": "1bab55dd05dbff384524a6a1c99006d9eb5f139b",
+			"revisionTime": "2017-10-06T14:14:18Z"
+		},
+		{
+			"checksumSHA1": "3VoqH7TFfzA6Ds0zFzIbKCUvBmw=",
+			"path": "github.com/prometheus/common/model",
+			"revision": "1bab55dd05dbff384524a6a1c99006d9eb5f139b",
+			"revisionTime": "2017-10-06T14:14:18Z"
+		},
+		{
+			"checksumSHA1": "pW1yt1G1J9jnQMCxr1TDI7LQr3s=",
+			"path": "github.com/prometheus/procfs",
+			"revision": "a6e9df898b1336106c743392c48ee0b71f5c4efa",
+			"revisionTime": "2017-10-17T21:40:25Z"
+		},
+		{
+			"checksumSHA1": "xCiFAAwVTrjsfZT1BIJQ3DgeNCY=",
+			"path": "github.com/prometheus/procfs/xfs",
+			"revision": "a6e9df898b1336106c743392c48ee0b71f5c4efa",
+			"revisionTime": "2017-10-17T21:40:25Z"
 		},
 		{
 			"checksumSHA1": "KAzbLjI9MzW2tjfcAsK75lVRp6I=",

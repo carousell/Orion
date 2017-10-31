@@ -8,9 +8,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-type RequestFunc func(ctx context.Context, request interface{}) context.Context
-type ServerResponseFunc func(ctx context.Context, response interface{}) context.Context
-
 type GRPCMethodHandler func(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error)
 
 type Interceptor interface {
