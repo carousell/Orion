@@ -8,7 +8,7 @@ import (
 
 func main() {
 	grpcSrvImpl := service.GetService()
-	s := orion.GetDefaultServer()
+	s := orion.GetDefaultServer("EchoService")
 	proto.RegisterEchoServiceOrionServer(grpcSrvImpl, s)
 	s.Start()
 	s.Wait()

@@ -3,21 +3,23 @@ package orion
 import (
 	"fmt"
 	"log"
-	"strconv"
 	"sync"
 	"time"
 
 	"github.com/carousell/Orion/orion/handlers"
 	"github.com/carousell/go-utils/utils/listnerutils"
+	newrelic "github.com/newrelic/go-agent"
 	"google.golang.org/grpc"
 )
 
+//DefaultServerImpl provides a default implementation of orion.Server this can be embeded in custom orion.Server implementations
 type DefaultServerImpl struct {
 	config      Config
 	mu          sync.Mutex
 	httpHandler handlers.Handler
 	grpcHandler handlers.Handler
 	wg          sync.WaitGroup
+	nrApp       newrelic.Application
 }
 
 func (s *DefaultServerImpl) GetOrionConfig() Config {
@@ -25,20 +27,21 @@ func (s *DefaultServerImpl) GetOrionConfig() Config {
 }
 
 func (s *DefaultServerImpl) Start() {
-	if s.config.HTTPOnly && s.config.GRPCOnly {
-		panic("Error: at least one GRPC/HTTP server needs to be initialized")
-	}
 	fmt.Println(BANNER)
+	doInit(s)
+	if s.config.HTTPOnly && s.config.GRPCOnly {
+		panic("Error: at least one GRPC or HTTP server needs to be initialized")
+	}
 	// start http server
 	if !s.config.GRPCOnly {
 		if s.httpHandler != nil {
-			httpPort := strconv.Itoa(s.config.HTTPPort)
+			httpPort := s.config.HTTPPort
 			httpListener, err := listnerutils.NewListener("tcp", ":"+httpPort)
 			if err != nil {
 				log.Println("error", err)
 				return
 			}
-			fmt.Println("HTTPListnerPort", httpPort)
+			log.Println("HTTPListnerPort", httpPort)
 			s.wg.Add(1)
 			go func(s *DefaultServerImpl) {
 				defer s.wg.Done()
@@ -47,13 +50,13 @@ func (s *DefaultServerImpl) Start() {
 		}
 	}
 	if !s.config.HTTPOnly {
-		grpcPort := strconv.Itoa(s.config.GRPCPort)
+		grpcPort := s.config.GRPCPort
 		grpcListener, err := listnerutils.NewListener("tcp", ":"+grpcPort)
 		if err != nil {
 			log.Println("error", err)
 			return
 		}
-		fmt.Println("gRPCListnerPort", grpcPort)
+		log.Println("gRPCListnerPort", grpcPort)
 		s.wg.Add(1)
 		go func(s *DefaultServerImpl) {
 			defer s.wg.Done()
@@ -105,10 +108,12 @@ func (s *DefaultServerImpl) Stop(timeout time.Duration) error {
 	return nil
 }
 
-func GetDefaultServer() Server {
-	return GetDefaultServerWithConfig(BuildDefaultConfig())
+//GetDefaultServer returns a default server object that can be directly used to start orion server
+func GetDefaultServer(name string) Server {
+	return GetDefaultServerWithConfig(BuildDefaultConfig(name))
 }
 
+//GetDefaultServerWithConfig returns a default server object that uses provided configuration
 func GetDefaultServerWithConfig(config Config) Server {
 	return &DefaultServerImpl{config: config}
 }

@@ -29,10 +29,6 @@ import (
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 )
 
-var (
-	grpcPkg = generator.RegisterUniquePackageName("grpc", nil)
-)
-
 // P prints the arguments to the generated output.  It handles strings and int32s, plus
 // handling indirections because they may be *string, etc.
 func P(g *generator.Generator, str ...interface{}) {
