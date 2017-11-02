@@ -128,7 +128,7 @@ func runner(errc chan error, httpListener net.Listener, grpcListener net.Listene
 
 	srvErr := make(chan error)
 
-	o := orion.GetDefaultServer()
+	o := orion.GetDefaultServer("BCD")
 	grpcSrv := grpc.NewServer()
 	proto.RegisterServiceNameServiceOrionServer(grpcSrv, service.(proto.ServiceNameServiceServer), o)
 	o.Start()

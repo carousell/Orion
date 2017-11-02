@@ -87,9 +87,8 @@ func generate(g *generator.Generator, file *descriptor.FileDescriptorProto) {
 		}
 		servName := generator.CamelCase(origServName)
 		serviceDescVar := "_" + servName + "_serviceDesc"
-		serverType := servName + "Server"
 
-		P(g, "func Register", servName, "OrionServer(srv ", serverType, ", orionServer orion.Server) {")
+		P(g, "func Register", servName, "OrionServer(srv orion.ServiceFactory, orionServer orion.Server) {")
 		//g.P("s.RegisterService(&", serviceDescVar, `, srv)`)
 		P(g, "\torionServer.RegisterService(&", serviceDescVar, `, srv)`)
 		P(g, "}")

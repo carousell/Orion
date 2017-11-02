@@ -6,10 +6,16 @@ import (
 	"github.com/carousell/Orion/orion"
 )
 
+type svcFactory struct {
+}
+
+func (s *svcFactory) NewService() interface{} {
+	return service.GetService()
+}
+
 func main() {
-	grpcSrvImpl := service.GetService()
 	s := orion.GetDefaultServer("EchoService")
-	proto.RegisterEchoServiceOrionServer(grpcSrvImpl, s)
+	proto.RegisterEchoServiceOrionServer(&svcFactory{}, s)
 	s.Start()
 	s.Wait()
 }

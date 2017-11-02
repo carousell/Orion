@@ -23,7 +23,7 @@ type Server interface {
 	//Start starts the orion server, this is non blocking call
 	Start()
 	//RegisterService registers the service to origin server
-	RegisterService(sd *grpc.ServiceDesc, ss interface{}) error
+	RegisterService(sd *grpc.ServiceDesc, sf ServiceFactory) error
 	//Wait waits for the Server loop to exit
 	Wait() error
 	//Stop stops the Server
@@ -33,7 +33,7 @@ type Server interface {
 // ServiceFactory is the interface that need to be implemented by client that provides with a new service object
 type ServiceFactory interface {
 	// NewService function parses configuration recieved from the orion server
-	NewService(server Server) interface{}
+	NewService() interface{}
 }
 
 // HystrixInitializer is the interface that needs to be implemented by client for a custom hystrix initializer

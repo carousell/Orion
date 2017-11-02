@@ -7,6 +7,7 @@ import (
 	orion "github.com/carousell/Orion/orion"
 )
 
-func RegisterEchoServiceOrionServer(srv EchoServiceServer, orionServer orion.Server) {
+func RegisterEchoServiceOrionServer(srv orion.ServiceFactory, orionServer orion.Server) {
 	orionServer.RegisterService(&_EchoService_serviceDesc, srv)
 }
+
