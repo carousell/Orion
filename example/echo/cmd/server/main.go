@@ -9,7 +9,7 @@ import (
 type svcFactory struct {
 }
 
-func (s *svcFactory) NewService() interface{} {
+func (s *svcFactory) NewService(config map[string]interface{}) interface{} {
 	return service.GetService()
 }
 

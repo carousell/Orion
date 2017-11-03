@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+//NewGRPCHandler creates a new GRPC handler
 func NewGRPCHandler() Handler {
 	return &grpcHandler{}
 }
@@ -18,9 +19,7 @@ type grpcHandler struct {
 func (g *grpcHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 	opt := make([]grpc.ServerOption, 0)
 
-	if interceptor, ok := ss.(Interceptor); ok {
-		opt = append(opt, grpc.UnaryInterceptor(chainUnaryServer(interceptor.GetInterceptors()...)))
-	}
+	opt = append(opt, grpc.UnaryInterceptor(getInterceptors(ss)))
 
 	g.grpcServer = grpc.NewServer(opt...)
 	g.grpcServer.RegisterService(sd, ss)

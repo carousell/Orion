@@ -15,6 +15,7 @@ type Interceptor interface {
 	GetInterceptors() []grpc.UnaryServerInterceptor
 }
 
+//Handler implements a service handler that is used by orion server
 type Handler interface {
 	Add(sd *grpc.ServiceDesc, ss interface{}) error
 	Run(httpListener net.Listener) error

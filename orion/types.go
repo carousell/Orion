@@ -33,7 +33,7 @@ type Server interface {
 // ServiceFactory is the interface that need to be implemented by client that provides with a new service object
 type ServiceFactory interface {
 	// NewService function parses configuration recieved from the orion server
-	NewService() interface{}
+	NewService(config map[string]interface{}) interface{}
 }
 
 // HystrixInitializer is the interface that needs to be implemented by client for a custom hystrix initializer
@@ -49,4 +49,14 @@ type ZipkinInitializer interface {
 // NewRelicInitializer is the interface that needs to be implemented by client for a custom newrelic initializer
 type NewRelicInitializer interface {
 	InitNewRelic()
+}
+
+// PreInitializer is the interface that needs to implemented by client for any custom coe that runs before all other initializer
+type PreInitializer interface {
+	PreInit()
+}
+
+// PostInitializer is the interface that needs to implemented by client for any custom coe that runs after all other initializer
+type PostInitializer interface {
+	PostInit()
 }

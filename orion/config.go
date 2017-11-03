@@ -8,6 +8,10 @@ import (
 	"github.com/spf13/viper"
 )
 
+var (
+	configPaths = []string{".", "/opt/config/"}
+)
+
 // Config is the configuration used by Orion core
 type Config struct {
 	//OrionServerName is the name of this orion server that is tracked
@@ -105,8 +109,9 @@ func setConfigDefaults() {
 // sets up the config parser
 func setup(name string) {
 	viper.SetConfigName(name)
-	viper.AddConfigPath("/opt/config/")
-	viper.AddConfigPath(".")
+	for _, path := range configPaths {
+		viper.AddConfigPath(path)
+	}
 	viper.AutomaticEnv()
 	setConfigDefaults()
 }
@@ -122,4 +127,17 @@ func readConfig(name string) {
 	}
 	data, _ := json.MarshalIndent(viper.AllSettings(), "", "  ")
 	log.Println("Config", string(data))
+}
+
+// AddConfigPath adds a config path from where orion tries to read config values
+func AddConfigPath(path ...string) {
+	if configPaths == nil {
+		configPaths = []string{}
+	}
+	configPaths = append(configPaths, path...)
+}
+
+// ResetConfigPath resets the configuration paths
+func ResetConfigPath() {
+	configPaths = []string{}
 }

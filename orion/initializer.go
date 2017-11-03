@@ -14,6 +14,7 @@ import (
 	zipkin "github.com/openzipkin/zipkin-go-opentracing"
 )
 
+//InitHystrix initializes hystrix with default values
 func (d *DefaultServerImpl) InitHystrix() {
 	hystrix.DefaultTimeout = 1000 // one sec
 	hystrix.DefaultMaxConcurrent = 300
@@ -28,6 +29,7 @@ func (d *DefaultServerImpl) InitHystrix() {
 	go http.ListenAndServe(net.JoinHostPort("", port), hystrixStreamHandler)
 }
 
+//InitZipkin initializes zipkin collectors and traces to default config
 func (d *DefaultServerImpl) InitZipkin() {
 	zipkinAddr := d.GetOrionConfig().ZipkinConfig.Addr
 	serviceName := d.GetOrionConfig().OrionServerName
@@ -66,6 +68,7 @@ func (d *DefaultServerImpl) InitZipkin() {
 	}
 }
 
+//InitNewRelic initializes newrelic lib to default values based on config
 func (d *DefaultServerImpl) InitNewRelic() {
 	apiKey := d.GetOrionConfig().NewRelicConfig.APIKey
 	if strings.TrimSpace(apiKey) == "" {
@@ -85,7 +88,12 @@ func (d *DefaultServerImpl) InitNewRelic() {
 	}
 }
 
-func doInit(d interface{}) {
+func initInitializers(d interface{}) {
+
+	// pre init
+	if i, ok := d.(PreInitializer); ok {
+		i.PreInit()
+	}
 
 	// process hystrix
 	if i, ok := d.(HystrixInitializer); ok {
@@ -102,4 +110,8 @@ func doInit(d interface{}) {
 		i.InitNewRelic()
 	}
 
+	// post init
+	if i, ok := d.(PostInitializer); ok {
+		i.PostInit()
+	}
 }

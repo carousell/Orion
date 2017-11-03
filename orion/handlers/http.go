@@ -17,11 +17,12 @@ import (
 	"google.golang.org/grpc"
 )
 
+//NewHTTPHandler creates a new HTTP handler
 func NewHTTPHandler() Handler {
 	return &httpHandler{}
 }
 
-func generateUrl(serviceName, method string) string {
+func generateURL(serviceName, method string) string {
 	parts := strings.Split(serviceName, ".")
 	if len(parts) > 1 {
 		serviceName = strings.ToLower(parts[1])
@@ -125,7 +126,7 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 
 	// TODO recover in case of error
 	for _, m := range sd.Methods {
-		url := generateUrl(sd.ServiceName, m.MethodName)
+		url := generateURL(sd.ServiceName, m.MethodName)
 		h.paths[url] = pathInfo{
 			method: GRPCMethodHandler(m.Handler),
 			svc:    svcInfo,
@@ -137,7 +138,7 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 
 func (h *httpHandler) Run(httpListener net.Listener) error {
 	fmt.Println("Mapped URLs: ")
-	for url, _ := range h.paths {
+	for url := range h.paths {
 		fmt.Println("\tPOST", url)
 	}
 	httpSrv := &http.Server{
