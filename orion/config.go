@@ -94,7 +94,6 @@ func BuildDefaultNewRelicConfig() NewRelicConfig {
 }
 
 func setConfigDefaults() {
-	viper.SetDefault("orion.ServiceName", "MainOrionService")
 	viper.SetDefault("orion.GRPCPort", "9281")
 	viper.SetDefault("orion.HttpPort", "9282")
 	viper.SetDefault("orion.HystrixPort", "9283")

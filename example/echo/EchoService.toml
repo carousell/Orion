@@ -1,2 +1,5 @@
 [orion]
-ServiceName="EchoService"
+ReloadOnConfigChange=true
+
+[echo]
+AppendText="Yahoo! "

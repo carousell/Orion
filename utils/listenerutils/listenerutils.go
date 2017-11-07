@@ -25,6 +25,8 @@ func (c *customListener) Close() error {
 	return nil
 }
 func (c *customListener) Accept() (net.Conn, error) {
+	// yes no locks, this is by design
+	// its ok if we process some requests after stop accept is set
 	if c.stopAccept {
 		return nil, errors.New("can not accpet on this connection")
 	}

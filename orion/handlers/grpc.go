@@ -19,7 +19,7 @@ type grpcHandler struct {
 func (g *grpcHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 	opt := make([]grpc.ServerOption, 0)
 
-	opt = append(opt, grpc.UnaryInterceptor(getInterceptors(ss)))
+	opt = append(opt, grpc.UnaryInterceptor(grpcInterceptor()))
 
 	g.grpcServer = grpc.NewServer(opt...)
 	g.grpcServer.RegisterService(sd, ss)
