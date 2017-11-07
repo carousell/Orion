@@ -1,0 +1,6 @@
+[orion]
+ReloadOnConfigChange=true
+
+[echo]
+AppendText="Yahoo! "
+Debug=false
