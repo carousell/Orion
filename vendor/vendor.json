@@ -3,10 +3,6 @@
 	"ignore": "test",
 	"package": [
 		{
-			"path": "-v",
-			"revision": ""
-		},
-		{
 			"path": "appengine",
 			"revision": ""
 		},

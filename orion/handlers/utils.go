@@ -57,6 +57,7 @@ func getInterceptors(svc interface{}) grpc.UnaryServerInterceptor {
 	return chainUnaryServer(opts...)
 }
 
+// grpcInterceptor acts as default interceptor for gprc and applies service specific interceptors based on implementation
 func grpcInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		// fetch interceptors from the service implementation and apply

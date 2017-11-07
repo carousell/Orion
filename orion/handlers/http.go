@@ -155,5 +155,8 @@ func (h *httpHandler) Stop(timeout time.Duration) error {
 	ctx, can := context.WithTimeout(context.Background(), timeout)
 	defer can()
 	h.svr.Shutdown(ctx)
+	// reset known services and router
+	h.r = nil
+	h.services = nil
 	return nil
 }

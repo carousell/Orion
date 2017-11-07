@@ -100,7 +100,7 @@ func (s *DefaultServerImpl) signalWatcher() {
 			log.Println("signal", "config reloaded on "+sig.String())
 			for _, h := range s.handlers {
 				h.listener.StopAccept()
-				h.handler.Stop(time.Second * 5)
+				h.handler.Stop(time.Second * 1)
 			}
 			log.Println("stop", "stopped all handlers")
 			readConfig(s.config.OrionServerName)
