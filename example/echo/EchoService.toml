@@ -2,5 +2,5 @@
 ReloadOnConfigChange=true
 
 [echo]
-AppendText="Ya! "
+AppendText="Yahoo! "
 Debug=false

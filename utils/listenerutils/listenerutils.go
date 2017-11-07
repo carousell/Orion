@@ -14,8 +14,14 @@ type CustomListener interface {
 
 type customListener struct {
 	net.Listener
-	canClose   bool
-	stopAccept bool
+	canClose bool
+	accept   chan *acceptValues
+	stop     chan *bool
+}
+
+type acceptValues struct {
+	conn net.Conn
+	err  error
 }
 
 func (c *customListener) Close() error {
@@ -24,13 +30,23 @@ func (c *customListener) Close() error {
 	}
 	return nil
 }
+
 func (c *customListener) Accept() (net.Conn, error) {
-	// yes no locks, this is by design
-	// its ok if we process some requests after stop accept is set
-	if c.stopAccept {
+	go c.doAccept()
+	select {
+	case <-c.stop:
 		return nil, errors.New("can not accpet on this connection")
+	case connection := <-c.accept:
+		return connection.conn, connection.err
 	}
-	return c.Listener.Accept()
+}
+
+func (c *customListener) doAccept() {
+	conn, err := c.Listener.Accept()
+	c.accept <- &acceptValues{
+		conn: conn,
+		err:  err,
+	}
 }
 
 func (c *customListener) CanClose(canClose bool) {
@@ -38,13 +54,18 @@ func (c *customListener) CanClose(canClose bool) {
 }
 
 func (c *customListener) GetListener() CustomListener {
-	return &customListener{
-		Listener: c.Listener,
-	}
+	return newListener(c.Listener, c.accept)
 }
 
 func (c *customListener) StopAccept() {
-	c.stopAccept = true
+	select {
+	case _, open := <-c.stop:
+		if open {
+			close(c.stop)
+		}
+	default:
+		close(c.stop)
+	}
 }
 
 func NewListener(network, laddr string) (CustomListener, error) {
@@ -52,9 +73,14 @@ func NewListener(network, laddr string) (CustomListener, error) {
 	if err != nil {
 		return nil, err
 	}
+	return newListener(lis, make(chan *acceptValues, 0)), nil
+}
+
+func newListener(lis net.Listener, accept chan *acceptValues) CustomListener {
 	return &customListener{
-		Listener:   lis,
-		canClose:   false,
-		stopAccept: false,
-	}, nil
+		Listener: lis,
+		canClose: false,
+		accept:   accept,
+		stop:     make(chan *bool, 0),
+	}
 }

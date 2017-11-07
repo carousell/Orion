@@ -21,6 +21,7 @@ import (
 type svcInfo struct {
 	sd *grpc.ServiceDesc
 	sf ServiceFactory
+	ss interface{}
 }
 
 type handlerInfo struct {
@@ -37,7 +38,7 @@ type DefaultServerImpl struct {
 	inited bool
 
 	services map[string]svcInfo
-	handlers []handlerInfo
+	handlers []*handlerInfo
 }
 
 //GetOrionConfig returns current orion config
@@ -56,8 +57,8 @@ func (s *DefaultServerImpl) init(reload bool) {
 	}
 }
 
-func (s *DefaultServerImpl) buildHandlers() []handlerInfo {
-	hlrs := []handlerInfo{}
+func (s *DefaultServerImpl) buildHandlers() []*handlerInfo {
+	hlrs := []*handlerInfo{}
 	if !s.config.GRPCOnly {
 		httpPort := s.config.HTTPPort
 		httpListener, err := listenerutils.NewListener("tcp", ":"+httpPort)
@@ -66,7 +67,7 @@ func (s *DefaultServerImpl) buildHandlers() []handlerInfo {
 		}
 		log.Println("HTTPListnerPort", httpPort)
 		handler := handlers.NewHTTPHandler()
-		hlrs = append(hlrs, handlerInfo{
+		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,
 			listener: httpListener,
 		})
@@ -79,7 +80,7 @@ func (s *DefaultServerImpl) buildHandlers() []handlerInfo {
 		}
 		log.Println("gRPCListnerPort", grpcPort)
 		handler := handlers.NewGRPCHandler()
-		hlrs = append(hlrs, handlerInfo{
+		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,
 			listener: grpcListener,
 		})
@@ -93,25 +94,17 @@ func (s *DefaultServerImpl) initHandlers() {
 
 func (s *DefaultServerImpl) signalWatcher() {
 	// SETUP Interrupt handler.
-	c := make(chan os.Signal, 5)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP)
 	for sig := range c {
 		if sig == syscall.SIGHUP { // only reload config for sighup
 			log.Println("signal", "config reloaded on "+sig.String())
-			for _, h := range s.handlers {
-				h.listener.StopAccept()
-				h.handler.Stop(time.Second * 1)
-			}
-			log.Println("stop", "stopped all handlers")
 			readConfig(s.config.OrionServerName)
-			log.Println("reload", "reloading all services")
 			for _, info := range s.services {
 				s.registerService(info.sd, info.sf, true)
 			}
-			log.Println("reload", "re initing all handlers")
 			for _, h := range s.handlers {
-				h.listener = h.listener.GetListener()
-				go h.handler.Run(h.listener)
+				s.startHandler(h, true)
 			}
 		} else {
 			// should not happen!
@@ -135,15 +128,29 @@ func (s *DefaultServerImpl) Start() {
 	}
 
 	for _, h := range s.handlers {
-		s.wg.Add(1)
-		go func(s *DefaultServerImpl, h handlerInfo) {
-			defer s.wg.Done()
-			h.handler.Run(h.listener)
-		}(s, h)
+		s.startHandler(h, false)
 	}
 	if s.config.HotReload {
 		go s.signalWatcher()
 	}
+}
+
+func (s *DefaultServerImpl) startHandler(h *handlerInfo, reload bool) {
+
+	if reload {
+		h.listener.StopAccept()
+		h.handler.Stop(time.Second * 1)
+		h.listener = h.listener.GetListener()
+	}
+	for _, info := range s.services {
+		h.handler.Add(info.sd, info.ss)
+	}
+	s.wg.Add(1)
+	go func(s *DefaultServerImpl, h *handlerInfo) {
+		defer s.wg.Done()
+		err := h.handler.Run(h.listener)
+		log.Println("exited", h, err)
+	}(s, h)
 }
 
 // Wait waits for all the serving servers to quit
@@ -179,13 +186,16 @@ func (s *DefaultServerImpl) registerService(sd *grpc.ServiceDesc, sf ServiceFact
 		return fmt.Errorf("Orion.Server.RegisterService found the handler of type %v that does not satisfy %v", st, ht)
 	}
 
-	for _, h := range s.handlers {
-		h.handler.Add(sd, ss)
-	}
+	/*
+		for _, h := range s.handlers {
+			h.handler.Add(sd, ss)
+		}
+	*/
 
 	s.services[sd.ServiceName] = svcInfo{
 		sd: sd,
 		sf: sf,
+		ss: ss,
 	}
 	return nil
 
@@ -196,7 +206,7 @@ func (s *DefaultServerImpl) Stop(timeout time.Duration) error {
 	var wg sync.WaitGroup
 	for _, h := range s.handlers {
 		wg.Add(1)
-		go func(h handlerInfo, timeout time.Duration) {
+		go func(h *handlerInfo, timeout time.Duration) {
 			defer wg.Done()
 			h.handler.Stop(timeout)
 		}(h, timeout)

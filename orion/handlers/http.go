@@ -152,6 +152,8 @@ func (h *httpHandler) Run(httpListener net.Listener) error {
 }
 
 func (h *httpHandler) Stop(timeout time.Duration) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	ctx, can := context.WithTimeout(context.Background(), timeout)
 	defer can()
 	h.svr.Shutdown(ctx)
