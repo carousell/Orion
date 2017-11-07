@@ -12,11 +12,13 @@ import (
 
 type svc struct {
 	appendText string
+	debug      bool
 }
 
 func GetService(config Config) echo_proto.EchoServiceServer {
 	s := new(svc)
 	s.appendText = config.AppendText
+	s.debug = config.Debug
 	return s
 }
 
@@ -39,7 +41,9 @@ func (s *svc) ABC(ctx context.Context, req *echo_proto.UpperRequest) (*echo_prot
 }
 
 func (s *svc) GetInterceptors() []grpc.UnaryServerInterceptor {
-	return []grpc.UnaryServerInterceptor{
-		interceptors.DebugLoggingInterceptor(),
+	icpt := []grpc.UnaryServerInterceptor{}
+	if s.debug {
+		icpt = append(icpt, interceptors.DebugLoggingInterceptor())
 	}
+	return icpt
 }

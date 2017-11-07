@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -48,6 +49,7 @@ type httpHandler struct {
 	services map[string]serviceInfo
 	r        *mux.Router
 	mar      jsonpb.Marshaler
+	svr      *http.Server
 }
 
 func writeResp(resp http.ResponseWriter, status int, data []byte) {
@@ -141,14 +143,17 @@ func (h *httpHandler) Run(httpListener net.Listener) error {
 	for url := range h.paths {
 		fmt.Println("\tPOST", url)
 	}
-	httpSrv := &http.Server{
+	h.svr = &http.Server{
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		Handler:      h.r,
 	}
-	return httpSrv.Serve(httpListener)
+	return h.svr.Serve(httpListener)
 }
 
 func (h *httpHandler) Stop(timeout time.Duration) error {
+	ctx, can := context.WithTimeout(context.Background(), timeout)
+	defer can()
+	h.svr.Shutdown(ctx)
 	return nil
 }

@@ -24,8 +24,8 @@ type Config struct {
 	HTTPPort string
 	// GRPCPost id the port to bind for gRPC requests
 	GRPCPort string
-	// ReloadOnConfigChange when set reloads the service when it detects configuration update
-	ReloadOnConfigChange bool
+	// HotReload when set reloads the service when it recieves SIGHUP
+	HotReload bool
 	//HystrixConfig is the configuration options for hystrix
 	HystrixConfig HystrixConfig
 	//ZipkinConfig is the configuration options for zipkin
@@ -58,15 +58,15 @@ type NewRelicConfig struct {
 func BuildDefaultConfig(name string) Config {
 	readConfig(name)
 	return Config{
-		GRPCOnly:             false,
-		HTTPOnly:             false,
-		GRPCPort:             viper.GetString("orion.GRPCPort"),
-		HTTPPort:             viper.GetString("orion.HTTPPort"),
-		ReloadOnConfigChange: true,
-		OrionServerName:      name,
-		HystrixConfig:        BuildDefaultHystrixConfig(),
-		ZipkinConfig:         BuildDefaultZipkinConfig(),
-		NewRelicConfig:       BuildDefaultNewRelicConfig(),
+		GRPCOnly:        viper.GetBool("orion.GRPCOnly"),
+		HTTPOnly:        viper.GetBool("orion.HTTPOnly"),
+		GRPCPort:        viper.GetString("orion.GRPCPort"),
+		HTTPPort:        viper.GetString("orion.HTTPPort"),
+		HotReload:       viper.GetBool("orion.HotReload"),
+		OrionServerName: name,
+		HystrixConfig:   BuildDefaultHystrixConfig(),
+		ZipkinConfig:    BuildDefaultZipkinConfig(),
+		NewRelicConfig:  BuildDefaultNewRelicConfig(),
 	}
 }
 
@@ -98,11 +98,14 @@ func setConfigDefaults() {
 	viper.SetDefault("orion.HttpPort", "9282")
 	viper.SetDefault("orion.HystrixPort", "9283")
 	viper.SetDefault("orion.PprofPort", "9284")
+	viper.SetDefault("orion.GRPCOnly", false)
+	viper.SetDefault("orion.HTTPOnly", false)
 	viper.SetDefault("orion.ZipkinAddr", "http://10.200.0.7:9411/api/v1/spans")
 	viper.SetDefault("orion.env", "dev")
 	viper.SetDefault("orion.rollbar-token", "")
 	viper.SetDefault("orion.newrelic-servicename", "")
 	viper.SetDefault("orion.newrelic-api-key", "")
+	viper.SetDefault("orion.HotReload", true)
 }
 
 // sets up the config parser

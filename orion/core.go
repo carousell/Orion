@@ -4,8 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
 	"reflect"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/carousell/Orion/orion/handlers"
@@ -88,6 +91,42 @@ func (s *DefaultServerImpl) initHandlers() {
 	s.handlers = s.buildHandlers()
 }
 
+func (s *DefaultServerImpl) signalWatcher() {
+	// SETUP Interrupt handler.
+	c := make(chan os.Signal, 5)
+	signal.Notify(c, syscall.SIGHUP)
+	for sig := range c {
+		if sig == syscall.SIGHUP { // only reload config for sighup
+			log.Println("signal", "config reloaded on "+sig.String())
+			for _, h := range s.handlers {
+				h.listener.StopAccept()
+				h.handler.Stop(time.Second * 5)
+			}
+			log.Println("stop", "stopped all handlers")
+			readConfig(s.config.OrionServerName)
+			log.Println("reload", "reloading all services")
+			for _, info := range s.services {
+				s.registerService(info.sd, info.sf, true)
+			}
+			log.Println("reload", "re initing all handlers")
+			for _, h := range s.handlers {
+				h.listener = h.listener.GetListener()
+				go h.handler.Run(h.listener)
+			}
+		} else {
+			// should not happen!
+			for _, h := range s.handlers {
+				h.listener.CanClose(true)
+				h.handler.Stop(time.Second * 5)
+			}
+			//logger.Log("signal", "terminating on "+sig.String())
+			//errc <- errors.New("terminating on " + sig.String())
+			break
+		}
+		log.Println("signal", "all actions complete")
+	}
+}
+
 //Start starts the orion server
 func (s *DefaultServerImpl) Start() {
 	fmt.Println(BANNER)
@@ -101,6 +140,9 @@ func (s *DefaultServerImpl) Start() {
 			defer s.wg.Done()
 			h.handler.Run(h.listener)
 		}(s, h)
+	}
+	if s.config.HotReload {
+		go s.signalWatcher()
 	}
 }
 
