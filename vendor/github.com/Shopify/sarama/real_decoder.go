@@ -79,7 +79,7 @@ func (rd *realDecoder) getArrayLength() (int, error) {
 		rd.off = len(rd.raw)
 		return -1, ErrInsufficientData
 	}
-	tmp := int(binary.BigEndian.Uint32(rd.raw[rd.off:]))
+	tmp := int(int32(binary.BigEndian.Uint32(rd.raw[rd.off:])))
 	rd.off += 4
 	if tmp > rd.remaining() {
 		rd.off = len(rd.raw)
@@ -140,6 +140,15 @@ func (rd *realDecoder) getString() (string, error) {
 	tmpStr := string(rd.raw[rd.off : rd.off+n])
 	rd.off += n
 	return tmpStr, nil
+}
+
+func (rd *realDecoder) getNullableString() (*string, error) {
+	tmp, err := rd.getInt16()
+	if err != nil || tmp == -1 {
+		return nil, err
+	}
+	str, err := rd.getString()
+	return &str, err
 }
 
 func (rd *realDecoder) getInt32Array() ([]int32, error) {
@@ -260,10 +269,17 @@ func (rd *realDecoder) getRawBytes(length int) ([]byte, error) {
 func (rd *realDecoder) push(in pushDecoder) error {
 	in.saveOffset(rd.off)
 
-	reserve := in.reserveLength()
-	if rd.remaining() < reserve {
-		rd.off = len(rd.raw)
-		return ErrInsufficientData
+	var reserve int
+	if dpd, ok := in.(dynamicPushDecoder); ok {
+		if err := dpd.decode(rd); err != nil {
+			return err
+		}
+	} else {
+		reserve = in.reserveLength()
+		if rd.remaining() < reserve {
+			rd.off = len(rd.raw)
+			return ErrInsufficientData
+		}
 	}
 
 	rd.stack = append(rd.stack, in)

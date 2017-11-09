@@ -66,7 +66,10 @@ func (s *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			log.Println("error", err)
 		}
 		log.Println("HTTPListnerPort", httpPort)
-		handler := handlers.NewHTTPHandler()
+		config := handlers.HTTPHandlerConfig{
+			EnableProtoURL: s.config.EnableProtoURL,
+		}
+		handler := handlers.NewHTTPHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,
 			listener: httpListener,

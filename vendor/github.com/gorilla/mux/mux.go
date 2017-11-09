@@ -14,6 +14,7 @@ import (
 
 var (
 	ErrMethodMismatch = errors.New("method is not allowed")
+	ErrNotFound       = errors.New("no matching route was found")
 )
 
 // NewRouter returns a new router instance.
@@ -64,7 +65,17 @@ type Router struct {
 	useEncodedPath bool
 }
 
-// Match matches registered routes against the request.
+// Match attempts to match the given request against the router's registered routes.
+//
+// If the request matches a route of this router or one of its subrouters the Route,
+// Handler, and Vars fields of the the match argument are filled and this function
+// returns true.
+//
+// If the request does not match any of this router's or its subrouters' routes
+// then this function returns false. If available, a reason for the match failure
+// will be filled in the match argument's MatchErr field. If the match failure type
+// (eg: not found) has a registered handler, the handler is assigned to the Handler
+// field of the match argument.
 func (r *Router) Match(req *http.Request, match *RouteMatch) bool {
 	for _, route := range r.routes {
 		if route.Match(req, match) {
@@ -72,16 +83,23 @@ func (r *Router) Match(req *http.Request, match *RouteMatch) bool {
 		}
 	}
 
-	if match.MatchErr == ErrMethodMismatch && r.MethodNotAllowedHandler != nil {
-		match.Handler = r.MethodNotAllowedHandler
-		return true
+	if match.MatchErr == ErrMethodMismatch {
+		if r.MethodNotAllowedHandler != nil {
+			match.Handler = r.MethodNotAllowedHandler
+			return true
+		} else {
+			return false
+		}
 	}
 
 	// Closest match for a router (includes sub-routers)
 	if r.NotFoundHandler != nil {
 		match.Handler = r.NotFoundHandler
+		match.MatchErr = ErrNotFound
 		return true
 	}
+
+	match.MatchErr = ErrNotFound
 	return false
 }
 

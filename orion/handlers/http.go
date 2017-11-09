@@ -18,9 +18,15 @@ import (
 	"google.golang.org/grpc"
 )
 
+type HTTPHandlerConfig struct {
+	EnableProtoURL bool
+}
+
 //NewHTTPHandler creates a new HTTP handler
-func NewHTTPHandler() Handler {
-	return &httpHandler{}
+func NewHTTPHandler(config HTTPHandlerConfig) Handler {
+	return &httpHandler{
+		protoURL: config.EnableProtoURL,
+	}
 }
 
 func generateURL(serviceName, method string) string {
@@ -29,6 +35,10 @@ func generateURL(serviceName, method string) string {
 		serviceName = strings.ToLower(parts[1])
 	}
 	method = strings.ToLower(method)
+	return "/" + serviceName + "/" + method
+}
+
+func generateProtoUrl(serviceName, method string) string {
 	return "/" + serviceName + "/" + method
 }
 
@@ -50,6 +60,7 @@ type httpHandler struct {
 	r        *mux.Router
 	mar      jsonpb.Marshaler
 	svr      *http.Server
+	protoURL bool
 }
 
 func writeResp(resp http.ResponseWriter, status int, data []byte) {
@@ -128,12 +139,19 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 
 	// TODO recover in case of error
 	for _, m := range sd.Methods {
-		url := generateURL(sd.ServiceName, m.MethodName)
-		h.paths[url] = pathInfo{
+		info := pathInfo{
 			method: GRPCMethodHandler(m.Handler),
 			svc:    svcInfo,
 		}
+		url := generateURL(sd.ServiceName, m.MethodName)
+		h.paths[url] = info
 		h.r.Methods("POST").Path(url).Handler(h)
+
+		if h.protoURL {
+			protoUrl := generateProtoUrl(sd.ServiceName, m.MethodName)
+			h.paths[protoUrl] = info
+			h.r.Methods("POST").Path(protoUrl).Handler(h)
+		}
 	}
 	return nil
 }

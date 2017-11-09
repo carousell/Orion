@@ -1,5 +1,6 @@
 [orion]
 ReloadOnConfigChange=true
+EnableProtoURL=false
 
 [echo]
 AppendText="Yahoo! "

@@ -82,6 +82,5 @@ func finishServerSpan(ctx context.Context, serverSpan opentracing.Span, err erro
 		ext.Error.Set(serverSpan, true)
 		serverSpan.LogFields(log.String("event", "error"), log.String("message", err.Error()))
 	}
-
 	serverSpan.Finish()
 }

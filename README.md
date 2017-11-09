@@ -62,13 +62,7 @@ install the protoc plugin for go
 go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
 ```
 
-## Creating Service
-just run ```./create.sh <service-name>```
-
-## Using Orion
-### Adding new API call
-* Update Proto defination
-* Add Service call in service/types.go
-* Implement the service call
-* Add Endpoints
-* Update HTTP/gRPC transports
+install the protoc plugin for orion
+```
+go get -u github.com/carousell/Orion/protoc-gen-orion
+```

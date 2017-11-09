@@ -26,6 +26,8 @@ type Config struct {
 	GRPCPort string
 	// HotReload when set reloads the service when it recieves SIGHUP
 	HotReload bool
+	//EnableProtoURL adds gRPC generated urls in HTTP handler
+	EnableProtoURL bool
 	//HystrixConfig is the configuration options for hystrix
 	HystrixConfig HystrixConfig
 	//ZipkinConfig is the configuration options for zipkin
@@ -63,6 +65,7 @@ func BuildDefaultConfig(name string) Config {
 		GRPCPort:        viper.GetString("orion.GRPCPort"),
 		HTTPPort:        viper.GetString("orion.HTTPPort"),
 		HotReload:       viper.GetBool("orion.HotReload"),
+		EnableProtoURL:  viper.GetBool("orion.EnableProtoURL"),
 		OrionServerName: name,
 		HystrixConfig:   BuildDefaultHystrixConfig(),
 		ZipkinConfig:    BuildDefaultZipkinConfig(),
@@ -100,7 +103,8 @@ func setConfigDefaults() {
 	viper.SetDefault("orion.PprofPort", "9284")
 	viper.SetDefault("orion.GRPCOnly", false)
 	viper.SetDefault("orion.HTTPOnly", false)
-	viper.SetDefault("orion.ZipkinAddr", "http://10.200.0.7:9411/api/v1/spans")
+	viper.SetDefault("orion.EnableProtoURL", false)
+	viper.SetDefault("orion.ZipkinAddr", "")
 	viper.SetDefault("orion.env", "dev")
 	viper.SetDefault("orion.rollbar-token", "")
 	viper.SetDefault("orion.newrelic-servicename", "")
