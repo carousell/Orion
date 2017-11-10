@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net"
+	"net/http"
 	"time"
 
 	"google.golang.org/grpc"
@@ -13,6 +14,12 @@ type GRPCMethodHandler func(srv interface{}, ctx context.Context, dec func(inter
 type Interceptor interface {
 	// gets an array of Server Interceptors
 	GetInterceptors() []grpc.UnaryServerInterceptor
+}
+
+type Encoder func(req *http.Request, reqObject interface{}) error
+
+type Encodeable interface {
+	AddEncoder(serviceName, method, httpMethod, path string, encoder Encoder)
 }
 
 //Handler implements a service handler that is used by orion server

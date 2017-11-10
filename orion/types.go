@@ -3,6 +3,7 @@ package orion
 import (
 	"time"
 
+	"github.com/carousell/Orion/orion/handlers"
 	"google.golang.org/grpc"
 )
 
@@ -60,3 +61,5 @@ type PreInitializer interface {
 type PostInitializer interface {
 	PostInit()
 }
+
+type Encoder = handlers.Encoder

@@ -36,6 +36,7 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type EchoRequest struct {
+	// Param: ksdjsk
 	Msg string `protobuf:"bytes,1,opt,name=msg" json:"msg,omitempty"`
 }
 
@@ -117,9 +118,8 @@ const _ = grpc.SupportPackageIsVersion4
 // Client API for EchoService service
 
 type EchoServiceClient interface {
-	// Echo echos the request back
 	Echo(ctx context.Context, in *EchoRequest, opts ...grpc.CallOption) (*EchoResponse, error)
-	// Upper echos the request back in all caps
+	// ORION:URL: GET /upper/1.1/{msg}
 	Upper(ctx context.Context, in *UpperRequest, opts ...grpc.CallOption) (*UpperResponse, error)
 	ABC(ctx context.Context, in *UpperRequest, opts ...grpc.CallOption) (*UpperResponse, error)
 }
@@ -162,9 +162,8 @@ func (c *echoServiceClient) ABC(ctx context.Context, in *UpperRequest, opts ...g
 // Server API for EchoService service
 
 type EchoServiceServer interface {
-	// Echo echos the request back
 	Echo(context.Context, *EchoRequest) (*EchoResponse, error)
-	// Upper echos the request back in all caps
+	// ORION:URL: GET /upper/1.1/{msg}
 	Upper(context.Context, *UpperRequest) (*UpperResponse, error)
 	ABC(context.Context, *UpperRequest) (*UpperResponse, error)
 }

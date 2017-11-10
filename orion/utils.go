@@ -2,9 +2,12 @@ package orion
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"reflect"
+
+	"github.com/carousell/Orion/orion/handlers"
 )
 
 func decoder(in interface{}) error {
@@ -25,4 +28,11 @@ func getHostname() string {
 	}
 	log.Println("HOST", host)
 	return host
+}
+
+func RegisterEncoder(svr Server, serviceName, method, httpMethod, path string, encoder handlers.Encoder) {
+	fmt.Println("registering encoder for", method, path)
+	if e, ok := svr.(handlers.Encodeable); ok {
+		e.AddEncoder(serviceName, method, httpMethod, path, encoder)
+	}
 }

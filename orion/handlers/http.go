@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -30,9 +29,10 @@ func NewHTTPHandler(config HTTPHandlerConfig) Handler {
 }
 
 func generateURL(serviceName, method string) string {
+	serviceName = strings.ToLower(serviceName)
 	parts := strings.Split(serviceName, ".")
 	if len(parts) > 1 {
-		serviceName = strings.ToLower(parts[1])
+		serviceName = parts[1]
 	}
 	method = strings.ToLower(method)
 	return "/" + serviceName + "/" + method
@@ -49,15 +49,24 @@ type serviceInfo struct {
 }
 
 type pathInfo struct {
-	svc    serviceInfo
-	method GRPCMethodHandler
+	svc        *serviceInfo
+	method     GRPCMethodHandler
+	encoder    Encoder
+	httpMethod string
+}
+
+func (p *pathInfo) Clone() *pathInfo {
+	return &pathInfo{
+		svc:        p.svc,
+		method:     p.method,
+		encoder:    p.encoder,
+		httpMethod: p.httpMethod,
+	}
 }
 
 type httpHandler struct {
 	mu       sync.Mutex
-	paths    map[string]pathInfo
-	services map[string]serviceInfo
-	r        *mux.Router
+	paths    map[string]*pathInfo
 	mar      jsonpb.Marshaler
 	svr      *http.Server
 	protoURL bool
@@ -68,7 +77,14 @@ func writeResp(resp http.ResponseWriter, status int, data []byte) {
 	resp.Write(data)
 }
 
-func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+func (h *httpHandler) getHTTPHandler(url string) http.HandlerFunc {
+	return func(resp http.ResponseWriter, req *http.Request) {
+		h.ServeHTTP(resp, req, url)
+	}
+
+}
+
+func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url string) {
 	defer func(resp http.ResponseWriter) {
 		// panic handler
 		if r := recover(); r != nil {
@@ -79,15 +95,19 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	}(resp)
 
 	ctx := req.Context()
-	url := req.URL.String()
 
 	info, ok := h.paths[url]
 	if ok {
 		var decErr error
 		dec := func(r interface{}) error {
-			protoReq := r.(proto.Message)
-			decErr = jsonpb.Unmarshal(req.Body, protoReq)
-			return decErr
+			if info.encoder == nil {
+				protoReq := r.(proto.Message)
+				decErr = jsonpb.Unmarshal(req.Body, protoReq)
+				return decErr
+			} else {
+				decErr = info.encoder(req, r)
+				return decErr
+			}
 		}
 		protoResponse, err := info.method(info.svc.svc, ctx, dec, info.svc.interceptors)
 		if err != nil {
@@ -115,56 +135,62 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 	defer h.mu.Unlock()
 
 	if h.paths == nil {
-		h.paths = make(map[string]pathInfo)
-	}
-	if h.services == nil {
-		h.services = make(map[string]serviceInfo)
-	}
-	if h.r == nil {
-		h.r = mux.NewRouter()
+		h.paths = make(map[string]*pathInfo)
 	}
 
-	if _, ok := h.services[sd.ServiceName]; ok {
-		return errors.New("Service " + sd.ServiceName + " is already initialized")
-	}
-
-	svcInfo := serviceInfo{
+	svcInfo := &serviceInfo{
 		desc: sd,
 		svc:  ss,
 	}
 
 	svcInfo.interceptors = getInterceptors(ss)
 
-	h.services[sd.ServiceName] = svcInfo
-
 	// TODO recover in case of error
 	for _, m := range sd.Methods {
-		info := pathInfo{
-			method: GRPCMethodHandler(m.Handler),
-			svc:    svcInfo,
+		info := &pathInfo{
+			method:     GRPCMethodHandler(m.Handler),
+			svc:        svcInfo,
+			httpMethod: "POST",
 		}
 		url := generateURL(sd.ServiceName, m.MethodName)
 		h.paths[url] = info
-		h.r.Methods("POST").Path(url).Handler(h)
 
 		if h.protoURL {
 			protoUrl := generateProtoUrl(sd.ServiceName, m.MethodName)
 			h.paths[protoUrl] = info
-			h.r.Methods("POST").Path(protoUrl).Handler(h)
 		}
 	}
 	return nil
 }
 
+func (h *httpHandler) AddEncoder(serviceName, method, httpMethod string, path string, encoder Encoder) {
+	fmt.Println("registering path", serviceName, method, httpMethod, path)
+	if h.paths != nil {
+		fmt.Println("paths is not nil")
+		url := generateURL(serviceName, method)
+		if info, ok := h.paths[url]; ok {
+			i := info.Clone()
+			i.encoder = encoder
+			i.httpMethod = httpMethod
+			delete(h.paths, url)
+			h.paths[path] = i
+		} else {
+			fmt.Println("url not found", url, h.paths)
+		}
+	}
+}
+
 func (h *httpHandler) Run(httpListener net.Listener) error {
+	r := mux.NewRouter()
 	fmt.Println("Mapped URLs: ")
-	for url := range h.paths {
-		fmt.Println("\tPOST", url)
+	for url, info := range h.paths {
+		r.Methods(info.httpMethod).Path(url).Handler(h.getHTTPHandler(url))
+		fmt.Println("\t", info.httpMethod, url)
 	}
 	h.svr = &http.Server{
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
-		Handler:      h.r,
+		Handler:      r,
 	}
 	return h.svr.Serve(httpListener)
 }
@@ -175,8 +201,5 @@ func (h *httpHandler) Stop(timeout time.Duration) error {
 	ctx, can := context.WithTimeout(context.Background(), timeout)
 	defer can()
 	h.svr.Shutdown(ctx)
-	// reset known services and router
-	h.r = nil
-	h.services = nil
 	return nil
 }
