@@ -49,6 +49,10 @@ func (f *forkJoin) Wait() error {
 			f.mu.Lock()
 			f.errored = true
 			f.mu.Unlock()
+			go func(errc chan error) {
+				for range errc {
+				} // drain rest of the errors
+			}(f.errc)
 		}
 		return err
 	case <-f.done:
