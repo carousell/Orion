@@ -12,14 +12,21 @@ func NewForkJoin() ForkJoin {
 }
 
 type forkJoin struct {
-	wg   sync.WaitGroup
-	errc chan error
-	done chan bool
+	wg      sync.WaitGroup
+	errc    chan error
+	done    chan bool
+	mu      sync.Mutex
+	errored bool
 }
 
 func (f *forkJoin) Add(work Work) {
-	f.wg.Add(1)
-	go f.startWork(work)
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	// if we have already errored dont start work
+	if !f.errored {
+		f.wg.Add(1)
+		go f.startWork(work)
+	}
 }
 
 func (f *forkJoin) startWork(work Work) {
@@ -38,6 +45,11 @@ func (f *forkJoin) Wait() error {
 	}(f)
 	select {
 	case err := <-f.errc:
+		if err != nil {
+			f.mu.Lock()
+			f.errored = true
+			f.mu.Unlock()
+		}
 		return err
 	case <-f.done:
 		return nil
