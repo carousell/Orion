@@ -173,18 +173,33 @@ func (s *DefaultServerImpl) initHandlers() {
 }
 
 func (s *DefaultServerImpl) signalWatcher() {
-	// SETUP Interrupt handler.
+	// Setup interrupt handler.
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP)
 	for sig := range c {
 		if sig == syscall.SIGHUP { // only reload config for sighup
 			log.Println("signal", "config reloaded on "+sig.String())
+			// relaod config
 			readConfig(s.config.OrionServerName)
+
+			// reload initializers
+			s.processInitializers(true)
+
+			// reload services
+			oldServices := []svcInfo{}
 			for _, info := range s.services {
 				s.registerService(info.sd, info.sf, true)
+				oldServices = append(oldServices, info)
 			}
+
+			// reload handlers
 			for _, h := range s.handlers {
 				s.startHandler(h, true)
+			}
+
+			//dispose the older service object
+			for _, info := range oldServices {
+				info.sf.DisposeService(info.ss)
 			}
 		} else {
 			// should not happen!
@@ -262,7 +277,7 @@ func (s *DefaultServerImpl) registerService(sd *grpc.ServiceDesc, sf ServiceFact
 		return errors.New("error: service " + sd.ServiceName + " already added!")
 	}
 	// create a obejct from factory and check types
-	ss := sf.NewService(viper.AllSettings())
+	ss := sf.NewService(s)
 	ht := reflect.TypeOf(sd.HandlerType).Elem()
 	st := reflect.TypeOf(ss)
 	if !st.Implements(ht) {
