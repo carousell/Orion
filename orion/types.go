@@ -29,6 +29,21 @@ type Server interface {
 	Wait() error
 	//Stop stops the Server
 	Stop(timeout time.Duration) error
+	//GetOrionConfig returns current orion config
+	GetOrionConfig() Config
+	//GetConfig returns current config as parsed from the file/defaults
+	GetConfig() map[string]interface{}
+	//AddInitializers adds the initializers to orion server
+	AddInitializers(ins ...Initializer)
+	//Store stores values for use by initializers
+	Store(key string, value interface{})
+	//Fetch fetches values for use by initializers
+	Fetch(key string) (value interface{}, found bool)
+}
+
+type Initializer interface {
+	Init(svr Server) error
+	ReInit(svr Server) error
 }
 
 // ServiceFactory is the interface that need to be implemented by client that provides with a new service object
@@ -37,27 +52,12 @@ type ServiceFactory interface {
 	NewService(config map[string]interface{}) interface{}
 }
 
-// HystrixInitializer is the interface that needs to be implemented by client for a custom hystrix initializer
-type HystrixInitializer interface {
-	InitHystrix()
-}
-
-// ZipkinInitializer is the interface that needs to be implemented by client for a custom zipkin initializer
-type ZipkinInitializer interface {
-	InitZipkin()
-}
-
-// NewRelicInitializer is the interface that needs to be implemented by client for a custom newrelic initializer
-type NewRelicInitializer interface {
-	InitNewRelic()
-}
-
-// PreInitializer is the interface that needs to implemented by client for any custom coe that runs before all other initializer
+// PreInitializer is the interface that needs to implemented by client for any custom code that runs before all other initializer
 type PreInitializer interface {
 	PreInit()
 }
 
-// PostInitializer is the interface that needs to implemented by client for any custom coe that runs after all other initializer
+// PostInitializer is the interface that needs to implemented by client for any custom code that runs after all other initializer
 type PostInitializer interface {
 	PostInit()
 }

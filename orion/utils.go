@@ -3,8 +3,6 @@ package orion
 import (
 	"errors"
 	"fmt"
-	"log"
-	"os"
 	"reflect"
 
 	"github.com/carousell/Orion/orion/handlers"
@@ -19,15 +17,6 @@ func decoder(in interface{}) error {
 		return errors.New("decoder can only deserialize to structs, can not convert " + t.String() + " of kind " + t.Kind().String())
 	}
 	return nil
-}
-
-func getHostname() string {
-	host := os.Getenv("HOST")
-	if host == "" {
-		host = "localhost"
-	}
-	log.Println("HOST", host)
-	return host
 }
 
 func RegisterEncoder(svr Server, serviceName, method, httpMethod, path string, encoder handlers.Encoder) {

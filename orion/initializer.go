@@ -1,6 +1,7 @@
 package orion
 
 import (
+	"errors"
 	"log"
 	"net"
 	"net/http"
@@ -8,14 +9,41 @@ import (
 	"strings"
 
 	"github.com/afex/hystrix-go/hystrix"
+	"github.com/carousell/Orion/utils"
 	logg "github.com/go-kit/kit/log"
 	newrelic "github.com/newrelic/go-agent"
 	stdopentracing "github.com/opentracing/opentracing-go"
 	zipkin "github.com/openzipkin/zipkin-go-opentracing"
 )
 
-//InitHystrix initializes hystrix with default values
-func (d *DefaultServerImpl) InitHystrix() {
+const (
+	NR_APP = "INIT:NR_APP"
+)
+
+func DefaultInitializers() []Initializer {
+	return []Initializer{
+		HystrixInitializer(),
+		ZipkinInitializer(),
+		NewRelicInitializer(),
+	}
+}
+
+func HystrixInitializer() Initializer {
+	return &hystrixInitializer{}
+}
+
+func ZipkinInitializer() Initializer {
+	return &zipkinInitializer{}
+}
+
+func NewRelicInitializer() Initializer {
+	return &newRelicInitializer{}
+}
+
+type hystrixInitializer struct {
+}
+
+func (h *hystrixInitializer) Init(svr Server) error {
 	hystrix.DefaultTimeout = 1000 // one sec
 	hystrix.DefaultMaxConcurrent = 300
 	hystrix.DefaultErrorPercentThreshold = 75
@@ -24,15 +52,51 @@ func (d *DefaultServerImpl) InitHystrix() {
 
 	hystrixStreamHandler := hystrix.NewStreamHandler()
 	hystrixStreamHandler.Start()
-	port := d.GetOrionConfig().HystrixConfig.Port
+	port := svr.GetOrionConfig().HystrixConfig.Port
 	log.Println("HystrixPort", port)
 	go http.ListenAndServe(net.JoinHostPort("", port), hystrixStreamHandler)
+	return nil
 }
 
-//InitZipkin initializes zipkin collectors and traces to default config
-func (d *DefaultServerImpl) InitZipkin() {
-	zipkinAddr := d.GetOrionConfig().ZipkinConfig.Addr
-	serviceName := d.GetOrionConfig().OrionServerName
+func (h *hystrixInitializer) ReInit(svr Server) error {
+	// do nothing, cant be reinited
+	return nil
+}
+
+type newRelicInitializer struct {
+}
+
+func (n *newRelicInitializer) Init(svr Server) error {
+	apiKey := svr.GetOrionConfig().NewRelicConfig.APIKey
+	if strings.TrimSpace(apiKey) == "" {
+		return errors.New("empty token")
+	}
+	serviceName := svr.GetOrionConfig().NewRelicConfig.ServiceName
+	if strings.TrimSpace(serviceName) == "" {
+		serviceName = svr.GetOrionConfig().OrionServerName
+	}
+	config := newrelic.NewConfig(serviceName, apiKey)
+	app, err := newrelic.NewApplication(config)
+	if err != nil {
+		log.Println("nr-error", err)
+		return err
+	} else {
+		log.Println("NR", "initialized with "+serviceName)
+		svr.Store(NR_APP, app)
+	}
+	return nil
+}
+
+func (n *newRelicInitializer) ReInit(svr Server) error {
+	return n.Init(svr)
+}
+
+type zipkinInitializer struct {
+}
+
+func (z *zipkinInitializer) Init(svr Server) error {
+	zipkinAddr := svr.GetOrionConfig().ZipkinConfig.Addr
+	serviceName := svr.GetOrionConfig().OrionServerName
 	if zipkinAddr != "" {
 		logger := logg.NewLogfmtLogger(os.Stdout)
 		logger = logg.With(logger, "ts", logg.DefaultTimestampUTC)
@@ -53,65 +117,25 @@ func (d *DefaultServerImpl) InitZipkin() {
 		}
 		if err != nil {
 			logger.Log("err", err)
+			return err
 		}
 
 		tracer, err := zipkin.NewTracer(
-			zipkin.NewRecorder(collector, true, getHostname(), serviceName),
+			zipkin.NewRecorder(collector, true, utils.GetHostname(), serviceName),
 		)
 		if err != nil {
 			logger.Log("err", err)
+			return err
 		} else {
 			stdopentracing.SetGlobalTracer(tracer)
 		}
 	} else {
 		stdopentracing.SetGlobalTracer(stdopentracing.NoopTracer{})
 	}
+	return nil
 }
 
-//InitNewRelic initializes newrelic lib to default values based on config
-func (d *DefaultServerImpl) InitNewRelic() {
-	apiKey := d.GetOrionConfig().NewRelicConfig.APIKey
-	if strings.TrimSpace(apiKey) == "" {
-		return
-	}
-	serviceName := d.GetOrionConfig().NewRelicConfig.ServiceName
-	if strings.TrimSpace(serviceName) == "" {
-		serviceName = d.GetOrionConfig().OrionServerName
-	}
-	config := newrelic.NewConfig(serviceName, apiKey)
-	app, err := newrelic.NewApplication(config)
-	if err != nil {
-		log.Println("nr-error", err)
-	} else {
-		log.Println("NR", "initialized with "+serviceName)
-		d.nrApp = app
-	}
-}
-
-func initInitializers(d interface{}) {
-
-	// pre init
-	if i, ok := d.(PreInitializer); ok {
-		i.PreInit()
-	}
-
-	// process hystrix
-	if i, ok := d.(HystrixInitializer); ok {
-		i.InitHystrix()
-	}
-
-	// process zipkin
-	if i, ok := d.(ZipkinInitializer); ok {
-		i.InitZipkin()
-	}
-
-	// process newrelic
-	if i, ok := d.(NewRelicInitializer); ok {
-		i.InitNewRelic()
-	}
-
-	// post init
-	if i, ok := d.(PostInitializer); ok {
-		i.PostInit()
-	}
+func (z *zipkinInitializer) ReInit(svr Server) error {
+	// just do the same init on reinit
+	return z.Init(svr)
 }

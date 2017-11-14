@@ -13,7 +13,6 @@ import (
 
 	"github.com/carousell/Orion/orion/handlers"
 	"github.com/carousell/Orion/utils/listenerutils"
-	newrelic "github.com/newrelic/go-agent"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 )
@@ -42,12 +41,32 @@ type DefaultServerImpl struct {
 	config Config
 	mu     sync.Mutex
 	wg     sync.WaitGroup
-	nrApp  newrelic.Application
 	inited bool
 
-	services map[string]svcInfo
-	encoders map[string]encoderInfo
-	handlers []*handlerInfo
+	services     map[string]svcInfo
+	encoders     map[string]encoderInfo
+	handlers     []*handlerInfo
+	initializers []Initializer
+
+	dataBag map[string]interface{}
+}
+
+//Store stores values for use by initializers
+func (d *DefaultServerImpl) Store(key string, value interface{}) {
+	if d.dataBag == nil {
+		d.dataBag = make(map[string]interface{})
+	}
+	if value == nil {
+		if _, found := d.dataBag[key]; found {
+			delete(d.dataBag, key)
+		}
+	}
+}
+
+//Fetch fetches values for use by initializers
+func (d *DefaultServerImpl) Fetch(key string) (value interface{}, found bool) {
+	value, found = d.dataBag[key]
+	return
 }
 
 func (d *DefaultServerImpl) AddEncoder(serviceName, method, httpMethod string, path string, encoder handlers.Encoder) {
@@ -74,8 +93,30 @@ func (s *DefaultServerImpl) init(reload bool) {
 	defer s.mu.Unlock()
 	if s.inited != true {
 		s.initHandlers()
-		initInitializers(s)
+		s.initInitializers(reload)
 		s.inited = true
+	}
+}
+
+func (d *DefaultServerImpl) initInitializers(relaod bool) {
+
+	var in interface{}
+	in = d
+
+	// pre init
+	if i, ok := in.(PreInitializer); ok {
+		i.PreInit()
+	}
+
+	/*
+		if s.initializers == nil {
+			s.initializers = initializers.DefaultInitializers()
+		}
+	*/
+
+	// post init
+	if i, ok := in.(PostInitializer); ok {
+		i.PostInit()
 	}
 }
 
@@ -137,8 +178,6 @@ func (s *DefaultServerImpl) signalWatcher() {
 				h.listener.CanClose(true)
 				h.handler.Stop(time.Second * 5)
 			}
-			//logger.Log("signal", "terminating on "+sig.String())
-			//errc <- errors.New("terminating on " + sig.String())
 			break
 		}
 		log.Println("signal", "all actions complete")
@@ -161,7 +200,6 @@ func (s *DefaultServerImpl) Start() {
 }
 
 func (s *DefaultServerImpl) startHandler(h *handlerInfo, reload bool) {
-
 	if reload {
 		h.listener.StopAccept()
 		h.handler.Stop(time.Second * 1)
@@ -217,12 +255,6 @@ func (s *DefaultServerImpl) registerService(sd *grpc.ServiceDesc, sf ServiceFact
 		return fmt.Errorf("Orion.Server.RegisterService found the handler of type %v that does not satisfy %v", st, ht)
 	}
 
-	/*
-		for _, h := range s.handlers {
-			h.handler.Add(sd, ss)
-		}
-	*/
-
 	s.services[sd.ServiceName] = svcInfo{
 		sd: sd,
 		sf: sf,
@@ -230,6 +262,22 @@ func (s *DefaultServerImpl) registerService(sd *grpc.ServiceDesc, sf ServiceFact
 	}
 	return nil
 
+}
+
+//AddInitializers adds the initializers to orion server
+func (d *DefaultServerImpl) AddInitializers(ins ...Initializer) {
+	if d.initializers == nil {
+		d.initializers = make([]Initializer, 0)
+	}
+	if len(ins) > 0 {
+		d.initializers = append(d.initializers, ins...)
+	}
+
+}
+
+//GetConfig returns current config as parsed from the file/defaults
+func (d *DefaultServerImpl) GetConfig() map[string]interface{} {
+	return viper.AllSettings()
 }
 
 //Stop stops the server
