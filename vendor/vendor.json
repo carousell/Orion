@@ -81,6 +81,12 @@
 			"revisionTime": "2016-08-05T00:47:13Z"
 		},
 		{
+			"checksumSHA1": "jGqodjjIGBLUCcAenqMYloWpBks=",
+			"path": "github.com/fortytw2/leaktest",
+			"revision": "3b724c3d7b8729a35bf4e577f71653aec6e53513",
+			"revisionTime": "2017-07-15T21:17:39Z"
+		},
+		{
 			"checksumSHA1": "x2Km0Qy3WgJJnV19Zv25VwTJcBM=",
 			"path": "github.com/fsnotify/fsnotify",
 			"revision": "4da3e2cfbabc9f751898f250b49f2439785783a1",
@@ -425,6 +431,12 @@
 			"revisionTime": "2017-07-14T08:24:55Z"
 		},
 		{
+			"checksumSHA1": "LuFv4/jlrmFNnDb/5SCSEPAM9vU=",
+			"path": "github.com/pmezard/go-difflib/difflib",
+			"revision": "792786c7400a136282c1664665ae0a8db921c6c2",
+			"revisionTime": "2016-01-10T10:55:54Z"
+		},
+		{
 			"checksumSHA1": "hu0MsbTdFzZxNRyAxe2HmTFFFak=",
 			"path": "github.com/prometheus/client_golang/prometheus",
 			"revision": "5cec1d0429b02e4323e042eb04dafdb079ddf568",
@@ -507,6 +519,12 @@
 			"path": "github.com/spf13/viper",
 			"revision": "8ef37cbca71638bf32f3d5e194117d4cb46da163",
 			"revisionTime": "2017-10-20T10:22:28Z"
+		},
+		{
+			"checksumSHA1": "mGbTYZ8dHVTiPTTJu3ktp+84pPI=",
+			"path": "github.com/stretchr/testify/assert",
+			"revision": "2aa2c176b9dab406a6970f6a55f513e8a8c8b18f",
+			"revisionTime": "2017-08-14T20:04:35Z"
 		},
 		{
 			"checksumSHA1": "GtamqiJoL7PGHsN454AoffBFMa8=",

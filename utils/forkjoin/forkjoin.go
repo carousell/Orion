@@ -1,6 +1,7 @@
 package forkjoin
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -15,23 +16,25 @@ type forkJoin struct {
 	wg      sync.WaitGroup
 	errc    chan error
 	done    chan bool
-	mu      sync.Mutex
 	errored bool
 }
 
-func (f *forkJoin) Add(work Work) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	// if we have already errored dont start work
+func (f *forkJoin) Add(task Task) {
+	// if we have already errored dont start task
 	if !f.errored {
 		f.wg.Add(1)
-		go f.startWork(work)
+		go f.startTask(task)
 	}
 }
 
-func (f *forkJoin) startWork(work Work) {
-	defer f.wg.Done()
-	err := work()
+func (f *forkJoin) startTask(task Task) {
+	defer func(f *forkJoin) {
+		if r := recover(); r != nil {
+			f.errc <- fmt.Errorf("PANIC: %s", r)
+		}
+		f.wg.Done()
+	}(f)
+	err := task()
 	if err != nil {
 		f.errc <- err
 	}
@@ -46,9 +49,7 @@ func (f *forkJoin) Wait() error {
 	select {
 	case err := <-f.errc:
 		if err != nil {
-			f.mu.Lock()
 			f.errored = true
-			f.mu.Unlock()
 			go func(errc chan error) {
 				for range errc {
 				} // drain rest of the errors
@@ -56,7 +57,13 @@ func (f *forkJoin) Wait() error {
 		}
 		return err
 	case <-f.done:
-		return nil
+		// rare corner case of errc trigring after done
+		// when only 1 task was added
+		select {
+		case err := <-f.errc:
+			return err
+		default:
+			return nil
+		}
 	}
-	return nil
 }

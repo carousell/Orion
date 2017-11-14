@@ -1,8 +1,8 @@
 package forkjoin
 
-type Work func() error
+type Task func() error
 
 type ForkJoin interface {
-	Add(Work)
+	Add(Task)
 	Wait() error
 }
