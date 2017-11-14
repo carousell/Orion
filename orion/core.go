@@ -98,7 +98,7 @@ func (s *DefaultServerImpl) init(reload bool) {
 	}
 }
 
-func (d *DefaultServerImpl) initInitializers(relaod bool) {
+func (d *DefaultServerImpl) initInitializers(reload bool) {
 
 	var in interface{}
 	in = d
@@ -108,15 +108,29 @@ func (d *DefaultServerImpl) initInitializers(relaod bool) {
 		i.PreInit()
 	}
 
-	/*
-		if s.initializers == nil {
-			s.initializers = initializers.DefaultInitializers()
-		}
-	*/
+	if d.initializers == nil {
+		d.initializers = DefaultInitializers()
+	}
+	d.processInitializers(reload)
 
 	// post init
 	if i, ok := in.(PostInitializer); ok {
 		i.PostInit()
+	}
+}
+
+func (d *DefaultServerImpl) processInitializers(reload bool) {
+	if d.initializers == nil {
+		return
+	}
+	for _, in := range d.initializers {
+		if in != nil {
+			if reload {
+				in.ReInit(d)
+			} else {
+				in.Init(d)
+			}
+		}
 	}
 }
 

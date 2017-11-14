@@ -166,7 +166,6 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 func (h *httpHandler) AddEncoder(serviceName, method, httpMethod string, path string, encoder Encoder) {
 	fmt.Println("registering path", serviceName, method, httpMethod, path)
 	if h.paths != nil {
-		fmt.Println("paths is not nil")
 		url := generateURL(serviceName, method)
 		if info, ok := h.paths[url]; ok {
 			i := info.Clone()
