@@ -34,6 +34,7 @@ func (f *forkJoin) Wait() error {
 	go func(f *forkJoin) {
 		f.wg.Wait()
 		close(f.done)
+		close(f.errc)
 	}(f)
 	select {
 	case err := <-f.errc:
