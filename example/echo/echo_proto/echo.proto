@@ -5,16 +5,13 @@ package echo_proto;
 service EchoService{
     rpc Echo (EchoRequest) returns (EchoResponse){
     }
-    // ORION:URL: GET /upper/1.1/{msg}
-    rpc upper (UpperRequest) returns (UpperResponse){
-    }
-    rpc ABC(UpperRequest) returns (UpperResponse){
+    // ORION:URL: GET /api/1.0/upper/{msg}
+    rpc Upper (UpperRequest) returns (UpperResponse){
     }
 }
 
 
 message EchoRequest {
-    // Param: ksdjsk
     string msg = 1;
 }
 

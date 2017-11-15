@@ -34,12 +34,6 @@ func (s *svc) Upper(ctx context.Context, req *echo_proto.UpperRequest) (*echo_pr
 	return resp, nil
 }
 
-func (s *svc) ABC(ctx context.Context, req *echo_proto.UpperRequest) (*echo_proto.UpperResponse, error) {
-	resp := new(echo_proto.UpperResponse)
-	resp.Msg = strings.ToUpper(s.appendText + req.GetMsg())
-	return resp, nil
-}
-
 func (s *svc) GetInterceptors() []grpc.UnaryServerInterceptor {
 	icpt := []grpc.UnaryServerInterceptor{}
 	if s.debug {

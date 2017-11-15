@@ -48,8 +48,16 @@ type Initializer interface {
 
 // ServiceFactory is the interface that need to be implemented by client that provides with a new service object
 type ServiceFactory interface {
-	// NewService function parses configuration recieved from the orion server
-	NewService(config map[string]interface{}) interface{}
+	// NewService function recieves the server obejct for which service has to be initialized
+	NewService(Server) interface{}
+	//DisposeService function disposes the service object
+	DisposeService(svc interface{})
+}
+
+//WhitelistedHeaders is the interface that needs to be implemented by clients that need request/response headers to be passed in through the context
+type WhitelistedHeaders interface {
+	GetRequestHeaders() []string
+	GetResponseHeaders() []string
 }
 
 // PreInitializer is the interface that needs to implemented by client for any custom code that runs before all other initializer
