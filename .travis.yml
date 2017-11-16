@@ -1,0 +1,12 @@
+language: go
+sudo: false
+
+go:
+  - master
+  - 1.9.2
+
+install:
+  - go get -u github.com/golang/lint/golint
+
+script:
+  - make ci

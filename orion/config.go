@@ -2,6 +2,7 @@ package orion
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/afex/hystrix-go/hystrix"
@@ -24,6 +25,8 @@ type Config struct {
 	HTTPPort string
 	// GRPCPost id the port to bind for gRPC requests
 	GRPCPort string
+	//PprofPort is the port to use for pprof
+	PProfport string
 	// HotReload when set reloads the service when it recieves SIGHUP
 	HotReload bool
 	//EnableProtoURL adds gRPC generated urls in HTTP handler
@@ -64,6 +67,7 @@ func BuildDefaultConfig(name string) Config {
 		HTTPOnly:        viper.GetBool("orion.HTTPOnly"),
 		GRPCPort:        viper.GetString("orion.GRPCPort"),
 		HTTPPort:        viper.GetString("orion.HTTPPort"),
+		PProfport:       viper.GetString("orion.PprofPort"),
 		HotReload:       viper.GetBool("orion.HotReload"),
 		EnableProtoURL:  viper.GetBool("orion.EnableProtoURL"),
 		OrionServerName: name,
@@ -122,17 +126,18 @@ func setup(name string) {
 	setConfigDefaults()
 }
 
-func readConfig(name string) {
+func readConfig(name string) error {
 	setup(name)
 	log.Println("msg", "Reading config")
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {
 		// do nothing and default everything
 		log.Println("Config", "config could not be read "+err.Error())
-		return
+		return fmt.Errorf("Config config could not be read %s", err.Error())
 	}
 	data, _ := json.MarshalIndent(viper.AllSettings(), "", "  ")
 	log.Println("Config", string(data))
+	return nil
 }
 
 // AddConfigPath adds a config path from where orion tries to read config values

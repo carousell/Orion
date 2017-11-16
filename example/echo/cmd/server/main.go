@@ -34,6 +34,10 @@ func encoder(req *http.Request, reqObject interface{}) error {
 			r.Msg = value
 		} else if r, ok := reqObject.(*proto.EchoRequest); ok {
 			r.Msg = value
+			return nil
+		} else if r, ok := reqObject.(*proto.EchoRequest); ok {
+			r.Msg = value
+			return nil
 		}
 		return nil
 	}

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
 )
 
@@ -37,6 +38,7 @@ func (g *grpcHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 
 func (g *grpcHandler) Run(grpcListener net.Listener) error {
 	log.Println("GRPC", "server starting")
+	grpc_prometheus.Register(g.grpcServer)
 	return g.grpcServer.Serve(grpcListener)
 }
 
