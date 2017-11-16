@@ -180,7 +180,11 @@ func (s *DefaultServerImpl) signalWatcher() {
 		if sig == syscall.SIGHUP { // only reload config for sighup
 			log.Println("signal", "config reloaded on "+sig.String())
 			// relaod config
-			readConfig(s.config.OrionServerName)
+			err := readConfig(s.config.OrionServerName)
+			if err != nil {
+				log.Println("Error", err, "msg", "not reloading services")
+				continue
+			}
 
 			// reload initializers
 			s.processInitializers(true)

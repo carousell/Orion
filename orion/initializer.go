@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"strings"
 
@@ -14,6 +15,7 @@ import (
 	newrelic "github.com/newrelic/go-agent"
 	stdopentracing "github.com/opentracing/opentracing-go"
 	zipkin "github.com/openzipkin/zipkin-go-opentracing"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
@@ -25,6 +27,8 @@ func DefaultInitializers() []Initializer {
 		HystrixInitializer(),
 		ZipkinInitializer(),
 		NewRelicInitializer(),
+		PrometheusInitializer(),
+		PprofInitializer(),
 	}
 }
 
@@ -38,6 +42,14 @@ func ZipkinInitializer() Initializer {
 
 func NewRelicInitializer() Initializer {
 	return &newRelicInitializer{}
+}
+
+func PrometheusInitializer() Initializer {
+	return &prometheusInitializer{}
+}
+
+func PprofInitializer() Initializer {
+	return &pprofInitializer{}
 }
 
 type hystrixInitializer struct {
@@ -138,4 +150,35 @@ func (z *zipkinInitializer) Init(svr Server) error {
 func (z *zipkinInitializer) ReInit(svr Server) error {
 	// just do the same init on reinit
 	return z.Init(svr)
+}
+
+type prometheusInitializer struct {
+}
+
+func (p *prometheusInitializer) Init(svr Server) error {
+	// Register Prometheus metrics handler.
+	http.Handle("/metrics", promhttp.Handler())
+	return nil
+}
+
+func (p *prometheusInitializer) ReInit(svr Server) error {
+	return nil
+}
+
+type pprofInitializer struct {
+}
+
+func (p *pprofInitializer) Init(svr Server) error {
+
+	go func(svr Server) {
+		pprofport := svr.GetOrionConfig().PProfport
+		log.Println("PprofPort", pprofport)
+		log.Println(http.DefaultServeMux)
+		http.ListenAndServe(":"+pprofport, nil)
+	}(svr)
+	return nil
+}
+
+func (p *pprofInitializer) ReInit(svr Server) error {
+	return nil
 }

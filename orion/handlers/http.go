@@ -81,7 +81,6 @@ func (h *httpHandler) getHTTPHandler(url string) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
 		h.ServeHTTP(resp, req, url)
 	}
-
 }
 
 func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url string) {
@@ -164,7 +163,6 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 }
 
 func (h *httpHandler) AddEncoder(serviceName, method, httpMethod string, path string, encoder Encoder) {
-	fmt.Println("registering path", serviceName, method, httpMethod, path)
 	if h.paths != nil {
 		url := generateURL(serviceName, method)
 		if info, ok := h.paths[url]; ok {
