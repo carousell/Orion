@@ -31,6 +31,11 @@ type Config struct {
 	HotReload bool
 	//EnableProtoURL adds gRPC generated urls in HTTP handler
 	EnableProtoURL bool
+	//EnablePrometheus enables prometheus metric for services on path '/metrics' on pprof port
+	EnablePrometheus bool
+	//EnablePrometheusHistograms enables request histograms for services
+	//ref: https://github.com/grpc-ecosystem/go-grpc-prometheus#histograms
+	EnablePrometheusHistogram bool
 	//HystrixConfig is the configuration options for hystrix
 	HystrixConfig HystrixConfig
 	//ZipkinConfig is the configuration options for zipkin
@@ -63,17 +68,19 @@ type NewRelicConfig struct {
 func BuildDefaultConfig(name string) Config {
 	readConfig(name)
 	return Config{
-		GRPCOnly:        viper.GetBool("orion.GRPCOnly"),
-		HTTPOnly:        viper.GetBool("orion.HTTPOnly"),
-		GRPCPort:        viper.GetString("orion.GRPCPort"),
-		HTTPPort:        viper.GetString("orion.HTTPPort"),
-		PProfport:       viper.GetString("orion.PprofPort"),
-		HotReload:       viper.GetBool("orion.HotReload"),
-		EnableProtoURL:  viper.GetBool("orion.EnableProtoURL"),
-		OrionServerName: name,
-		HystrixConfig:   BuildDefaultHystrixConfig(),
-		ZipkinConfig:    BuildDefaultZipkinConfig(),
-		NewRelicConfig:  BuildDefaultNewRelicConfig(),
+		GRPCOnly:                  viper.GetBool("orion.GRPCOnly"),
+		HTTPOnly:                  viper.GetBool("orion.HTTPOnly"),
+		GRPCPort:                  viper.GetString("orion.GRPCPort"),
+		HTTPPort:                  viper.GetString("orion.HTTPPort"),
+		PProfport:                 viper.GetString("orion.PprofPort"),
+		HotReload:                 viper.GetBool("orion.HotReload"),
+		EnableProtoURL:            viper.GetBool("orion.EnableProtoURL"),
+		EnablePrometheus:          viper.GetBool("orion.EnablePrometheus"),
+		EnablePrometheusHistogram: viper.GetBool("orion.EnablePrometheusHistogram"),
+		OrionServerName:           name,
+		HystrixConfig:             BuildDefaultHystrixConfig(),
+		ZipkinConfig:              BuildDefaultZipkinConfig(),
+		NewRelicConfig:            BuildDefaultNewRelicConfig(),
 	}
 }
 
@@ -114,6 +121,8 @@ func setConfigDefaults() {
 	viper.SetDefault("orion.newrelic-servicename", "")
 	viper.SetDefault("orion.newrelic-api-key", "")
 	viper.SetDefault("orion.HotReload", true)
+	viper.SetDefault("orion.EnablePrometheus", true)
+	viper.SetDefault("orion.EnablePrometheusHistogram", false)
 }
 
 // sets up the config parser

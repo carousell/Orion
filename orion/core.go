@@ -69,6 +69,7 @@ func (d *DefaultServerImpl) Fetch(key string) (value interface{}, found bool) {
 	return
 }
 
+//AddEncoder is the implementation of handlers.Encodable
 func (d *DefaultServerImpl) AddEncoder(serviceName, method, httpMethod string, path string, encoder handlers.Encoder) {
 	if d.encoders == nil {
 		d.encoders = make(map[string]encoderInfo)
@@ -84,17 +85,17 @@ func (d *DefaultServerImpl) AddEncoder(serviceName, method, httpMethod string, p
 
 //GetOrionConfig returns current orion config
 //NOTE: this config can not be modifies
-func (s *DefaultServerImpl) GetOrionConfig() Config {
-	return s.config
+func (d *DefaultServerImpl) GetOrionConfig() Config {
+	return d.config
 }
 
-func (s *DefaultServerImpl) init(reload bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.inited != true {
-		s.initHandlers()
-		s.initInitializers(reload)
-		s.inited = true
+func (d *DefaultServerImpl) init(reload bool) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.inited != true {
+		d.initHandlers()
+		d.initInitializers(reload)
+		d.inited = true
 	}
 }
 
@@ -109,7 +110,7 @@ func (d *DefaultServerImpl) initInitializers(reload bool) {
 	}
 
 	if d.initializers == nil {
-		d.initializers = DefaultInitializers()
+		d.initializers = DefaultInitializers
 	}
 	d.processInitializers(reload)
 
@@ -134,17 +135,17 @@ func (d *DefaultServerImpl) processInitializers(reload bool) {
 	}
 }
 
-func (s *DefaultServerImpl) buildHandlers() []*handlerInfo {
+func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 	hlrs := []*handlerInfo{}
-	if !s.config.GRPCOnly {
-		httpPort := s.config.HTTPPort
+	if !d.config.GRPCOnly {
+		httpPort := d.config.HTTPPort
 		httpListener, err := listenerutils.NewListener("tcp", ":"+httpPort)
 		if err != nil {
 			log.Println("error", err)
 		}
 		log.Println("HTTPListnerPort", httpPort)
 		config := handlers.HTTPHandlerConfig{
-			EnableProtoURL: s.config.EnableProtoURL,
+			EnableProtoURL: d.config.EnableProtoURL,
 		}
 		handler := handlers.NewHTTPHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
@@ -152,8 +153,8 @@ func (s *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			listener: httpListener,
 		})
 	}
-	if !s.config.HTTPOnly {
-		grpcPort := s.config.GRPCPort
+	if !d.config.HTTPOnly {
+		grpcPort := d.config.GRPCPort
 		grpcListener, err := listenerutils.NewListener("tcp", ":"+grpcPort)
 		if err != nil {
 			log.Println("error", err)
@@ -168,11 +169,11 @@ func (s *DefaultServerImpl) buildHandlers() []*handlerInfo {
 	return hlrs
 }
 
-func (s *DefaultServerImpl) initHandlers() {
-	s.handlers = s.buildHandlers()
+func (d *DefaultServerImpl) initHandlers() {
+	d.handlers = d.buildHandlers()
 }
 
-func (s *DefaultServerImpl) signalWatcher() {
+func (d *DefaultServerImpl) signalWatcher() {
 	// Setup interrupt handler.
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP)
@@ -180,25 +181,25 @@ func (s *DefaultServerImpl) signalWatcher() {
 		if sig == syscall.SIGHUP { // only reload config for sighup
 			log.Println("signal", "config reloaded on "+sig.String())
 			// relaod config
-			err := readConfig(s.config.OrionServerName)
+			err := readConfig(d.config.OrionServerName)
 			if err != nil {
 				log.Println("Error", err, "msg", "not reloading services")
 				continue
 			}
 
 			// reload initializers
-			s.processInitializers(true)
+			d.processInitializers(true)
 
 			// reload services
 			oldServices := []svcInfo{}
-			for _, info := range s.services {
-				s.registerService(info.sd, info.sf, true)
+			for _, info := range d.services {
+				d.registerService(info.sd, info.sf, true)
 				oldServices = append(oldServices, info)
 			}
 
 			// reload handlers
-			for _, h := range s.handlers {
-				s.startHandler(h, true)
+			for _, h := range d.handlers {
+				d.startHandler(h, true)
 			}
 
 			//dispose the older service object
@@ -207,7 +208,7 @@ func (s *DefaultServerImpl) signalWatcher() {
 			}
 		} else {
 			// should not happen!
-			for _, h := range s.handlers {
+			for _, h := range d.handlers {
 				h.listener.CanClose(true)
 				h.handler.Stop(time.Second * 5)
 			}
@@ -218,77 +219,76 @@ func (s *DefaultServerImpl) signalWatcher() {
 }
 
 //Start starts the orion server
-func (s *DefaultServerImpl) Start() {
+func (d *DefaultServerImpl) Start() {
 	fmt.Println(BANNER)
-	if s.config.HTTPOnly && s.config.GRPCOnly {
+	if d.config.HTTPOnly && d.config.GRPCOnly {
 		panic("Error: at least one GRPC or HTTP server needs to be initialized")
 	}
 
-	for _, h := range s.handlers {
-		s.startHandler(h, false)
+	for _, h := range d.handlers {
+		d.startHandler(h, false)
 	}
-	if s.config.HotReload {
-		go s.signalWatcher()
+	if d.config.HotReload {
+		go d.signalWatcher()
 	}
 }
 
-func (s *DefaultServerImpl) startHandler(h *handlerInfo, reload bool) {
+func (d *DefaultServerImpl) startHandler(h *handlerInfo, reload bool) {
 	if reload {
 		h.listener.StopAccept()
 		h.handler.Stop(time.Second * 1)
 		h.listener = h.listener.GetListener()
 	}
-	for _, info := range s.services {
+	for _, info := range d.services {
 		h.handler.Add(info.sd, info.ss)
 	}
 
-	for _, ei := range s.encoders {
+	for _, ei := range d.encoders {
 		if e, ok := h.handler.(handlers.Encodeable); ok {
 			e.AddEncoder(ei.serviceName, ei.method, ei.httpMethod, ei.path, ei.encoder)
 		}
 	}
-	s.wg.Add(1)
+	d.wg.Add(1)
 	go func(s *DefaultServerImpl, h *handlerInfo) {
 		defer s.wg.Done()
 		err := h.handler.Run(h.listener)
-		log.Println("exited", h, err)
-	}(s, h)
+	}(d, h)
 }
 
 // Wait waits for all the serving servers to quit
-func (s *DefaultServerImpl) Wait() error {
-	s.wg.Wait()
+func (d *DefaultServerImpl) Wait() error {
+	d.wg.Wait()
 	return nil
 }
 
 //RegisterService registers a service from a generated proto file
 //Note: this is only callled from code generated by orion plugin
-func (s *DefaultServerImpl) RegisterService(sd *grpc.ServiceDesc, sf ServiceFactory) error {
-	s.init(false) // make sure its called before lock
-	return s.registerService(sd, sf, false)
+func (d *DefaultServerImpl) RegisterService(sd *grpc.ServiceDesc, sf ServiceFactory) error {
+	d.init(false) // make sure its called before lock
+	return d.registerService(sd, sf, false)
 }
 
-func (s *DefaultServerImpl) registerService(sd *grpc.ServiceDesc, sf ServiceFactory, reload bool) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (d *DefaultServerImpl) registerService(sd *grpc.ServiceDesc, sf ServiceFactory, reload bool) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
-	if s.services == nil {
-		s.services = make(map[string]svcInfo)
+	if d.services == nil {
+		d.services = make(map[string]svcInfo)
 	}
 
-	_, ok := s.services[sd.ServiceName]
+	_, ok := d.services[sd.ServiceName]
 	if ok && !reload {
 		return errors.New("error: service " + sd.ServiceName + " already added!")
 	}
 	// create a obejct from factory and check types
-	ss := sf.NewService(s)
+	ss := sf.NewService(d)
 	ht := reflect.TypeOf(sd.HandlerType).Elem()
 	st := reflect.TypeOf(ss)
 	if !st.Implements(ht) {
 		return fmt.Errorf("Orion.Server.RegisterService found the handler of type %v that does not satisfy %v", st, ht)
 	}
 
-	s.services[sd.ServiceName] = svcInfo{
+	d.services[sd.ServiceName] = svcInfo{
 		sd: sd,
 		sf: sf,
 		ss: ss,
@@ -314,9 +314,9 @@ func (d *DefaultServerImpl) GetConfig() map[string]interface{} {
 }
 
 //Stop stops the server
-func (s *DefaultServerImpl) Stop(timeout time.Duration) error {
+func (d *DefaultServerImpl) Stop(timeout time.Duration) error {
 	var wg sync.WaitGroup
-	for _, h := range s.handlers {
+	for _, h := range d.handlers {
 		wg.Add(1)
 		go func(h *handlerInfo, timeout time.Duration) {
 			defer wg.Done()

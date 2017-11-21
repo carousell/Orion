@@ -5,13 +5,14 @@ import (
 	"log"
 	"net"
 	"net/http"
-	_ "net/http/pprof"
+	_ "net/http/pprof" // import pprof
 	"os"
 	"strings"
 
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/carousell/Orion/utils"
 	logg "github.com/go-kit/kit/log"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	newrelic "github.com/newrelic/go-agent"
 	stdopentracing "github.com/opentracing/opentracing-go"
 	zipkin "github.com/openzipkin/zipkin-go-opentracing"
@@ -19,35 +20,42 @@ import (
 )
 
 const (
-	NR_APP = "INIT:NR_APP"
+	// NRApp is the key for New Relic app object
+	NRApp = "INIT:NR_APP"
 )
 
-func DefaultInitializers() []Initializer {
-	return []Initializer{
+var (
+	//DefaultInitializers are the initializers applied by orion as default
+	DefaultInitializers = []Initializer{
 		HystrixInitializer(),
 		ZipkinInitializer(),
 		NewRelicInitializer(),
 		PrometheusInitializer(),
 		PprofInitializer(),
 	}
-}
+)
 
+//HystrixInitializer returns a Initializer implementation for Hystrix
 func HystrixInitializer() Initializer {
 	return &hystrixInitializer{}
 }
 
+//ZipkinInitializer returns a Initializer implementation for Zipkin
 func ZipkinInitializer() Initializer {
 	return &zipkinInitializer{}
 }
 
+//NewRelicInitializer returns a Initializer implementation for NewRelic
 func NewRelicInitializer() Initializer {
 	return &newRelicInitializer{}
 }
 
+//PrometheusInitializer returns a Initializer implementation for Prometheus
 func PrometheusInitializer() Initializer {
 	return &prometheusInitializer{}
 }
 
+//PprofInitializer returns a Initializer implementation for Pprof
 func PprofInitializer() Initializer {
 	return &pprofInitializer{}
 }
@@ -92,10 +100,9 @@ func (n *newRelicInitializer) Init(svr Server) error {
 	if err != nil {
 		log.Println("nr-error", err)
 		return err
-	} else {
-		log.Println("NR", "initialized with "+serviceName)
-		svr.Store(NR_APP, app)
 	}
+	log.Println("NR", "initialized with "+serviceName)
+	svr.Store(NRApp, app)
 	return nil
 }
 
@@ -138,9 +145,8 @@ func (z *zipkinInitializer) Init(svr Server) error {
 		if err != nil {
 			logger.Log("err", err)
 			return err
-		} else {
-			stdopentracing.SetGlobalTracer(tracer)
 		}
+		stdopentracing.SetGlobalTracer(tracer)
 	} else {
 		stdopentracing.SetGlobalTracer(stdopentracing.NoopTracer{})
 	}
@@ -156,8 +162,13 @@ type prometheusInitializer struct {
 }
 
 func (p *prometheusInitializer) Init(svr Server) error {
-	// Register Prometheus metrics handler.
-	http.Handle("/metrics", promhttp.Handler())
+	if svr.GetOrionConfig().EnablePrometheus {
+		if svr.GetOrionConfig().EnablePrometheusHistogram {
+			grpc_prometheus.EnableHandlingTimeHistogram()
+		}
+		// Register Prometheus metrics handler.
+		http.Handle("/metrics", promhttp.Handler())
+	}
 	return nil
 }
 
@@ -173,7 +184,6 @@ func (p *pprofInitializer) Init(svr Server) error {
 	go func(svr Server) {
 		pprofport := svr.GetOrionConfig().PProfport
 		log.Println("PprofPort", pprofport)
-		log.Println(http.DefaultServeMux)
 		http.ListenAndServe(":"+pprofport, nil)
 	}(svr)
 	return nil

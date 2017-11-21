@@ -16,6 +16,7 @@ type Interceptor interface {
 	GetInterceptors() []grpc.UnaryServerInterceptor
 }
 
+//Encoder is the function type needed for request encoders
 type Encoder func(req *http.Request, reqObject interface{}) error
 
 type Encodeable interface {

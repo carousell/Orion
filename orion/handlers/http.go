@@ -38,7 +38,7 @@ func generateURL(serviceName, method string) string {
 	return "/" + serviceName + "/" + method
 }
 
-func generateProtoUrl(serviceName, method string) string {
+func generateProtoURL(serviceName, method string) string {
 	return "/" + serviceName + "/" + method
 }
 
@@ -103,10 +103,9 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 				protoReq := r.(proto.Message)
 				decErr = jsonpb.Unmarshal(req.Body, protoReq)
 				return decErr
-			} else {
-				decErr = info.encoder(req, r)
-				return decErr
 			}
+			decErr = info.encoder(req, r)
+			return decErr
 		}
 		protoResponse, err := info.method(info.svc.svc, ctx, dec, info.svc.interceptors)
 		if err != nil {
@@ -155,8 +154,8 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 		h.paths[url] = info
 
 		if h.protoURL {
-			protoUrl := generateProtoUrl(sd.ServiceName, m.MethodName)
-			h.paths[protoUrl] = info
+			protoURL := generateProtoURL(sd.ServiceName, m.MethodName)
+			h.paths[protoURL] = info
 		}
 	}
 	return nil
