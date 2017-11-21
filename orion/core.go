@@ -252,7 +252,6 @@ func (d *DefaultServerImpl) startHandler(h *handlerInfo, reload bool) {
 	go func(s *DefaultServerImpl, h *handlerInfo) {
 		defer s.wg.Done()
 		err := h.handler.Run(h.listener)
-		log.Println("exited", h, err)
 	}(d, h)
 }
 

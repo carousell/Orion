@@ -184,7 +184,6 @@ func (p *pprofInitializer) Init(svr Server) error {
 	go func(svr Server) {
 		pprofport := svr.GetOrionConfig().PProfport
 		log.Println("PprofPort", pprofport)
-		log.Println(http.DefaultServeMux)
 		http.ListenAndServe(":"+pprofport, nil)
 	}(svr)
 	return nil
