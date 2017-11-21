@@ -41,6 +41,7 @@ type Server interface {
 	Fetch(key string) (value interface{}, found bool)
 }
 
+//Initializer is the interface needed to be implemented by custom initializers
 type Initializer interface {
 	Init(svr Server) error
 	ReInit(svr Server) error
@@ -70,4 +71,5 @@ type PostInitializer interface {
 	PostInit()
 }
 
+//Encoder is the function type needed for request encoders
 type Encoder = handlers.Encoder

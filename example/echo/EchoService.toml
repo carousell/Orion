@@ -1,6 +1,7 @@
 [orion]
 ReloadOnConfigChange=true
 EnableProtoURL=false
+EnablePrometheusHistogram=true
 
 [echo]
 AppendText="Yahoo! "
