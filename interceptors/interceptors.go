@@ -11,6 +11,16 @@ import (
 	"google.golang.org/grpc"
 )
 
+var (
+	//DefaultInterceptors are the set of default interceptors that are applied to all Orion methods
+	DefaultInterceptors = []grpc.UnaryServerInterceptor{
+		ResponseTimeLoggingInterceptor(),
+		grpc_opentracing.UnaryServerInterceptor(),
+		grpc_prometheus.UnaryServerInterceptor,
+	}
+)
+
+//DebugLoggingInterceptor is the interceptor that logs all request/response from a handler
 func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		fmt.Println(info, "requst", req)
@@ -20,6 +30,7 @@ func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
+//ResponseTimeLoggingInterceptor logs response time for each request on server
 func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		defer func(begin time.Time) {
@@ -27,13 +38,5 @@ func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 		}(time.Now())
 		resp, err = handler(ctx, req)
 		return resp, err
-	}
-}
-
-func DefaultInterceptors() []grpc.UnaryServerInterceptor {
-	return []grpc.UnaryServerInterceptor{
-		ResponseTimeLoggingInterceptor(),
-		grpc_opentracing.UnaryServerInterceptor(),
-		grpc_prometheus.UnaryServerInterceptor,
 	}
 }

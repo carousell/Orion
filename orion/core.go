@@ -251,7 +251,7 @@ func (d *DefaultServerImpl) startHandler(h *handlerInfo, reload bool) {
 	d.wg.Add(1)
 	go func(s *DefaultServerImpl, h *handlerInfo) {
 		defer s.wg.Done()
-		err := h.handler.Run(h.listener)
+		h.handler.Run(h.listener)
 	}(d, h)
 }
 

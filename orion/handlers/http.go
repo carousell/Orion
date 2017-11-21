@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+//HTTPHandlerConfig is the configuration for HTTP Handler
 type HTTPHandlerConfig struct {
 	EnableProtoURL bool
 }
