@@ -30,11 +30,8 @@ func encoder(req *http.Request, reqObject interface{}) error {
 	vars := mux.Vars(req)
 	value, ok := vars["msg"]
 	if ok {
-		if r, ok := reqObject.(*proto.UpperRequest); !ok {
+		if r, ok := reqObject.(*proto.UpperRequest); ok {
 			r.Msg = value
-		} else if r, ok := reqObject.(*proto.EchoRequest); ok {
-			r.Msg = value
-			return nil
 		} else if r, ok := reqObject.(*proto.EchoRequest); ok {
 			r.Msg = value
 			return nil

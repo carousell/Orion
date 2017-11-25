@@ -18,6 +18,14 @@ type Interceptor interface {
 	GetInterceptors() []grpc.UnaryServerInterceptor
 }
 
+//WhitelistedHeaders is the interface that needs to be implemented by clients that need request/response headers to be passed in through the context
+type WhitelistedHeaders interface {
+	//GetRequestHeaders retuns a list of all whitelisted request headers
+	GetRequestHeaders() []string
+	//GetResponseHeaders retuns a list of all whitelisted response headers
+	GetResponseHeaders() []string
+}
+
 //Encoder is the function type needed for request encoders
 type Encoder func(req *http.Request, reqObject interface{}) error
 

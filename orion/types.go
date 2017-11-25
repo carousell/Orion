@@ -55,12 +55,6 @@ type ServiceFactory interface {
 	DisposeService(svc interface{})
 }
 
-//WhitelistedHeaders is the interface that needs to be implemented by clients that need request/response headers to be passed in through the context
-type WhitelistedHeaders interface {
-	GetRequestHeaders() []string
-	GetResponseHeaders() []string
-}
-
 // PreInitializer is the interface that needs to implemented by client for any custom code that runs before all other initializer
 type PreInitializer interface {
 	PreInit()

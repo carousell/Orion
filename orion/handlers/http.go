@@ -11,10 +11,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/carousell/Orion/utils/headers"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gorilla/mux"
 	"google.golang.org/grpc"
+)
+
+var (
+	DefaultHTTPResponseHeaders = []string{
+		"Content-Type",
+	}
 )
 
 //HTTPHandlerConfig is the configuration for HTTP Handler
@@ -44,9 +51,11 @@ func generateProtoURL(serviceName, method string) string {
 }
 
 type serviceInfo struct {
-	desc         *grpc.ServiceDesc
-	svc          interface{}
-	interceptors grpc.UnaryServerInterceptor
+	desc            *grpc.ServiceDesc
+	svc             interface{}
+	interceptors    grpc.UnaryServerInterceptor
+	requestHeaders  []string
+	responseHeaders []string
 }
 
 type pathInfo struct {
@@ -74,6 +83,15 @@ type httpHandler struct {
 }
 
 func writeResp(resp http.ResponseWriter, status int, data []byte) {
+	writeRespWithHeaders(resp, status, data, nil)
+}
+
+func writeRespWithHeaders(resp http.ResponseWriter, status int, data []byte, headers map[string]string) {
+	if headers != nil {
+		for k, v := range headers {
+			resp.Header().Add(k, v)
+		}
+	}
 	resp.WriteHeader(status)
 	resp.Write(data)
 }
@@ -108,6 +126,15 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 			decErr = info.encoder(req, r)
 			return decErr
 		}
+		//initialize headers
+		ctx = headers.AddToRequestHeaders(ctx, "", "")
+		ctx = headers.AddToResponseHeaders(ctx, "", "")
+		// fetch and populate whitelisted headers
+		if len(info.svc.requestHeaders) > 0 {
+			for _, hdr := range info.svc.requestHeaders {
+				ctx = headers.AddToRequestHeaders(ctx, hdr, req.Header.Get(hdr))
+			}
+		}
 		protoResponse, err := info.method(info.svc.svc, ctx, dec, info.svc.interceptors)
 		if err != nil {
 			if decErr != nil {
@@ -120,8 +147,10 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 			if err != nil {
 				writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
 			} else {
-				resp.Header().Set("Content-Type", "application/json")
-				writeResp(resp, http.StatusOK, []byte(data))
+				ctx = headers.AddToResponseHeaders(ctx, "Content-Type", "application/json")
+				hdr := headers.ResponseHeadersFromContext(ctx)
+				responseHeaders := processWhitelist(hdr.GetAll(), append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
+				writeRespWithHeaders(resp, http.StatusOK, []byte(data), responseHeaders)
 			}
 		}
 	} else {
@@ -143,6 +172,10 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 	}
 
 	svcInfo.interceptors = getInterceptors(ss)
+	if headers, ok := ss.(WhitelistedHeaders); ok {
+		svcInfo.requestHeaders = headers.GetRequestHeaders()
+		svcInfo.responseHeaders = headers.GetResponseHeaders()
+	}
 
 	// TODO recover in case of error
 	for _, m := range sd.Methods {

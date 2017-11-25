@@ -3,16 +3,26 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/carousell/Orion/example/echo/echo_proto"
 	"github.com/carousell/Orion/interceptors"
+	"github.com/carousell/Orion/utils/headers"
 	"google.golang.org/grpc"
 )
 
 type svc struct {
 	appendText string
 	debug      bool
+}
+
+func (s *svc) GetRequestHeaders() []string {
+	return []string{}
+}
+
+func (s *svc) GetResponseHeaders() []string {
+	return []string{"Original-Msg"}
 }
 
 func GetService(config Config) echo_proto.EchoServiceServer {
@@ -31,6 +41,11 @@ func (s *svc) Echo(ctx context.Context, req *echo_proto.EchoRequest) (*echo_prot
 func (s *svc) Upper(ctx context.Context, req *echo_proto.UpperRequest) (*echo_proto.UpperResponse, error) {
 	resp := new(echo_proto.UpperResponse)
 	resp.Msg = strings.ToUpper(s.appendText + req.GetMsg())
+	hdrs := headers.RequestHeadersFromContext(ctx)
+	if hdrs != nil {
+		fmt.Println("All request headers", hdrs.GetAll())
+	}
+	headers.AddToResponseHeaders(ctx, "original-msg", req.GetMsg())
 	return resp, nil
 }
 

@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"log"
+	"strings"
 
 	"github.com/carousell/Orion/interceptors"
 	"google.golang.org/grpc"
@@ -64,4 +66,23 @@ func grpcInterceptor() grpc.UnaryServerInterceptor {
 		interceptor := getInterceptors(info.Server)
 		return interceptor(ctx, req, info, handler)
 	}
+}
+
+func processWhitelist(data map[string]string, allowedKeys []string) map[string]string {
+	whitelistedMap := make(map[string]string)
+	whitelistedKeys := make(map[string]bool)
+
+	for _, k := range allowedKeys {
+		whitelistedKeys[strings.ToLower(k)] = true
+	}
+
+	for k, v := range data {
+		if _, found := whitelistedKeys[strings.ToLower(k)]; found {
+			whitelistedMap[k] = v
+		} else {
+			log.Println("warn", "rejected headers not in whitelist", k, v)
+		}
+	}
+
+	return whitelistedMap
 }
