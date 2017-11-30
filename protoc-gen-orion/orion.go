@@ -180,12 +180,14 @@ func main() {
 
 	for _, file := range g.Request.GetProtoFile() {
 		g.Reset()
-		generate(g, file)
-		generateCustomURL(g, file)
-		g.Response.File = append(g.Response.File, &plugin.CodeGeneratorResponse_File{
-			Name:    proto.String(strings.ToLower(file.GetName()) + ".orion.pb.go"),
-			Content: proto.String(g.String()),
-		})
+		if len(file.Service) > 0 {
+			generate(g, file)
+			generateCustomURL(g, file)
+			g.Response.File = append(g.Response.File, &plugin.CodeGeneratorResponse_File{
+				Name:    proto.String(strings.ToLower(file.GetName()) + ".orion.pb.go"),
+				Content: proto.String(g.String()),
+			})
+		}
 	}
 
 	// Send back the results.
