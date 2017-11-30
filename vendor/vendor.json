@@ -51,12 +51,6 @@
 			"revisionTime": "2016-08-04T10:47:26Z"
 		},
 		{
-			"checksumSHA1": "U56/szyUW/HMS0wN6yUbidU7Bx8=",
-			"path": "github.com/coreos/rkt/tests/testutils/logger",
-			"revision": "dfa17221c8d88a55da1265f519f06dc38d51fbd4",
-			"revisionTime": "2017-11-28T15:37:38Z"
-		},
-		{
 			"checksumSHA1": "mrz/kicZiUaHxkyfvC/DyQcr8Do=",
 			"path": "github.com/davecgh/go-spew/spew",
 			"revision": "ecdeabc65495df2dec95d7c4a4c3e021903035e5",

@@ -2,6 +2,7 @@
 ReloadOnConfigChange=true
 EnableProtoURL=false
 EnablePrometheusHistogram=true
+ZipkinAddr='http://10.200.0.7:9411/api/v1/spans'
 
 [echo]
 AppendText="Yahoo! "

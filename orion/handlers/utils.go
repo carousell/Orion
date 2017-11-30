@@ -49,7 +49,7 @@ func chainUnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnarySer
 
 func getInterceptors(svc interface{}) grpc.UnaryServerInterceptor {
 
-	opts := interceptors.DefaultInterceptors
+	opts := interceptors.DefaultInterceptors()
 
 	interceptor, ok := svc.(Interceptor)
 	if ok {

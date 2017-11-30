@@ -15,6 +15,8 @@ import (
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gorilla/mux"
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	opentracing "github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
 )
 
@@ -112,10 +114,20 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 		}
 	}(resp)
 
-	ctx := req.Context()
-
 	info, ok := h.paths[url]
 	if ok {
+
+		wireContext, err := opentracing.GlobalTracer().Extract(
+			opentracing.HTTPHeaders,
+			opentracing.HTTPHeadersCarrier(req.Header))
+
+		ctx := req.Context()
+		if err == nil {
+			md := metautils.ExtractIncoming(ctx)
+			opentracing.GlobalTracer().Inject(wireContext, opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(md))
+			ctx = md.ToIncoming(ctx)
+		}
+
 		var decErr error
 		dec := func(r interface{}) error {
 			if info.encoder == nil {

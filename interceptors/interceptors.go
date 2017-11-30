@@ -11,14 +11,14 @@ import (
 	"google.golang.org/grpc"
 )
 
-var (
-	//DefaultInterceptors are the set of default interceptors that are applied to all Orion methods
-	DefaultInterceptors = []grpc.UnaryServerInterceptor{
+//DefaultInterceptors are the set of default interceptors that are applied to all Orion methods
+func DefaultInterceptors() []grpc.UnaryServerInterceptor {
+	return []grpc.UnaryServerInterceptor{
 		ResponseTimeLoggingInterceptor(),
 		grpc_opentracing.UnaryServerInterceptor(),
 		grpc_prometheus.UnaryServerInterceptor,
 	}
-)
+}
 
 //DebugLoggingInterceptor is the interceptor that logs all request/response from a handler
 func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
@@ -39,4 +39,8 @@ func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 		resp, err = handler(ctx, req)
 		return resp, err
 	}
+}
+
+func GRPCClientInterceptor() grpc.UnaryClientInterceptor {
+	return grpc_opentracing.UnaryClientInterceptor()
 }
