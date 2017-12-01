@@ -53,8 +53,8 @@ func (s *svc) Echo(ctx context.Context, req *proto.EchoRequest) (*proto.EchoResp
 	httpClient := &http.Client{}
 	url := "http://127.0.0.1:9282/api/1.0/upper/" + req.GetMsg()
 	httpReq, _ := http.NewRequest("GET", url, nil)
-	sp, ctx := spanutils.NewHTTPExternalSpan(ctx, "helloworld", url, httpReq.Header)
-	defer sp.Finish()
+	httpReq = httpReq.WithContext(ctx)
+
 	//log.Println(httpReq)
 	httpClient.Do(httpReq)
 

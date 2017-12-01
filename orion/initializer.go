@@ -11,6 +11,7 @@ import (
 
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/carousell/Orion/utils"
+	"github.com/carousell/Orion/utils/httptripper"
 	logg "github.com/go-kit/kit/log"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	newrelic "github.com/newrelic/go-agent"
@@ -32,6 +33,7 @@ var (
 		NewRelicInitializer(),
 		PrometheusInitializer(),
 		PprofInitializer(),
+		HTTTPZipkinInitializer(),
 	}
 )
 
@@ -58,6 +60,11 @@ func PrometheusInitializer() Initializer {
 //PprofInitializer returns a Initializer implementation for Pprof
 func PprofInitializer() Initializer {
 	return &pprofInitializer{}
+}
+
+//HTTPZipkinInitializer returns an Initializer implementation for httptripper which appends zipkin trace info to all outgoing HTTP requests
+func HTTTPZipkinInitializer() Initializer {
+	return &httpZipkinInitializer{}
 }
 
 type hystrixInitializer struct {
@@ -190,5 +197,19 @@ func (p *pprofInitializer) Init(svr Server) error {
 }
 
 func (p *pprofInitializer) ReInit(svr Server) error {
+	return nil
+}
+
+type httpZipkinInitializer struct {
+}
+
+func (h *httpZipkinInitializer) Init(svr Server) error {
+	tripper := httptripper.WrapTripper(http.DefaultTransport)
+	http.DefaultTransport = tripper
+	return nil
+}
+
+func (h *httpZipkinInitializer) ReInit(svr Server) error {
+	// Do nothing
 	return nil
 }

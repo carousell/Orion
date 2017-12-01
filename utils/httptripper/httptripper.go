@@ -1,0 +1,48 @@
+/*Package httptripper provides an implementation of http.RoundTripper that wraps zipking span info in request headers
+
+Setup
+
+for most cases wrapping the default http RoundTripper works
+	tripper := httptripper.WrapTripper(http.DefaultTransport)
+	http.DefaultTransport = tripper
+doing this at the start of your program will make sure zipkin spans are appended for all outgoing http requests
+
+Note: If you are using a custom tripper, then just wrap your custom tripper using httptripper.WrapTripper
+
+How To Use
+
+Make sure you add context info in the http.Request
+
+	httpReq, err := http.NewRequest("GET", url, nil)
+	httpReq = httpReq.WithContext(ctx)
+
+*/
+package httptripper
+
+import (
+	"net/http"
+
+	"github.com/carousell/Orion/utils/spanutils"
+)
+
+type tripper struct {
+	transport http.RoundTripper
+}
+
+func (t *tripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	sp, _ := spanutils.NewHTTPExternalSpan(req.Context(), req.Host, req.URL.Path, req.Header)
+	defer sp.Finish()
+	return t.getTripper().RoundTrip(req)
+}
+
+func (t *tripper) getTripper() http.RoundTripper {
+	if t.transport != nil {
+		return t.transport
+	}
+	return http.DefaultTransport
+}
+
+//WrapTripper wraps the base tripper with zipkin info
+func WrapTripper(base http.RoundTripper) http.RoundTripper {
+	return &tripper{transport: base}
+}
