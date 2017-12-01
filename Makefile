@@ -63,3 +63,6 @@ goinstall:
 
 macinstall:
 	brew install protobuf`
+
+gen:
+	go generate ./orion ./utils ./interceptors
