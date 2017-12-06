@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package simple_proto;
+
+service SimpleService{
+    rpc Echo (EchoRequest) returns (EchoResponse){
+    }
+}
+
+message EchoRequest {
+    string msg = 1;
+}
+
+message EchoResponse {
+    string msg = 1;
+}
