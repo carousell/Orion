@@ -66,3 +66,6 @@ install the protoc plugin for orion
 ```
 go get -u github.com/carousell/Orion/protoc-gen-orion
 ```
+
+## Getting Started
+Follow the guide at https://github.com/carousell/Orion/blob/master/orion/README.md

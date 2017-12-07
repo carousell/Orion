@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"github.com/carousell/Orion/utils/spanutils"
+	opentracing "github.com/opentracing/opentracing-go"
 )
 
 type tripper struct {
@@ -30,9 +31,17 @@ type tripper struct {
 }
 
 func (t *tripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	sp, _ := spanutils.NewHTTPExternalSpan(req.Context(), req.Host, req.URL.Path, req.Header)
-	defer sp.Finish()
-	return t.getTripper().RoundTrip(req)
+	if opentracing.SpanFromContext(req.Context()) != nil {
+		sp, _ := spanutils.NewHTTPExternalSpan(req.Context(), req.Host, req.URL.Path, req.Header)
+		defer sp.Finish()
+		resp, err := t.getTripper().RoundTrip(req)
+		if err != nil {
+			sp.SetTag("error", err.Error())
+		}
+		return resp, err
+	} else {
+		return t.getTripper().RoundTrip(req)
+	}
 }
 
 func (t *tripper) getTripper() http.RoundTripper {

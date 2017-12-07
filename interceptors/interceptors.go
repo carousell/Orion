@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/afex/hystrix-go/hystrix"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
@@ -43,4 +44,12 @@ func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 
 func GRPCClientInterceptor() grpc.UnaryClientInterceptor {
 	return grpc_opentracing.UnaryClientInterceptor()
+}
+
+func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		return hystrix.Do(method, func() error {
+			return invoker(ctx, method, req, reply, cc, opts...)
+		}, nil)
+	}
 }
