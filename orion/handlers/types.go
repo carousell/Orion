@@ -29,9 +29,16 @@ type WhitelistedHeaders interface {
 //Encoder is the function type needed for request encoders
 type Encoder func(req *http.Request, reqObject interface{}) error
 
+type Decoder func(w http.ResponseWriter, decoderError, endpointError error, respObject interface{})
+
 //Encodeable interface that is implemented by a handler that supports custom HTTP encoder
 type Encodeable interface {
 	AddEncoder(serviceName, method, httpMethod, path string, encoder Encoder)
+}
+
+//Decodable interface that is implemented by a handler that supports custom HTTP decoder
+type Decodable interface {
+	AddDecoder(serviceName, method string, decoder Decoder)
 }
 
 //Handler implements a service handler that is used by orion server

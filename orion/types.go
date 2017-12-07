@@ -67,3 +67,6 @@ type PostInitializer interface {
 
 //Encoder is the function type needed for request encoders
 type Encoder = handlers.Encoder
+
+//Decoder is the funtion type needed for request decoders
+type Decoder = handlers.Decoder

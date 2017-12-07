@@ -61,20 +61,25 @@ type serviceInfo struct {
 }
 
 type pathInfo struct {
-	svc        *serviceInfo
-	method     GRPCMethodHandler
-	encoder    Encoder
-	httpMethod string
+	svc         *serviceInfo
+	method      GRPCMethodHandler
+	encoder     Encoder
+	decoder     Decoder
+	httpMethod  string
+	encoderPath string
 }
 
+/*
 func (p *pathInfo) Clone() *pathInfo {
 	return &pathInfo{
 		svc:        p.svc,
 		method:     p.method,
 		encoder:    p.encoder,
+		decoder:    p.decoder,
 		httpMethod: p.httpMethod,
 	}
 }
+*/
 
 type httpHandler struct {
 	mu       sync.Mutex
@@ -117,10 +122,10 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 	info, ok := h.paths[url]
 	if ok {
 
+		// translate from http zipkin context to gRPC
 		wireContext, err := opentracing.GlobalTracer().Extract(
 			opentracing.HTTPHeaders,
 			opentracing.HTTPHeadersCarrier(req.Header))
-
 		ctx := req.Context()
 		if err == nil {
 			md := metautils.ExtractIncoming(ctx)
@@ -148,21 +153,25 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 			}
 		}
 		protoResponse, err := info.method(info.svc.svc, ctx, dec, info.svc.interceptors)
-		if err != nil {
-			if decErr != nil {
-				writeResp(resp, http.StatusBadRequest, []byte("Bad Request!"))
-			} else {
-				writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
-			}
+		if info.decoder != nil {
+			info.decoder(resp, decErr, err, protoResponse)
 		} else {
-			data, err := h.mar.MarshalToString(protoResponse.(proto.Message))
 			if err != nil {
-				writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
+				if decErr != nil {
+					writeResp(resp, http.StatusBadRequest, []byte("Bad Request!"))
+				} else {
+					writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
+				}
 			} else {
-				ctx = headers.AddToResponseHeaders(ctx, "Content-Type", "application/json")
-				hdr := headers.ResponseHeadersFromContext(ctx)
-				responseHeaders := processWhitelist(hdr.GetAll(), append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
-				writeRespWithHeaders(resp, http.StatusOK, []byte(data), responseHeaders)
+				data, err := h.mar.MarshalToString(protoResponse.(proto.Message))
+				if err != nil {
+					writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
+				} else {
+					ctx = headers.AddToResponseHeaders(ctx, "Content-Type", "application/json")
+					hdr := headers.ResponseHeadersFromContext(ctx)
+					responseHeaders := processWhitelist(hdr.GetAll(), append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
+					writeRespWithHeaders(resp, http.StatusOK, []byte(data), responseHeaders)
+				}
 			}
 		}
 	} else {
@@ -211,11 +220,21 @@ func (h *httpHandler) AddEncoder(serviceName, method, httpMethod string, path st
 	if h.paths != nil {
 		url := generateURL(serviceName, method)
 		if info, ok := h.paths[url]; ok {
-			i := info.Clone()
-			i.encoder = encoder
-			i.httpMethod = httpMethod
-			delete(h.paths, url)
-			h.paths[path] = i
+			info.encoder = encoder
+			info.httpMethod = httpMethod
+			info.encoderPath = path
+			h.paths[path] = info
+		} else {
+			fmt.Println("url not found", url, h.paths)
+		}
+	}
+}
+
+func (h *httpHandler) AddDecoder(serviceName, method string, decoder Decoder) {
+	if h.paths != nil {
+		url := generateURL(serviceName, method)
+		if info, ok := h.paths[url]; ok {
+			info.decoder = decoder
 		} else {
 			fmt.Println("url not found", url, h.paths)
 		}
@@ -226,6 +245,9 @@ func (h *httpHandler) Run(httpListener net.Listener) error {
 	r := mux.NewRouter()
 	fmt.Println("Mapped URLs: ")
 	for url, info := range h.paths {
+		if strings.TrimSpace(info.encoderPath) != "" && info.encoderPath != url {
+			continue
+		}
 		r.Methods(info.httpMethod).Path(url).Handler(h.getHTTPHandler(url))
 		fmt.Println("\t", info.httpMethod, url)
 	}

@@ -36,6 +36,12 @@ type encoderInfo struct {
 	encoder     handlers.Encoder
 }
 
+type decoderInfo struct {
+	serviceName string
+	method      string
+	decoder     handlers.Decoder
+}
+
 //DefaultServerImpl provides a default implementation of orion.Server this can be embeded in custom orion.Server implementations
 type DefaultServerImpl struct {
 	config Config
@@ -45,6 +51,7 @@ type DefaultServerImpl struct {
 
 	services     map[string]svcInfo
 	encoders     map[string]encoderInfo
+	decoders     map[string]decoderInfo
 	handlers     []*handlerInfo
 	initializers []Initializer
 
@@ -80,6 +87,17 @@ func (d *DefaultServerImpl) AddEncoder(serviceName, method, httpMethod string, p
 		httpMethod:  httpMethod,
 		path:        path,
 		encoder:     encoder,
+	}
+}
+
+func (d *DefaultServerImpl) AddDecoder(serviceName, method string, decoder handlers.Decoder) {
+	if d.decoders == nil {
+		d.decoders = make(map[string]decoderInfo)
+	}
+	d.decoders[serviceName+":"+method] = decoderInfo{
+		serviceName: serviceName,
+		method:      method,
+		decoder:     decoder,
 	}
 }
 
@@ -246,6 +264,11 @@ func (d *DefaultServerImpl) startHandler(h *handlerInfo, reload bool) {
 	for _, ei := range d.encoders {
 		if e, ok := h.handler.(handlers.Encodeable); ok {
 			e.AddEncoder(ei.serviceName, ei.method, ei.httpMethod, ei.path, ei.encoder)
+		}
+	}
+	for _, di := range d.decoders {
+		if e, ok := h.handler.(handlers.Decodable); ok {
+			e.AddDecoder(di.serviceName, di.method, di.decoder)
 		}
 	}
 	d.wg.Add(1)

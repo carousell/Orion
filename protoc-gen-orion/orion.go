@@ -96,28 +96,38 @@ func generate(g *generator.Generator, file *descriptor.FileDescriptorProto) {
 }
 
 const (
-	ORION = "ORION"
-	URL   = "URL"
-	DELIM = ":"
+	ORION   = "ORION"
+	URL     = "URL"
+	DELIM   = ":"
+	DECODER = "DECODER"
 )
 
-type option struct {
-	Method string
-	Path   string
+type commentsInfo struct {
+	Method  string
+	Path    string
+	Decoder bool
+	Encoder bool
 }
 
-func parseCommnets(line string) *option {
-	line = strings.Replace(line, "\\:", "$$-$$", 100)
+func parseComments(line string) *commentsInfo {
 	parts := strings.Split(line, DELIM)
-	if len(parts) == 3 {
+	if len(parts) > 1 {
 		if ORION == strings.ToUpper(strings.TrimSpace(parts[0])) {
 			switch strings.ToUpper(strings.TrimSpace(parts[1])) {
 			case URL:
-				values := strings.SplitN(strings.TrimSpace(parts[2]), " ", 2)
-				if len(values) == 2 {
-					return &option{
-						Method: strings.ToUpper(values[0]),
-						Path:   values[1],
+				if len(parts) > 2 {
+					values := strings.SplitN(strings.TrimSpace(parts[2]), " ", 2)
+					if len(values) == 2 {
+						return &commentsInfo{
+							Method:  strings.ToUpper(values[0]),
+							Path:    values[1],
+							Encoder: true,
+							Decoder: true,
+						}
+					}
+				} else {
+					return &commentsInfo{
+						Decoder: true,
 					}
 				}
 			}
@@ -135,11 +145,19 @@ func generateCustomURL(g *generator.Generator, file *descriptor.FileDescriptorPr
 			if loc, ok := comments[commentPath]; ok {
 				text := strings.TrimSuffix(loc.GetLeadingComments(), "\n")
 				for _, line := range strings.Split(text, "\n") {
-					if option := parseCommnets(line); option != nil {
-						P(g, "")
-						P(g, "func Register", svc.GetName(), method.GetName(), "Encoder(svr orion.Server, encoder orion.Encoder) {")
-						P(g, "\torion.RegisterEncoder(svr, \""+svc.GetName()+"\", \""+method.GetName()+"\",\""+option.Method+"\", \""+option.Path+"\", encoder)")
-						P(g, "}")
+					if option := parseComments(line); option != nil {
+						if option.Encoder {
+							P(g, "")
+							P(g, "func Register", svc.GetName(), method.GetName(), "Encoder(svr orion.Server, encoder orion.Encoder) {")
+							P(g, "\torion.RegisterEncoder(svr, \""+svc.GetName()+"\", \""+method.GetName()+"\", \""+option.Method+"\", \""+option.Path+"\", encoder)")
+							P(g, "}")
+						}
+						if option.Decoder {
+							P(g, "")
+							P(g, "func Register", svc.GetName(), method.GetName(), "Decoder(svr orion.Server, decoder orion.Decoder) {")
+							P(g, "\torion.RegisterDecoder(svr, \""+svc.GetName()+"\", \""+method.GetName()+"\", decoder)")
+							P(g, "}")
+						}
 					}
 				}
 			}
