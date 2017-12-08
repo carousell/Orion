@@ -21,6 +21,8 @@
 
 ## <a name="pkg-index">Index</a>
 * [Variables](#pkg-variables)
+* [type Decodable](#Decodable)
+* [type Decoder](#Decoder)
 * [type Encodeable](#Encodeable)
 * [type Encoder](#Encoder)
 * [type GRPCMethodHandler](#GRPCMethodHandler)
@@ -43,7 +45,20 @@ var (
 )
 ```
 
-## <a name="Encodeable">type</a> [Encodeable](./types.go#L33-L35)
+## <a name="Decodable">type</a> [Decodable](./types.go#L40-L42)
+``` go
+type Decodable interface {
+    AddDecoder(serviceName, method string, decoder Decoder)
+}
+```
+Decodable interface that is implemented by a handler that supports custom HTTP decoder
+
+## <a name="Decoder">type</a> [Decoder](./types.go#L32)
+``` go
+type Decoder func(w http.ResponseWriter, decoderError, endpointError error, respObject interface{})
+```
+
+## <a name="Encodeable">type</a> [Encodeable](./types.go#L35-L37)
 ``` go
 type Encodeable interface {
     AddEncoder(serviceName, method, httpMethod, path string, encoder Encoder)
@@ -71,7 +86,7 @@ type HTTPHandlerConfig struct {
 ```
 HTTPHandlerConfig is the configuration for HTTP Handler
 
-## <a name="Handler">type</a> [Handler](./types.go#L38-L42)
+## <a name="Handler">type</a> [Handler](./types.go#L45-L49)
 ``` go
 type Handler interface {
     Add(sd *grpc.ServiceDesc, ss interface{}) error

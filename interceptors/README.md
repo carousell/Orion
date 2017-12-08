@@ -9,6 +9,7 @@
 
 ## <a name="pkg-imports">Imported Packages</a>
 
+- [github.com/afex/hystrix-go/hystrix](https://godoc.org/github.com/afex/hystrix-go/hystrix)
 - [github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing](https://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing)
 - [github.com/grpc-ecosystem/go-grpc-prometheus](https://godoc.org/github.com/grpc-ecosystem/go-grpc-prometheus)
 - [google.golang.org/grpc](https://godoc.org/google.golang.org/grpc)
@@ -17,29 +18,35 @@
 * [func DebugLoggingInterceptor() grpc.UnaryServerInterceptor](#DebugLoggingInterceptor)
 * [func DefaultInterceptors() []grpc.UnaryServerInterceptor](#DefaultInterceptors)
 * [func GRPCClientInterceptor() grpc.UnaryClientInterceptor](#GRPCClientInterceptor)
+* [func HystrixClientInterceptor() grpc.UnaryClientInterceptor](#HystrixClientInterceptor)
 * [func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor](#ResponseTimeLoggingInterceptor)
 
 #### <a name="pkg-files">Package files</a>
 [documentations.go](./documentations.go) [interceptors.go](./interceptors.go) 
 
-## <a name="DebugLoggingInterceptor">func</a> [DebugLoggingInterceptor](./interceptors.go#L24)
+## <a name="DebugLoggingInterceptor">func</a> [DebugLoggingInterceptor](./interceptors.go#L25)
 ``` go
 func DebugLoggingInterceptor() grpc.UnaryServerInterceptor
 ```
 DebugLoggingInterceptor is the interceptor that logs all request/response from a handler
 
-## <a name="DefaultInterceptors">func</a> [DefaultInterceptors](./interceptors.go#L15)
+## <a name="DefaultInterceptors">func</a> [DefaultInterceptors](./interceptors.go#L16)
 ``` go
 func DefaultInterceptors() []grpc.UnaryServerInterceptor
 ```
 DefaultInterceptors are the set of default interceptors that are applied to all Orion methods
 
-## <a name="GRPCClientInterceptor">func</a> [GRPCClientInterceptor](./interceptors.go#L44)
+## <a name="GRPCClientInterceptor">func</a> [GRPCClientInterceptor](./interceptors.go#L45)
 ``` go
 func GRPCClientInterceptor() grpc.UnaryClientInterceptor
 ```
 
-## <a name="ResponseTimeLoggingInterceptor">func</a> [ResponseTimeLoggingInterceptor](./interceptors.go#L34)
+## <a name="HystrixClientInterceptor">func</a> [HystrixClientInterceptor](./interceptors.go#L49)
+``` go
+func HystrixClientInterceptor() grpc.UnaryClientInterceptor
+```
+
+## <a name="ResponseTimeLoggingInterceptor">func</a> [ResponseTimeLoggingInterceptor](./interceptors.go#L35)
 ``` go
 func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor
 ```

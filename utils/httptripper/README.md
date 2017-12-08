@@ -27,6 +27,7 @@ Make sure you add context info in the http.Request
 ## <a name="pkg-imports">Imported Packages</a>
 
 - [github.com/carousell/Orion/utils/spanutils](./../spanutils)
+- [github.com/opentracing/opentracing-go](https://godoc.org/github.com/opentracing/opentracing-go)
 
 ## <a name="pkg-index">Index</a>
 * [func WrapTripper(base http.RoundTripper) http.RoundTripper](#WrapTripper)
@@ -34,7 +35,7 @@ Make sure you add context info in the http.Request
 #### <a name="pkg-files">Package files</a>
 [httptripper.go](./httptripper.go) 
 
-## <a name="WrapTripper">func</a> [WrapTripper](./httptripper.go#L46)
+## <a name="WrapTripper">func</a> [WrapTripper](./httptripper.go#L55)
 ``` go
 func WrapTripper(base http.RoundTripper) http.RoundTripper
 ```
