@@ -22,26 +22,40 @@ package httptripper
 import (
 	"net/http"
 
+	"github.com/afex/hystrix-go/hystrix"
 	"github.com/carousell/Orion/utils/spanutils"
 	opentracing "github.com/opentracing/opentracing-go"
 )
 
 type tripper struct {
-	transport http.RoundTripper
+	transport     http.RoundTripper
+	enableHystrix bool
 }
 
 func (t *tripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	if opentracing.SpanFromContext(req.Context()) != nil {
 		sp, _ := spanutils.NewHTTPExternalSpan(req.Context(), req.Host, req.URL.Path, req.Header)
 		defer sp.Finish()
-		resp, err := t.getTripper().RoundTrip(req)
+		resp, err := t.doRoundTrip(req)
 		if err != nil {
 			sp.SetTag("error", err.Error())
 		}
 		return resp, err
 	} else {
-		return t.getTripper().RoundTrip(req)
+		return t.doRoundTrip(req)
 	}
+}
+
+func (t *tripper) doRoundTrip(req *http.Request) (*http.Response, error) {
+	var resp *http.Response
+	var err error
+	hystrix.Do(req.Method+"-"+req.URL.EscapedPath(),
+		func() error {
+			resp, err = t.getTripper().RoundTrip(req)
+			return err
+		},
+		nil)
+	return resp, err
 }
 
 func (t *tripper) getTripper() http.RoundTripper {
@@ -54,4 +68,11 @@ func (t *tripper) getTripper() http.RoundTripper {
 //WrapTripper wraps the base tripper with zipkin info
 func WrapTripper(base http.RoundTripper) http.RoundTripper {
 	return &tripper{transport: base}
+}
+
+func WrapTripperWithHystrix(base http.RoundTripper) http.RoundTripper {
+	return &tripper{
+		transport:     base,
+		enableHystrix: true,
+	}
 }

@@ -204,7 +204,7 @@ type httpZipkinInitializer struct {
 }
 
 func (h *httpZipkinInitializer) Init(svr Server) error {
-	tripper := httptripper.WrapTripper(http.DefaultTransport)
+	tripper := httptripper.WrapTripperWithHystrix(http.DefaultTransport)
 	http.DefaultTransport = tripper
 	return nil
 }
