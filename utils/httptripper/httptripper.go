@@ -41,9 +41,8 @@ func (t *tripper) RoundTrip(req *http.Request) (*http.Response, error) {
 			sp.SetTag("error", err.Error())
 		}
 		return resp, err
-	} else {
-		return t.doRoundTrip(req)
 	}
+	return t.doRoundTrip(req)
 }
 
 func (t *tripper) doRoundTrip(req *http.Request) (*http.Response, error) {
@@ -68,11 +67,4 @@ func (t *tripper) getTripper() http.RoundTripper {
 //WrapTripper wraps the base tripper with zipkin info
 func WrapTripper(base http.RoundTripper) http.RoundTripper {
 	return &tripper{transport: base}
-}
-
-func WrapTripperWithHystrix(base http.RoundTripper) http.RoundTripper {
-	return &tripper{
-		transport:     base,
-		enableHystrix: true,
-	}
 }

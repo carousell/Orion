@@ -18,6 +18,8 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	opentracing "github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -165,7 +167,19 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 			} else {
 				data, err := h.mar.MarshalToString(protoResponse.(proto.Message))
 				if err != nil {
-					writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
+					code := http.StatusInternalServerError
+					msg := "Internal Server Error!"
+					if s, ok := status.FromError(err); ok {
+						switch s.Code() {
+						case codes.NotFound:
+							code = http.StatusNotFound
+							msg = s.Message()
+						case codes.Unauthenticated:
+							code = http.StatusUnauthorized
+							msg = s.Message()
+						}
+					}
+					writeResp(resp, code, []byte(msg))
 				} else {
 					ctx = headers.AddToResponseHeaders(ctx, "Content-Type", "application/json")
 					hdr := headers.ResponseHeadersFromContext(ctx)
