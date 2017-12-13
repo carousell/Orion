@@ -162,11 +162,6 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 				if decErr != nil {
 					writeResp(resp, http.StatusBadRequest, []byte("Bad Request!"))
 				} else {
-					writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
-				}
-			} else {
-				data, err := h.mar.MarshalToString(protoResponse.(proto.Message))
-				if err != nil {
 					code := http.StatusInternalServerError
 					msg := "Internal Server Error!"
 					if s, ok := status.FromError(err); ok {
@@ -174,12 +169,22 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 						case codes.NotFound:
 							code = http.StatusNotFound
 							msg = s.Message()
+						case codes.InvalidArgument:
+							code = http.StatusBadRequest
+							msg = s.Message()
+						case codes.PermissionDenied:
+							fallthrough
 						case codes.Unauthenticated:
 							code = http.StatusUnauthorized
 							msg = s.Message()
 						}
 					}
 					writeResp(resp, code, []byte(msg))
+				}
+			} else {
+				data, err := h.mar.MarshalToString(protoResponse.(proto.Message))
+				if err != nil {
+					writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
 				} else {
 					ctx = headers.AddToResponseHeaders(ctx, "Content-Type", "application/json")
 					hdr := headers.ResponseHeadersFromContext(ctx)
