@@ -37,7 +37,7 @@ func ResponseHeadersFromContext(ctx context.Context) http.Header {
 func AddToRequestHeaders(ctx context.Context, key string, value string) context.Context {
 	h := RequestHeadersFromContext(ctx)
 	if h == nil {
-		ctx = context.WithValue(ctx, requestHeadersKey, &hdr{})
+		ctx = context.WithValue(ctx, requestHeadersKey, &hdr{make(map[string][]string)})
 	}
 	h = RequestHeadersFromContext(ctx)
 	if h != nil && key != "" {
@@ -49,7 +49,7 @@ func AddToRequestHeaders(ctx context.Context, key string, value string) context.
 func AddToResponseHeaders(ctx context.Context, key string, value string) context.Context {
 	h := ResponseHeadersFromContext(ctx)
 	if h == nil {
-		ctx = context.WithValue(ctx, responseHeadersKey, &hdr{})
+		ctx = context.WithValue(ctx, responseHeadersKey, &hdr{make(map[string][]string)})
 	}
 	h = ResponseHeadersFromContext(ctx)
 	if h != nil && key != "" {
