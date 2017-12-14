@@ -68,8 +68,8 @@ func grpcInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-func processWhitelist(data map[string]string, allowedKeys []string) map[string]string {
-	whitelistedMap := make(map[string]string)
+func processWhitelist(data map[string][]string, allowedKeys []string) map[string][]string {
+	whitelistedMap := make(map[string][]string)
 	whitelistedKeys := make(map[string]bool)
 
 	for _, k := range allowedKeys {

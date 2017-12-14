@@ -2,7 +2,7 @@ package headers
 
 import (
 	"context"
-	"strings"
+	"net/http"
 )
 
 type contextKey string
@@ -13,52 +13,22 @@ var (
 )
 
 type hdr struct {
-	data map[string]string
+	http.Header
 }
 
-func (h *hdr) Add(key string, value string) {
-	if h.data == nil {
-		h.data = make(map[string]string)
-	}
-	if strings.TrimSpace(key) != "" {
-		h.data[key] = value
-	}
-}
-
-func (h *hdr) Del(key string) {
-	if h.data == nil {
-		h.data = make(map[string]string)
-	}
-
-	if strings.TrimSpace(key) != "" {
-		delete(h.data, key)
-	}
-}
-
-func (h *hdr) Get(key string) string {
-	if h.data == nil {
-		h.data = make(map[string]string)
-	}
-	return h.data[key]
-}
-
-func (h *hdr) GetAll() map[string]string {
-	return h.data
-}
-
-func RequestHeadersFromContext(ctx context.Context) Headers {
+func RequestHeadersFromContext(ctx context.Context) http.Header {
 	if h := ctx.Value(requestHeadersKey); h != nil {
 		if headers, ok := h.(*hdr); ok {
-			return headers
+			return headers.Header
 		}
 	}
 	return nil
 }
 
-func ResponseHeadersFromContext(ctx context.Context) Headers {
+func ResponseHeadersFromContext(ctx context.Context) http.Header {
 	if h := ctx.Value(responseHeadersKey); h != nil {
 		if headers, ok := h.(*hdr); ok {
-			return headers
+			return headers.Header
 		}
 	}
 	return nil

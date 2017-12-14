@@ -95,10 +95,12 @@ func writeResp(resp http.ResponseWriter, status int, data []byte) {
 	writeRespWithHeaders(resp, status, data, nil)
 }
 
-func writeRespWithHeaders(resp http.ResponseWriter, status int, data []byte, headers map[string]string) {
+func writeRespWithHeaders(resp http.ResponseWriter, status int, data []byte, headers map[string][]string) {
 	if headers != nil {
-		for k, v := range headers {
-			resp.Header().Add(k, v)
+		for key, values := range headers {
+			for _, value := range values {
+				resp.Header().Add(key, value)
+			}
 		}
 	}
 	resp.WriteHeader(status)
@@ -188,7 +190,7 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 				} else {
 					ctx = headers.AddToResponseHeaders(ctx, "Content-Type", "application/json")
 					hdr := headers.ResponseHeadersFromContext(ctx)
-					responseHeaders := processWhitelist(hdr.GetAll(), append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
+					responseHeaders := processWhitelist(hdr, append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
 					writeRespWithHeaders(resp, http.StatusOK, []byte(data), responseHeaders)
 				}
 			}
