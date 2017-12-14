@@ -18,6 +18,8 @@
 - [github.com/grpc-ecosystem/go-grpc-prometheus](https://godoc.org/github.com/grpc-ecosystem/go-grpc-prometheus)
 - [github.com/opentracing/opentracing-go](https://godoc.org/github.com/opentracing/opentracing-go)
 - [google.golang.org/grpc](https://godoc.org/google.golang.org/grpc)
+- [google.golang.org/grpc/codes](https://godoc.org/google.golang.org/grpc/codes)
+- [google.golang.org/grpc/status](https://godoc.org/google.golang.org/grpc/status)
 
 ## <a name="pkg-index">Index</a>
 * [Variables](#pkg-variables)
@@ -78,7 +80,7 @@ type GRPCMethodHandler func(srv interface{}, ctx context.Context, dec func(inter
 ```
 GRPCMethodHandler is the method type as defined in grpc-go
 
-## <a name="HTTPHandlerConfig">type</a> [HTTPHandlerConfig](./http.go#L30-L32)
+## <a name="HTTPHandlerConfig">type</a> [HTTPHandlerConfig](./http.go#L32-L34)
 ``` go
 type HTTPHandlerConfig struct {
     EnableProtoURL bool
@@ -102,7 +104,7 @@ func NewGRPCHandler() Handler
 ```
 NewGRPCHandler creates a new GRPC handler
 
-### <a name="NewHTTPHandler">func</a> [NewHTTPHandler](./http.go#L35)
+### <a name="NewHTTPHandler">func</a> [NewHTTPHandler](./http.go#L37)
 ``` go
 func NewHTTPHandler(config HTTPHandlerConfig) Handler
 ```

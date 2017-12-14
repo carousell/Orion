@@ -14,41 +14,30 @@ No packages beyond the Go standard library are imported.
 ## <a name="pkg-index">Index</a>
 * [func AddToRequestHeaders(ctx context.Context, key string, value string) context.Context](#AddToRequestHeaders)
 * [func AddToResponseHeaders(ctx context.Context, key string, value string) context.Context](#AddToResponseHeaders)
-* [type Headers](#Headers)
-  * [func RequestHeadersFromContext(ctx context.Context) Headers](#RequestHeadersFromContext)
-  * [func ResponseHeadersFromContext(ctx context.Context) Headers](#ResponseHeadersFromContext)
+* [func RequestHeadersFromContext(ctx context.Context) http.Header](#RequestHeadersFromContext)
+* [func ResponseHeadersFromContext(ctx context.Context) http.Header](#ResponseHeadersFromContext)
 
 #### <a name="pkg-files">Package files</a>
-[headers.go](./headers.go) [types.go](./types.go) 
+[headers.go](./headers.go) 
 
-## <a name="AddToRequestHeaders">func</a> [AddToRequestHeaders](./headers.go#L67)
+## <a name="AddToRequestHeaders">func</a> [AddToRequestHeaders](./headers.go#L37)
 ``` go
 func AddToRequestHeaders(ctx context.Context, key string, value string) context.Context
 ```
 
-## <a name="AddToResponseHeaders">func</a> [AddToResponseHeaders](./headers.go#L79)
+## <a name="AddToResponseHeaders">func</a> [AddToResponseHeaders](./headers.go#L49)
 ``` go
 func AddToResponseHeaders(ctx context.Context, key string, value string) context.Context
 ```
 
-## <a name="Headers">type</a> [Headers](./types.go#L3-L8)
+## <a name="RequestHeadersFromContext">func</a> [RequestHeadersFromContext](./headers.go#L19)
 ``` go
-type Headers interface {
-    Add(key, value string)
-    Del(key string)
-    Get(key string) string
-    GetAll() map[string]string
-}
+func RequestHeadersFromContext(ctx context.Context) http.Header
 ```
 
-### <a name="RequestHeadersFromContext">func</a> [RequestHeadersFromContext](./headers.go#L49)
+## <a name="ResponseHeadersFromContext">func</a> [ResponseHeadersFromContext](./headers.go#L28)
 ``` go
-func RequestHeadersFromContext(ctx context.Context) Headers
-```
-
-### <a name="ResponseHeadersFromContext">func</a> [ResponseHeadersFromContext](./headers.go#L58)
-``` go
-func ResponseHeadersFromContext(ctx context.Context) Headers
+func ResponseHeadersFromContext(ctx context.Context) http.Header
 ```
 
 - - -
