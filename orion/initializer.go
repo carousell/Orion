@@ -33,7 +33,7 @@ var (
 		NewRelicInitializer(),
 		PrometheusInitializer(),
 		PprofInitializer(),
-		HTTTPZipkinInitializer(),
+		HTTPZipkinInitializer(),
 	}
 )
 
@@ -63,7 +63,7 @@ func PprofInitializer() Initializer {
 }
 
 //HTTPZipkinInitializer returns an Initializer implementation for httptripper which appends zipkin trace info to all outgoing HTTP requests
-func HTTTPZipkinInitializer() Initializer {
+func HTTPZipkinInitializer() Initializer {
 	return &httpZipkinInitializer{}
 }
 

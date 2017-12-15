@@ -90,6 +90,7 @@ func (d *DefaultServerImpl) AddEncoder(serviceName, method string, httpMethod []
 	}
 }
 
+//AddDecoder is the implementation of handlers.Decodable
 func (d *DefaultServerImpl) AddDecoder(serviceName, method string, decoder handlers.Decoder) {
 	if d.decoders == nil {
 		d.decoders = make(map[string]decoderInfo)
