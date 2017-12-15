@@ -33,7 +33,7 @@ type Decoder func(w http.ResponseWriter, decoderError, endpointError error, resp
 
 //Encodeable interface that is implemented by a handler that supports custom HTTP encoder
 type Encodeable interface {
-	AddEncoder(serviceName, method, httpMethod, path string, encoder Encoder)
+	AddEncoder(serviceName, method string, httpMethod []string, path string, encoder Encoder)
 }
 
 //Decodable interface that is implemented by a handler that supports custom HTTP decoder

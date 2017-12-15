@@ -12,7 +12,7 @@ func RegisterEchoServiceOrionServer(srv orion.ServiceFactory, orionServer orion.
 }
 
 func RegisterEchoServiceUpperEncoder(svr orion.Server, encoder orion.Encoder) {
-	orion.RegisterEncoder(svr, "EchoService", "Upper", "GET", "/api/1.0/upper/{msg}", encoder)
+	orion.RegisterEncoders(svr, "EchoService", "Upper", []string{"GET","POST"}, "/api/1.0/upper/{msg}", encoder)
 }
 
 func RegisterEchoServiceUpperDecoder(svr orion.Server, decoder orion.Decoder) {

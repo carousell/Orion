@@ -31,7 +31,7 @@ type handlerInfo struct {
 type encoderInfo struct {
 	serviceName string
 	method      string
-	httpMethod  string
+	httpMethod  []string
 	path        string
 	encoder     handlers.Encoder
 }
@@ -77,7 +77,7 @@ func (d *DefaultServerImpl) Fetch(key string) (value interface{}, found bool) {
 }
 
 //AddEncoder is the implementation of handlers.Encodable
-func (d *DefaultServerImpl) AddEncoder(serviceName, method, httpMethod string, path string, encoder handlers.Encoder) {
+func (d *DefaultServerImpl) AddEncoder(serviceName, method string, httpMethod []string, path string, encoder handlers.Encoder) {
 	if d.encoders == nil {
 		d.encoders = make(map[string]encoderInfo)
 	}

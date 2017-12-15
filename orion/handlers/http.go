@@ -67,7 +67,7 @@ type pathInfo struct {
 	method      GRPCMethodHandler
 	encoder     Encoder
 	decoder     Decoder
-	httpMethod  string
+	httpMethod  []string
 	encoderPath string
 }
 
@@ -224,7 +224,7 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 		info := &pathInfo{
 			method:     GRPCMethodHandler(m.Handler),
 			svc:        svcInfo,
-			httpMethod: "POST",
+			httpMethod: []string{"POST"},
 		}
 		url := generateURL(sd.ServiceName, m.MethodName)
 		h.paths[url] = info
@@ -237,7 +237,7 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 	return nil
 }
 
-func (h *httpHandler) AddEncoder(serviceName, method, httpMethod string, path string, encoder Encoder) {
+func (h *httpHandler) AddEncoder(serviceName, method string, httpMethod []string, path string, encoder Encoder) {
 	if h.paths != nil {
 		url := generateURL(serviceName, method)
 		if info, ok := h.paths[url]; ok {
@@ -269,7 +269,7 @@ func (h *httpHandler) Run(httpListener net.Listener) error {
 		if strings.TrimSpace(info.encoderPath) != "" && info.encoderPath != url {
 			continue
 		}
-		r.Methods(info.httpMethod).Path(url).Handler(h.getHTTPHandler(url))
+		r.Methods(info.httpMethod...).Path(url).Handler(h.getHTTPHandler(url))
 		fmt.Println("\t", info.httpMethod, url)
 	}
 	h.svr = &http.Server{
