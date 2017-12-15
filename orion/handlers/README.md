@@ -63,7 +63,7 @@ type Decoder func(w http.ResponseWriter, decoderError, endpointError error, resp
 ## <a name="Encodeable">type</a> [Encodeable](./types.go#L35-L37)
 ``` go
 type Encodeable interface {
-    AddEncoder(serviceName, method, httpMethod, path string, encoder Encoder)
+    AddEncoder(serviceName, method string, httpMethod []string, path string, encoder Encoder)
 }
 ```
 Encodeable interface that is implemented by a handler that supports custom HTTP encoder
