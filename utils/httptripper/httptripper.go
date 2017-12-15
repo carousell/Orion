@@ -22,7 +22,6 @@ package httptripper
 import (
 	"net/http"
 
-	"github.com/afex/hystrix-go/hystrix"
 	"github.com/carousell/Orion/utils/spanutils"
 	opentracing "github.com/opentracing/opentracing-go"
 )
@@ -46,15 +45,7 @@ func (t *tripper) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func (t *tripper) doRoundTrip(req *http.Request) (*http.Response, error) {
-	var resp *http.Response
-	var err error
-	hystrix.Do(req.Method+"-"+req.URL.EscapedPath(),
-		func() error {
-			resp, err = t.getTripper().RoundTrip(req)
-			return err
-		},
-		nil)
-	return resp, err
+	return t.getTripper().RoundTrip(req)
 }
 
 func (t *tripper) getTripper() http.RoundTripper {
