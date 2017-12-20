@@ -25,6 +25,7 @@ func (s *svcFactory) NewService(svr orion.Server) interface{} {
 
 func (s *svcFactory) DisposeService(svc interface{}) {
 	fmt.Println("disposing", svc)
+	service.DestroyService(svc)
 }
 
 func encoder(req *http.Request, reqObject interface{}) error {

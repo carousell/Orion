@@ -7,3 +7,4 @@ package utils
 //go:generate godoc2ghmd -ex -file=httptripper/README.md github.com/carousell/Orion/utils/httptripper
 //go:generate godoc2ghmd -ex -file=listenerutils/README.md github.com/carousell/Orion/utils/listenerutils
 //go:generate godoc2ghmd -ex -file=spanutils/README.md github.com/carousell/Orion/utils/spanutils
+//go:generate godoc2ghmd -ex -file=worker/README.md github.com/carousell/Orion/utils/worker
