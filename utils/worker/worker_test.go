@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -39,6 +38,7 @@ func TestLocalWokerFail(t *testing.T) {
 	assert.False(t, executed, "should execute task")
 }
 
+/*
 func TestRemoteWorker(t *testing.T) {
 	cfg := Config{}
 	cfg.LocalMode = false
@@ -62,3 +62,4 @@ func TestRemoteWorker(t *testing.T) {
 	time.Sleep(time.Second * 5)
 	assert.True(t, executed, "should execute task")
 }
+*/
