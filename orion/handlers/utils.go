@@ -86,3 +86,23 @@ func processWhitelist(data map[string][]string, allowedKeys []string) map[string
 
 	return whitelistedMap
 }
+
+/*
+func applyNR(string name, ctx context.Context) context.Context {
+	req, _ := http.NewRequest("", "/"+name, nil)
+	if app != nil {
+		t := app.StartTransaction(name, nil, req)
+		ctx = StoreNewRelicTransactionToContext(ctx, t)
+		response, err = next(ctx, request)
+		if check != nil && err != nil {
+			// check is defined
+			if check(err) {
+				t.NoticeError(err)
+			}
+		} else {
+			t.NoticeError(err)
+		}
+		t.End()
+	}
+}
+*/

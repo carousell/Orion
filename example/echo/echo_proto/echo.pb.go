@@ -118,7 +118,7 @@ const _ = grpc.SupportPackageIsVersion4
 
 type EchoServiceClient interface {
 	Echo(ctx context.Context, in *EchoRequest, opts ...grpc.CallOption) (*EchoResponse, error)
-	// ORION:URL: GET/POST /api/1.0/upper/{msg}
+	// ORION:URL: GET/POST/OPTIONS /api/1.0/upper/{msg}
 	Upper(ctx context.Context, in *UpperRequest, opts ...grpc.CallOption) (*UpperResponse, error)
 	UpperProxy(ctx context.Context, in *UpperRequest, opts ...grpc.CallOption) (*UpperResponse, error)
 }
@@ -162,7 +162,7 @@ func (c *echoServiceClient) UpperProxy(ctx context.Context, in *UpperRequest, op
 
 type EchoServiceServer interface {
 	Echo(context.Context, *EchoRequest) (*EchoResponse, error)
-	// ORION:URL: GET/POST /api/1.0/upper/{msg}
+	// ORION:URL: GET/POST/OPTIONS /api/1.0/upper/{msg}
 	Upper(context.Context, *UpperRequest) (*UpperResponse, error)
 	UpperProxy(context.Context, *UpperRequest) (*UpperResponse, error)
 }

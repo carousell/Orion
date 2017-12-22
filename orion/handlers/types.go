@@ -41,6 +41,12 @@ type Decodable interface {
 	AddDecoder(serviceName, method string, decoder Decoder)
 }
 
+type HTTPInterceptor interface {
+	AddHTTPHandler(serviceName, method string, path string, handler HTTPHandler)
+}
+
+type HTTPHandler func(http.ResponseWriter, *http.Request) bool
+
 //Handler implements a service handler that is used by orion server
 type Handler interface {
 	Add(sd *grpc.ServiceDesc, ss interface{}) error

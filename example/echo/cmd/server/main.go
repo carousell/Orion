@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	proto "github.com/carousell/Orion/example/echo/echo_proto"
 	"github.com/carousell/Orion/example/echo/service"
@@ -49,11 +50,21 @@ func decoder(w http.ResponseWriter, decoderError, endpointError error, respObjec
 	w.Write([]byte("Noo Hello world"))
 }
 
+func optionsHandler(w http.ResponseWriter, req *http.Request) bool {
+	if strings.ToLower(req.Method) == "options" {
+		// do something like CORS handling
+		w.Header().Set("Test-Header", "testing some data")
+		return true
+	}
+	return false
+}
+
 func main() {
 	server := orion.GetDefaultServer("EchoService")
 	proto.RegisterEchoServiceOrionServer(&svcFactory{}, server)
 	proto.RegisterEchoServiceUpperEncoder(server, encoder)
 	proto.RegisterEchoServiceUpperDecoder(server, decoder)
+	proto.RegisterEchoServiceUpperHandler(server, optionsHandler)
 	server.Start()
 	server.Wait()
 }

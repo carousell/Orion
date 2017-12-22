@@ -5,7 +5,7 @@ package echo_proto;
 service EchoService{
     rpc Echo (EchoRequest) returns (EchoResponse){
     }
-    // ORION:URL: GET/POST /api/1.0/upper/{msg}
+    // ORION:URL: GET/POST/OPTIONS /api/1.0/upper/{msg}
     rpc Upper (UpperRequest) returns (UpperResponse){
     }
 

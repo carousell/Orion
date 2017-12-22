@@ -67,6 +67,7 @@ type pathInfo struct {
 	method      GRPCMethodHandler
 	encoder     Encoder
 	decoder     Decoder
+	httpHandler HTTPHandler
 	httpMethod  []string
 	encoderPath string
 }
@@ -156,6 +157,13 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 				ctx = headers.AddToRequestHeaders(ctx, hdr, req.Header.Get(hdr))
 			}
 		}
+		if info.httpHandler != nil {
+			req = req.WithContext(ctx)
+			if info.httpHandler(resp, req) {
+				// short circuit if handler has handled request
+				return
+			}
+		}
 		protoResponse, err := info.method(info.svc.svc, ctx, dec, info.svc.interceptors)
 		if info.decoder != nil {
 			info.decoder(resp, decErr, err, protoResponse)
@@ -174,9 +182,7 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 						case codes.InvalidArgument:
 							code = http.StatusBadRequest
 							msg = s.Message()
-						case codes.PermissionDenied:
-							fallthrough
-						case codes.Unauthenticated:
+						case codes.Unauthenticated, codes.PermissionDenied:
 							code = http.StatusUnauthorized
 							msg = s.Message()
 						}
@@ -245,6 +251,17 @@ func (h *httpHandler) AddEncoder(serviceName, method string, httpMethod []string
 			info.httpMethod = httpMethod
 			info.encoderPath = path
 			h.paths[path] = info
+		} else {
+			fmt.Println("url not found", url, h.paths)
+		}
+	}
+}
+
+func (h *httpHandler) AddHTTPHandler(serviceName string, method string, path string, handler HTTPHandler) {
+	if h.paths != nil {
+		url := generateURL(serviceName, method)
+		if info, ok := h.paths[url]; ok {
+			info.httpHandler = handler
 		} else {
 			fmt.Println("url not found", url, h.paths)
 		}

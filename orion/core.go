@@ -33,7 +33,8 @@ type encoderInfo struct {
 	method      string
 	httpMethod  []string
 	path        string
-	encoder     handlers.Encoder
+	encoder     Encoder
+	handler     HTTPHandler
 }
 
 type decoderInfo struct {
@@ -49,9 +50,9 @@ type DefaultServerImpl struct {
 	wg     sync.WaitGroup
 	inited bool
 
-	services     map[string]svcInfo
-	encoders     map[string]encoderInfo
-	decoders     map[string]decoderInfo
+	services     map[string]*svcInfo
+	encoders     map[string]*encoderInfo
+	decoders     map[string]*decoderInfo
 	handlers     []*handlerInfo
 	initializers []Initializer
 
@@ -79,23 +80,44 @@ func (d *DefaultServerImpl) Fetch(key string) (value interface{}, found bool) {
 //AddEncoder is the implementation of handlers.Encodable
 func (d *DefaultServerImpl) AddEncoder(serviceName, method string, httpMethod []string, path string, encoder handlers.Encoder) {
 	if d.encoders == nil {
-		d.encoders = make(map[string]encoderInfo)
+		d.encoders = make(map[string]*encoderInfo)
 	}
-	d.encoders[path] = encoderInfo{
-		serviceName: serviceName,
-		method:      method,
-		httpMethod:  httpMethod,
-		path:        path,
-		encoder:     encoder,
+	ei := new(encoderInfo)
+	if info, ok := d.encoders[path]; ok {
+		ei = info
+	} else {
+		d.encoders[path] = ei
 	}
+	ei.serviceName = serviceName
+	ei.method = method
+	ei.httpMethod = httpMethod
+	ei.path = path
+	ei.encoder = encoder
+}
+
+//AddHTTPHandler is the implementation of handlers.HTTPInterceptor
+func (d *DefaultServerImpl) AddHTTPHandler(serviceName string, method string, path string, handler handlers.HTTPHandler) {
+	if d.encoders == nil {
+		d.encoders = make(map[string]*encoderInfo)
+	}
+	ei := new(encoderInfo)
+	if info, ok := d.encoders[path]; ok {
+		ei = info
+	} else {
+		d.encoders[path] = ei
+	}
+	ei.serviceName = serviceName
+	ei.method = method
+	ei.path = path
+	ei.handler = handler
 }
 
 //AddDecoder is the implementation of handlers.Decodable
 func (d *DefaultServerImpl) AddDecoder(serviceName, method string, decoder handlers.Decoder) {
 	if d.decoders == nil {
-		d.decoders = make(map[string]decoderInfo)
+		d.decoders = make(map[string]*decoderInfo)
 	}
-	d.decoders[serviceName+":"+method] = decoderInfo{
+	d.decoders[serviceName+":"+method] = &decoderInfo{
 		serviceName: serviceName,
 		method:      method,
 		decoder:     decoder,
@@ -210,7 +232,7 @@ func (d *DefaultServerImpl) signalWatcher() {
 			d.processInitializers(true)
 
 			// reload services
-			oldServices := []svcInfo{}
+			oldServices := []*svcInfo{}
 			for _, info := range d.services {
 				d.registerService(info.sd, info.sf, true)
 				oldServices = append(oldServices, info)
@@ -265,6 +287,11 @@ func (d *DefaultServerImpl) startHandler(h *handlerInfo, reload bool) {
 	for _, ei := range d.encoders {
 		if e, ok := h.handler.(handlers.Encodeable); ok {
 			e.AddEncoder(ei.serviceName, ei.method, ei.httpMethod, ei.path, ei.encoder)
+			if ei.handler != nil {
+				if i, ok := h.handler.(handlers.HTTPInterceptor); ok {
+					i.AddHTTPHandler(ei.serviceName, ei.method, ei.path, ei.handler)
+				}
+			}
 		}
 	}
 	for _, di := range d.decoders {
@@ -297,7 +324,7 @@ func (d *DefaultServerImpl) registerService(sd *grpc.ServiceDesc, sf ServiceFact
 	defer d.mu.Unlock()
 
 	if d.services == nil {
-		d.services = make(map[string]svcInfo)
+		d.services = make(map[string]*svcInfo)
 	}
 
 	_, ok := d.services[sd.ServiceName]
@@ -312,7 +339,7 @@ func (d *DefaultServerImpl) registerService(sd *grpc.ServiceDesc, sf ServiceFact
 		return fmt.Errorf("Orion.Server.RegisterService found the handler of type %v that does not satisfy %v", st, ht)
 	}
 
-	d.services[sd.ServiceName] = svcInfo{
+	d.services[sd.ServiceName] = &svcInfo{
 		sd: sd,
 		sf: sf,
 		ss: ss,

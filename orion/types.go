@@ -70,3 +70,6 @@ type Encoder = handlers.Encoder
 
 //Decoder is the funtion type needed for request decoders
 type Decoder = handlers.Decoder
+
+//HTTPHandler is the http interceptor
+type HTTPHandler = handlers.HTTPHandler

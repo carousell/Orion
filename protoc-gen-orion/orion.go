@@ -147,8 +147,12 @@ func generateCustomURL(g *generator.Generator, file *descriptor.FileDescriptorPr
 				for _, line := range strings.Split(text, "\n") {
 					if option := parseComments(line); option != nil {
 						if option.Encoder {
+							optionsEncoder := false
 							methods := strings.Split(option.Method, "/")
 							for i := range methods {
+								if strings.ToLower(methods[i]) == "options" {
+									optionsEncoder = true
+								}
 								methods[i] = "\"" + methods[i] + "\""
 							}
 							methodsString := strings.Join(methods, ",")
@@ -156,6 +160,12 @@ func generateCustomURL(g *generator.Generator, file *descriptor.FileDescriptorPr
 							P(g, "func Register", svc.GetName(), method.GetName(), "Encoder(svr orion.Server, encoder orion.Encoder) {")
 							P(g, "\torion.RegisterEncoders(svr, \""+svc.GetName()+"\", \""+method.GetName()+"\", []string{"+methodsString+"}, \""+option.Path+"\", encoder)")
 							P(g, "}")
+							if optionsEncoder {
+								P(g, "")
+								P(g, "func Register", svc.GetName(), method.GetName(), "Handler(svr orion.Server, handler orion.HTTPHandler) {")
+								P(g, "\torion.RegisterHandler(svr, \""+svc.GetName()+"\", \""+method.GetName()+"\", \""+option.Path+"\", handler)")
+								P(g, "}")
+							}
 						}
 						if option.Decoder {
 							P(g, "")
