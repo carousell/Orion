@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/carousell/Orion/utils"
 	"github.com/carousell/Orion/utils/headers"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
@@ -115,29 +116,80 @@ func (h *httpHandler) getHTTPHandler(url string) http.HandlerFunc {
 }
 
 func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url string) {
-	defer func(resp http.ResponseWriter) {
+	ctx := utils.StartNRTransaction(url, req.Context(), req, resp)
+	defer func(resp http.ResponseWriter, ctx context.Context) {
 		// panic handler
 		if r := recover(); r != nil {
 			writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
 			log.Println("panic", r)
 			log.Print(string(debug.Stack()))
+			utils.FinishNRTransaction(ctx, fmt.Errorf("Panic!!"))
 		}
-	}(resp)
+	}(resp, ctx)
+	req = req.WithContext(ctx)
+	err := h.serveHTTP(resp, req, url)
+	utils.FinishNRTransaction(req.Context(), err)
+}
 
+func prepareContext(req *http.Request, info *pathInfo) context.Context {
+	ctx := req.Context()
+	//initialize headers
+	ctx = headers.AddToRequestHeaders(ctx, "", "")
+	ctx = headers.AddToResponseHeaders(ctx, "", "")
+
+	// fetch and populate whitelisted headers
+	if len(info.svc.requestHeaders) > 0 {
+		for _, hdr := range info.svc.requestHeaders {
+			ctx = headers.AddToRequestHeaders(ctx, hdr, req.Header.Get(hdr))
+		}
+	}
+
+	// translate from http zipkin context to gRPC
+	wireContext, err := opentracing.GlobalTracer().Extract(
+		opentracing.HTTPHeaders,
+		opentracing.HTTPHeadersCarrier(req.Header))
+	if err == nil {
+		md := metautils.ExtractIncoming(ctx)
+		opentracing.GlobalTracer().Inject(wireContext, opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(md))
+		ctx = md.ToIncoming(ctx)
+	}
+	return ctx
+}
+
+func grpcErrorToHTTP(err error, defaultStatus int, defaultMessage string) (int, string) {
+	code := defaultStatus
+	msg := defaultMessage
+	if s, ok := status.FromError(err); ok {
+		switch s.Code() {
+		case codes.NotFound:
+			code = http.StatusNotFound
+			msg = s.Message()
+		case codes.InvalidArgument:
+			code = http.StatusBadRequest
+			msg = s.Message()
+		case codes.Unauthenticated, codes.PermissionDenied:
+			code = http.StatusUnauthorized
+			msg = s.Message()
+		}
+	}
+	return code, msg
+}
+
+func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url string) error {
 	info, ok := h.paths[url]
 	if ok {
+		ctx := prepareContext(req, info)
 
-		// translate from http zipkin context to gRPC
-		wireContext, err := opentracing.GlobalTracer().Extract(
-			opentracing.HTTPHeaders,
-			opentracing.HTTPHeadersCarrier(req.Header))
-		ctx := req.Context()
-		if err == nil {
-			md := metautils.ExtractIncoming(ctx)
-			opentracing.GlobalTracer().Inject(wireContext, opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(md))
-			ctx = md.ToIncoming(ctx)
+		// httpHandler allows handling entire http request
+		if info.httpHandler != nil {
+			req = req.WithContext(ctx)
+			if info.httpHandler(resp, req) {
+				// short circuit if handler has handled request
+				return nil
+			}
 		}
 
+		// decoder func
 		var decErr error
 		dec := func(r interface{}) error {
 			if info.encoder == nil {
@@ -148,61 +200,44 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 			decErr = info.encoder(req, r)
 			return decErr
 		}
-		//initialize headers
-		ctx = headers.AddToRequestHeaders(ctx, "", "")
-		ctx = headers.AddToResponseHeaders(ctx, "", "")
-		// fetch and populate whitelisted headers
-		if len(info.svc.requestHeaders) > 0 {
-			for _, hdr := range info.svc.requestHeaders {
-				ctx = headers.AddToRequestHeaders(ctx, hdr, req.Header.Get(hdr))
-			}
-		}
-		if info.httpHandler != nil {
-			req = req.WithContext(ctx)
-			if info.httpHandler(resp, req) {
-				// short circuit if handler has handled request
-				return
-			}
-		}
+
+		// make service call
 		protoResponse, err := info.method(info.svc.svc, ctx, dec, info.svc.interceptors)
+
 		if info.decoder != nil {
+			//apply decoder if any
 			info.decoder(resp, decErr, err, protoResponse)
+			if decErr != nil {
+				return decErr
+			}
+			return err
 		} else {
 			if err != nil {
 				if decErr != nil {
 					writeResp(resp, http.StatusBadRequest, []byte("Bad Request!"))
+					return fmt.Errorf("Bad Request!")
 				} else {
-					code := http.StatusInternalServerError
-					msg := "Internal Server Error!"
-					if s, ok := status.FromError(err); ok {
-						switch s.Code() {
-						case codes.NotFound:
-							code = http.StatusNotFound
-							msg = s.Message()
-						case codes.InvalidArgument:
-							code = http.StatusBadRequest
-							msg = s.Message()
-						case codes.Unauthenticated, codes.PermissionDenied:
-							code = http.StatusUnauthorized
-							msg = s.Message()
-						}
-					}
+					code, msg := grpcErrorToHTTP(err, http.StatusInternalServerError, "Internal Server Error!")
 					writeResp(resp, code, []byte(msg))
+					return fmt.Errorf(msg)
 				}
 			} else {
 				data, err := h.mar.MarshalToString(protoResponse.(proto.Message))
 				if err != nil {
 					writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
+					return fmt.Errorf("Internal Server Error!")
 				} else {
 					ctx = headers.AddToResponseHeaders(ctx, "Content-Type", "application/json")
 					hdr := headers.ResponseHeadersFromContext(ctx)
 					responseHeaders := processWhitelist(hdr, append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
 					writeRespWithHeaders(resp, http.StatusOK, []byte(data), responseHeaders)
+					return nil
 				}
 			}
 		}
 	} else {
 		writeResp(resp, http.StatusNotFound, []byte("Not Found!"))
+		return fmt.Errorf("Not Found!")
 	}
 }
 

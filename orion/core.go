@@ -59,24 +59,6 @@ type DefaultServerImpl struct {
 	dataBag map[string]interface{}
 }
 
-//Store stores values for use by initializers
-func (d *DefaultServerImpl) Store(key string, value interface{}) {
-	if d.dataBag == nil {
-		d.dataBag = make(map[string]interface{})
-	}
-	if value == nil {
-		if _, found := d.dataBag[key]; found {
-			delete(d.dataBag, key)
-		}
-	}
-}
-
-//Fetch fetches values for use by initializers
-func (d *DefaultServerImpl) Fetch(key string) (value interface{}, found bool) {
-	value, found = d.dataBag[key]
-	return
-}
-
 //AddEncoder is the implementation of handlers.Encodable
 func (d *DefaultServerImpl) AddEncoder(serviceName, method string, httpMethod []string, path string, encoder handlers.Encoder) {
 	if d.encoders == nil {

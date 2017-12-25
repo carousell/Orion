@@ -74,6 +74,9 @@ func generateHeader(g *generator.Generator, file *descriptor.FileDescriptorProto
 	P(g, "import (")
 	P(g, "\torion \"github.com/carousell/Orion/orion\"")
 	P(g, ")")
+	P(g, "")
+	P(g, "// If you see error please update your orion-protoc-gen by running 'go get -u github.com/carousell/Orion/protoc-gen-orion'")
+	P(g, "var _ = orion.ProtoGenVersion1_0")
 }
 
 // Generate the file

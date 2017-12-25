@@ -33,7 +33,7 @@ type tripper struct {
 
 func (t *tripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	if opentracing.SpanFromContext(req.Context()) != nil {
-		sp, _ := spanutils.NewHTTPExternalSpan(req.Context(), req.Host, req.URL.Path, req.Header)
+		sp, _ := spanutils.NewHTTPExternalSpan(req.Context(), req.Host, req.URL.String(), req.Header)
 		defer sp.Finish()
 		resp, err := t.doRoundTrip(req)
 		if err != nil {

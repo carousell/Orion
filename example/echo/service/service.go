@@ -12,9 +12,9 @@ import (
 	proto "github.com/carousell/Orion/example/echo/echo_proto"
 	"github.com/carousell/Orion/interceptors"
 	"github.com/carousell/Orion/utils/headers"
-	"github.com/carousell/Orion/utils/spanutils"
 	"github.com/carousell/Orion/utils/worker"
 	"github.com/gorilla/mux"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 )
 
@@ -42,7 +42,7 @@ func GetService(config Config) proto.EchoServiceServer {
 	s := new(svc)
 	s.appendText = config.AppendText
 	s.debug = config.Debug
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithUnaryInterceptor(interceptors.GRPCClientInterceptor()))
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(interceptors.DefaultClientInterceptors()...)))
 	if err != nil {
 		log.Fatalln("did not connect: %v", err)
 	}
@@ -101,9 +101,11 @@ func (s *svc) Upper(ctx context.Context, req *proto.UpperRequest) (*proto.UpperR
 	*/
 	headers.AddToResponseHeaders(ctx, "original-msg", req.GetMsg())
 
-	sp, ctx := spanutils.NewDatastoreSpan(ctx, "Wait", "Wa")
-	defer sp.End()
-	time.Sleep(100 * time.Millisecond)
+	/*
+		sp, ctx := spanutils.NewDatastoreSpan(ctx, "Wait", "Wa")
+		defer sp.End()
+		time.Sleep(100 * time.Millisecond)
+	*/
 	go s.worker.Schedule(ctx, "TestWorker", req.GetMsg())
 	return resp, nil
 }

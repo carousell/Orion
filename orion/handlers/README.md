@@ -10,7 +10,9 @@
 ## <a name="pkg-imports">Imported Packages</a>
 
 - [github.com/carousell/Orion/interceptors](./../../interceptors)
+- [github.com/carousell/Orion/utils](./../../utils)
 - [github.com/carousell/Orion/utils/headers](./../../utils/headers)
+- [github.com/carousell/go-utils/utils/errors/notifier](./../../../go-utils/utils/errors/notifier)
 - [github.com/gogo/protobuf/jsonpb](https://godoc.org/github.com/gogo/protobuf/jsonpb)
 - [github.com/gogo/protobuf/proto](https://godoc.org/github.com/gogo/protobuf/proto)
 - [github.com/gorilla/mux](https://godoc.org/github.com/gorilla/mux)
@@ -28,7 +30,9 @@
 * [type Encodeable](#Encodeable)
 * [type Encoder](#Encoder)
 * [type GRPCMethodHandler](#GRPCMethodHandler)
+* [type HTTPHandler](#HTTPHandler)
 * [type HTTPHandlerConfig](#HTTPHandlerConfig)
+* [type HTTPInterceptor](#HTTPInterceptor)
 * [type Handler](#Handler)
   * [func NewGRPCHandler() Handler](#NewGRPCHandler)
   * [func NewHTTPHandler(config HTTPHandlerConfig) Handler](#NewHTTPHandler)
@@ -80,7 +84,12 @@ type GRPCMethodHandler func(srv interface{}, ctx context.Context, dec func(inter
 ```
 GRPCMethodHandler is the method type as defined in grpc-go
 
-## <a name="HTTPHandlerConfig">type</a> [HTTPHandlerConfig](./http.go#L32-L34)
+## <a name="HTTPHandler">type</a> [HTTPHandler](./types.go#L48)
+``` go
+type HTTPHandler func(http.ResponseWriter, *http.Request) bool
+```
+
+## <a name="HTTPHandlerConfig">type</a> [HTTPHandlerConfig](./http.go#L34-L36)
 ``` go
 type HTTPHandlerConfig struct {
     EnableProtoURL bool
@@ -88,7 +97,14 @@ type HTTPHandlerConfig struct {
 ```
 HTTPHandlerConfig is the configuration for HTTP Handler
 
-## <a name="Handler">type</a> [Handler](./types.go#L45-L49)
+## <a name="HTTPInterceptor">type</a> [HTTPInterceptor](./types.go#L44-L46)
+``` go
+type HTTPInterceptor interface {
+    AddHTTPHandler(serviceName, method string, path string, handler HTTPHandler)
+}
+```
+
+## <a name="Handler">type</a> [Handler](./types.go#L51-L55)
 ``` go
 type Handler interface {
     Add(sd *grpc.ServiceDesc, ss interface{}) error
@@ -104,7 +120,7 @@ func NewGRPCHandler() Handler
 ```
 NewGRPCHandler creates a new GRPC handler
 
-### <a name="NewHTTPHandler">func</a> [NewHTTPHandler](./http.go#L37)
+### <a name="NewHTTPHandler">func</a> [NewHTTPHandler](./http.go#L39)
 ``` go
 func NewHTTPHandler(config HTTPHandlerConfig) Handler
 ```

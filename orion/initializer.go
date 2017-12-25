@@ -20,11 +20,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-const (
-	// NRApp is the key for New Relic app object
-	NRApp = "INIT:NR_APP"
-)
-
 var (
 	//DefaultInitializers are the initializers applied by orion as default
 	DefaultInitializers = []Initializer{
@@ -108,8 +103,8 @@ func (n *newRelicInitializer) Init(svr Server) error {
 		log.Println("nr-error", err)
 		return err
 	}
+	utils.NewRelicApp = app
 	log.Println("NR", "initialized with "+serviceName)
-	svr.Store(NRApp, app)
 	return nil
 }
 

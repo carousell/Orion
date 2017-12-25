@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	ProtoGenVersion1_0 = true
 	//BANNER is the orion banner text
 	BANNER = `
   ___  ____  ___ ___  _   _
@@ -35,10 +36,6 @@ type Server interface {
 	GetConfig() map[string]interface{}
 	//AddInitializers adds the initializers to orion server
 	AddInitializers(ins ...Initializer)
-	//Store stores values for use by initializers
-	Store(key string, value interface{})
-	//Fetch fetches values for use by initializers
-	Fetch(key string) (value interface{}, found bool)
 }
 
 //Initializer is the interface needed to be implemented by custom initializers

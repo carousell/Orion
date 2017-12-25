@@ -102,8 +102,8 @@ func BuildDefaultZipkinConfig() ZipkinConfig {
 //BuildDefaultNewRelicConfig builds a default config for newrelic
 func BuildDefaultNewRelicConfig() NewRelicConfig {
 	return NewRelicConfig{
-		ServiceName: viper.GetString("orion.newrelic-servicename"),
-		APIKey:      viper.GetString("orion.newrelic-api-key"),
+		ServiceName: viper.GetString("orion.NewRelicServiceName"),
+		APIKey:      viper.GetString("orion.NewRelicApiKey"),
 	}
 }
 
