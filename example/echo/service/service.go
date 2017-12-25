@@ -42,7 +42,7 @@ func GetService(config Config) proto.EchoServiceServer {
 	s := new(svc)
 	s.appendText = config.AppendText
 	s.debug = config.Debug
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(interceptors.DefaultClientInterceptors()...)))
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(interceptors.DefaultClientInterceptors(address)...)))
 	if err != nil {
 		log.Fatalln("did not connect: %v", err)
 	}
