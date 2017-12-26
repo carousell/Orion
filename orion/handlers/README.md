@@ -12,7 +12,6 @@
 - [github.com/carousell/Orion/interceptors](./../../interceptors)
 - [github.com/carousell/Orion/utils](./../../utils)
 - [github.com/carousell/Orion/utils/headers](./../../utils/headers)
-- [github.com/carousell/go-utils/utils/errors/notifier](./../../../go-utils/utils/errors/notifier)
 - [github.com/gogo/protobuf/jsonpb](https://godoc.org/github.com/gogo/protobuf/jsonpb)
 - [github.com/gogo/protobuf/proto](https://godoc.org/github.com/gogo/protobuf/proto)
 - [github.com/gorilla/mux](https://godoc.org/github.com/gorilla/mux)
@@ -89,7 +88,7 @@ GRPCMethodHandler is the method type as defined in grpc-go
 type HTTPHandler func(http.ResponseWriter, *http.Request) bool
 ```
 
-## <a name="HTTPHandlerConfig">type</a> [HTTPHandlerConfig](./http.go#L34-L36)
+## <a name="HTTPHandlerConfig">type</a> [HTTPHandlerConfig](./http.go#L33-L35)
 ``` go
 type HTTPHandlerConfig struct {
     EnableProtoURL bool
@@ -120,7 +119,7 @@ func NewGRPCHandler() Handler
 ```
 NewGRPCHandler creates a new GRPC handler
 
-### <a name="NewHTTPHandler">func</a> [NewHTTPHandler](./http.go#L39)
+### <a name="NewHTTPHandler">func</a> [NewHTTPHandler](./http.go#L38)
 ``` go
 func NewHTTPHandler(config HTTPHandlerConfig) Handler
 ```

@@ -124,23 +124,10 @@ func (d *DefaultServerImpl) init(reload bool) {
 
 func (d *DefaultServerImpl) initInitializers(reload bool) {
 
-	var in interface{}
-	in = d
-
-	// pre init
-	if i, ok := in.(PreInitializer); ok {
-		i.PreInit()
-	}
-
 	if d.initializers == nil {
 		d.initializers = DefaultInitializers
 	}
 	d.processInitializers(reload)
-
-	// post init
-	if i, ok := in.(PostInitializer); ok {
-		i.PostInit()
-	}
 }
 
 func (d *DefaultServerImpl) processInitializers(reload bool) {

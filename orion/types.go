@@ -52,16 +52,6 @@ type ServiceFactory interface {
 	DisposeService(svc interface{})
 }
 
-// PreInitializer is the interface that needs to implemented by client for any custom code that runs before all other initializer
-type PreInitializer interface {
-	PreInit()
-}
-
-// PostInitializer is the interface that needs to implemented by client for any custom code that runs after all other initializer
-type PostInitializer interface {
-	PostInit()
-}
-
 //Encoder is the function type needed for request encoders
 type Encoder = handlers.Encoder
 

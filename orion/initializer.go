@@ -113,25 +113,29 @@ func (n *newRelicInitializer) ReInit(svr Server) error {
 }
 
 type zipkinInitializer struct {
+	tracer    stdopentracing.Tracer
+	collector zipkin.Collector
 }
 
 func (z *zipkinInitializer) Init(svr Server) error {
+
+	oldCollector := z.collector
+
 	zipkinAddr := svr.GetOrionConfig().ZipkinConfig.Addr
 	serviceName := svr.GetOrionConfig().OrionServerName
 	if zipkinAddr != "" {
 		logger := logg.NewLogfmtLogger(os.Stdout)
 		logger = logg.With(logger, "ts", logg.DefaultTimestampUTC)
 		logger.Log("zipkin-addr", zipkinAddr)
-		var collector zipkin.Collector
 		var err error
 		if strings.HasPrefix(zipkinAddr, "http") {
-			collector, err = zipkin.NewHTTPCollector(
+			z.collector, err = zipkin.NewHTTPCollector(
 				zipkinAddr,
 				zipkin.HTTPLogger(logger),
 			)
 			zipkin.HTTPBatchSize(1)
 		} else {
-			collector, err = zipkin.NewKafkaCollector(
+			z.collector, err = zipkin.NewKafkaCollector(
 				strings.Split(zipkinAddr, ","),
 				zipkin.KafkaLogger(logger),
 			)
@@ -141,14 +145,18 @@ func (z *zipkinInitializer) Init(svr Server) error {
 			return err
 		}
 
-		tracer, err := zipkin.NewTracer(
-			zipkin.NewRecorder(collector, true, utils.GetHostname(), serviceName),
+		z.tracer, err = zipkin.NewTracer(
+			zipkin.NewRecorder(z.collector, true, utils.GetHostname(), serviceName),
 		)
 		if err != nil {
 			logger.Log("err", err)
 			return err
 		}
-		stdopentracing.SetGlobalTracer(tracer)
+		stdopentracing.SetGlobalTracer(z.tracer)
+		// close old collector
+		if oldCollector != nil {
+			oldCollector.Close()
+		}
 	} else {
 		stdopentracing.SetGlobalTracer(stdopentracing.NoopTracer{})
 	}
@@ -207,4 +215,14 @@ func (h *httpZipkinInitializer) Init(svr Server) error {
 func (h *httpZipkinInitializer) ReInit(svr Server) error {
 	// Do nothing
 	return nil
+}
+
+type errorLoggingInitializer struct{}
+
+func (e *errorLoggingInitializer) Init(svr Server) error {
+	return nil
+}
+
+func (e *errorLoggingInitializer) ReInit(svr Server) error {
+	return e.Init(svr)
 }

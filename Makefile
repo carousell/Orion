@@ -41,6 +41,7 @@ doc:
 
 update:
 	govendor fetch +vendor
+	go get -u github.com/carousell/Orion/protoc-gen-orion
 
 run:
 	exec ./run.sh
