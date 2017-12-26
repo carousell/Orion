@@ -167,8 +167,11 @@ func grpcErrorToHTTP(err error, defaultStatus int, defaultMessage string) (int, 
 		case codes.InvalidArgument:
 			code = http.StatusBadRequest
 			msg = s.Message()
-		case codes.Unauthenticated, codes.PermissionDenied:
+		case codes.Unauthenticated:
 			code = http.StatusUnauthorized
+			msg = s.Message()
+		case codes.PermissionDenied:
+			code = http.StatusForbidden
 			msg = s.Message()
 		}
 	}
