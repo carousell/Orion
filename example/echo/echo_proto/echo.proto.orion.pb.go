@@ -10,10 +10,6 @@ import (
 // If you see error please update your orion-protoc-gen by running 'go get -u github.com/carousell/Orion/protoc-gen-orion'
 var _ = orion.ProtoGenVersion1_0
 
-func RegisterEchoServiceOrionServer(srv orion.ServiceFactory, orionServer orion.Server) {
-	orionServer.RegisterService(&_EchoService_serviceDesc, srv)
-}
-
 func RegisterEchoServiceUpperEncoder(svr orion.Server, encoder orion.Encoder) {
 	orion.RegisterEncoders(svr, "EchoService", "Upper", []string{"GET", "POST", "OPTIONS"}, "/api/1.0/upper/{msg}", encoder)
 }
@@ -24,4 +20,9 @@ func RegisterEchoServiceUpperHandler(svr orion.Server, handler orion.HTTPHandler
 
 func RegisterEchoServiceUpperDecoder(svr orion.Server, decoder orion.Decoder) {
 	orion.RegisterDecoder(svr, "EchoService", "Upper", decoder)
+}
+
+func RegisterEchoServiceOrionServer(srv orion.ServiceFactory, orionServer orion.Server) {
+	orionServer.RegisterService(&_EchoService_serviceDesc, srv)
+	RegisterEchoServiceUpperEncoder(orionServer, nil)
 }

@@ -80,8 +80,7 @@ func generateHeader(g *generator.Generator, file *descriptor.FileDescriptorProto
 }
 
 // Generate the file
-func generate(g *generator.Generator, file *descriptor.FileDescriptorProto) {
-	generateHeader(g, file)
+func generate(g *generator.Generator, file *descriptor.FileDescriptorProto, encoders []string) {
 	for _, svc := range file.GetService() {
 		origServName := svc.GetName()
 		fullServName := origServName
@@ -94,6 +93,9 @@ func generate(g *generator.Generator, file *descriptor.FileDescriptorProto) {
 		P(g)
 		P(g, "func Register", servName, "OrionServer(srv orion.ServiceFactory, orionServer orion.Server) {")
 		P(g, "\torionServer.RegisterService(&", serviceDescVar, `, srv)`)
+		for _, encoder := range encoders {
+			P(g, "\t"+encoder+"(orionServer, nil)")
+		}
 		P(g, "}")
 	}
 }
@@ -139,7 +141,8 @@ func parseComments(line string) *commentsInfo {
 	return nil
 }
 
-func generateCustomURL(g *generator.Generator, file *descriptor.FileDescriptorProto) {
+func generateCustomURL(g *generator.Generator, file *descriptor.FileDescriptorProto) []string {
+	encoders := make([]string, 0)
 	comments := extractComments(file)
 	for index, svc := range file.GetService() {
 		path := fmt.Sprintf("6,%d", index) // 6 means service.
@@ -158,9 +161,11 @@ func generateCustomURL(g *generator.Generator, file *descriptor.FileDescriptorPr
 								}
 								methods[i] = "\"" + methods[i] + "\""
 							}
-							methodsString := strings.Join(methods, ",")
+							methodsString := strings.Join(methods, ", ")
+							funcName := "Register" + svc.GetName() + method.GetName() + "Encoder"
+							encoders = append(encoders, funcName)
 							P(g, "")
-							P(g, "func Register", svc.GetName(), method.GetName(), "Encoder(svr orion.Server, encoder orion.Encoder) {")
+							P(g, "func ", funcName, "(svr orion.Server, encoder orion.Encoder) {")
 							P(g, "\torion.RegisterEncoders(svr, \""+svc.GetName()+"\", \""+method.GetName()+"\", []string{"+methodsString+"}, \""+option.Path+"\", encoder)")
 							P(g, "}")
 							if optionsEncoder {
@@ -181,6 +186,7 @@ func generateCustomURL(g *generator.Generator, file *descriptor.FileDescriptorPr
 			}
 		}
 	}
+	return encoders
 }
 
 func extractComments(file *descriptor.FileDescriptorProto) map[string]*descriptor.SourceCodeInfo_Location {
@@ -217,8 +223,9 @@ func main() {
 	for _, file := range g.Request.GetProtoFile() {
 		g.Reset()
 		if len(file.Service) > 0 {
-			generate(g, file)
-			generateCustomURL(g, file)
+			generateHeader(g, file)
+			encoders := generateCustomURL(g, file)
+			generate(g, file, encoders)
 			g.Response.File = append(g.Response.File, &plugin.CodeGeneratorResponse_File{
 				Name:    proto.String(strings.ToLower(file.GetName()) + ".orion.pb.go"),
 				Content: proto.String(g.String()),
