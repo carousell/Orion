@@ -287,8 +287,12 @@ func (h *httpHandler) AddEncoder(serviceName, method string, httpMethod []string
 		if info, ok := h.paths[url]; ok {
 			info.encoder = encoder
 			info.httpMethod = httpMethod
-			info.encoderPath = path
-			h.paths[path] = info
+			if strings.TrimSpace(path) != "" {
+				info.encoderPath = path
+				h.paths[path] = info
+			} else {
+				info.encoderPath = url
+			}
 		} else {
 			fmt.Println("url not found", url, h.paths)
 		}

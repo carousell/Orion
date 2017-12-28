@@ -120,6 +120,7 @@ type EchoServiceClient interface {
 	Echo(ctx context.Context, in *EchoRequest, opts ...grpc.CallOption) (*EchoResponse, error)
 	// ORION:URL: GET/POST/OPTIONS /api/1.0/upper/{msg}
 	Upper(ctx context.Context, in *UpperRequest, opts ...grpc.CallOption) (*UpperResponse, error)
+	// ORION:URL: POST/PUT
 	UpperProxy(ctx context.Context, in *UpperRequest, opts ...grpc.CallOption) (*UpperResponse, error)
 }
 
@@ -164,6 +165,7 @@ type EchoServiceServer interface {
 	Echo(context.Context, *EchoRequest) (*EchoResponse, error)
 	// ORION:URL: GET/POST/OPTIONS /api/1.0/upper/{msg}
 	Upper(context.Context, *UpperRequest) (*UpperResponse, error)
+	// ORION:URL: POST/PUT
 	UpperProxy(context.Context, *UpperRequest) (*UpperResponse, error)
 }
 

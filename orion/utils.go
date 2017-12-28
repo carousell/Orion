@@ -28,6 +28,7 @@ func RegisterDecoder(svr Server, serviceName, method string, decoder Decoder) {
 	}
 }
 
+//RegisterHandler allows registering an HTTP handler for a given path
 func RegisterHandler(svr Server, serviceName, method string, path string, handler HTTPHandler) {
 	if e, ok := svr.(handlers.HTTPInterceptor); ok {
 		e.AddHTTPHandler(serviceName, method, path, handler)

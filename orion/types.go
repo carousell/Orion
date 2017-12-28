@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	//ProtoGenVersion1_0 is the version of protoc-gen-orion plugin compatible with current code base
 	ProtoGenVersion1_0 = true
 	//BANNER is the orion banner text
 	BANNER = `

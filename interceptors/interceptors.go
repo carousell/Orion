@@ -24,6 +24,7 @@ func DefaultInterceptors() []grpc.UnaryServerInterceptor {
 	}
 }
 
+//DefaultClientInterceptors are the set of default interceptors that should be applied to all client calls
 func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 	return []grpc.UnaryClientInterceptor{
 		GRPCClientInterceptor(),
@@ -53,6 +54,7 @@ func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
+//NewRelicInterceptor intercepts all server actions and reports them to newrelic
 func NewRelicInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		ctx = utils.StartNRTransaction(info.FullMethod, ctx, nil, nil)
@@ -62,6 +64,7 @@ func NewRelicInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
+//NewRelicClientInterceptor intercepts all client actions and reports them to newrelic
 func NewRelicClientInterceptor(address string) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		txn := utils.GetNewRelicTransactionFromContext(ctx)
@@ -74,7 +77,7 @@ func NewRelicClientInterceptor(address string) grpc.UnaryClientInterceptor {
 	}
 }
 
-//GRPCCLientInterceptor is the interceptor that intercepts all cleint requests and adds tracing info to them
+//GRPCClientInterceptor is the interceptor that intercepts all cleint requests and adds tracing info to them
 func GRPCClientInterceptor() grpc.UnaryClientInterceptor {
 	return grpc_opentracing.UnaryClientInterceptor()
 }

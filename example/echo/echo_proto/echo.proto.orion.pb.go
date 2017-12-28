@@ -22,7 +22,16 @@ func RegisterEchoServiceUpperDecoder(svr orion.Server, decoder orion.Decoder) {
 	orion.RegisterDecoder(svr, "EchoService", "Upper", decoder)
 }
 
+func RegisterEchoServiceUpperProxyEncoder(svr orion.Server, encoder orion.Encoder) {
+	orion.RegisterEncoders(svr, "EchoService", "UpperProxy", []string{"POST", "PUT"}, "", encoder)
+}
+
+func RegisterEchoServiceUpperProxyDecoder(svr orion.Server, decoder orion.Decoder) {
+	orion.RegisterDecoder(svr, "EchoService", "UpperProxy", decoder)
+}
+
 func RegisterEchoServiceOrionServer(srv orion.ServiceFactory, orionServer orion.Server) {
 	orionServer.RegisterService(&_EchoService_serviceDesc, srv)
 	RegisterEchoServiceUpperEncoder(orionServer, nil)
+	RegisterEchoServiceUpperProxyEncoder(orionServer, nil)
 }

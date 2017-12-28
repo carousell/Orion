@@ -9,6 +9,7 @@ service EchoService{
     rpc Upper (UpperRequest) returns (UpperResponse){
     }
 
+    // ORION:URL: POST/PUT
     rpc UpperProxy (UpperRequest) returns (UpperResponse) {
     }
 }

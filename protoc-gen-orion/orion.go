@@ -129,6 +129,13 @@ func parseComments(line string) *commentsInfo {
 							Encoder: true,
 							Decoder: true,
 						}
+					} else {
+						return &commentsInfo{
+							Method:  strings.ToUpper(values[0]),
+							Path:    "",
+							Encoder: true,
+							Decoder: true,
+						}
 					}
 				} else {
 					return &commentsInfo{
