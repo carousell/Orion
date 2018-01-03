@@ -74,18 +74,6 @@ type pathInfo struct {
 	encoderPath string
 }
 
-/*
-func (p *pathInfo) Clone() *pathInfo {
-	return &pathInfo{
-		svc:        p.svc,
-		method:     p.method,
-		encoder:    p.encoder,
-		decoder:    p.decoder,
-		httpMethod: p.httpMethod,
-	}
-}
-*/
-
 type httpHandler struct {
 	mu       sync.Mutex
 	paths    map[string]*pathInfo
@@ -210,7 +198,7 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url
 
 		if info.decoder != nil {
 			//apply decoder if any
-			info.decoder(resp, decErr, err, protoResponse)
+			info.decoder(ctx, resp, decErr, err, protoResponse)
 			if decErr != nil {
 				return decErr
 			}

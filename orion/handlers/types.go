@@ -29,7 +29,7 @@ type WhitelistedHeaders interface {
 //Encoder is the function type needed for request encoders
 type Encoder func(req *http.Request, reqObject interface{}) error
 
-type Decoder func(w http.ResponseWriter, decoderError, endpointError error, respObject interface{})
+type Decoder func(ctx context.Context, w http.ResponseWriter, decoderError, endpointError error, respObject interface{})
 
 //Encodeable interface that is implemented by a handler that supports custom HTTP encoder
 type Encodeable interface {
