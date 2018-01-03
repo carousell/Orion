@@ -204,24 +204,23 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url
 			}
 			return err
 		} else {
+			hdr := headers.ResponseHeadersFromContext(ctx)
+			responseHeaders := processWhitelist(hdr, append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
 			if err != nil {
 				if decErr != nil {
-					writeResp(resp, http.StatusBadRequest, []byte("Bad Request!"))
+					writeRespWithHeaders(resp, http.StatusBadRequest, []byte("Bad Request!"), responseHeaders)
 					return fmt.Errorf("Bad Request!")
 				} else {
 					code, msg := grpcErrorToHTTP(err, http.StatusInternalServerError, "Internal Server Error!")
-					writeResp(resp, code, []byte(msg))
+					writeRespWithHeaders(resp, code, []byte(msg), responseHeaders)
 					return fmt.Errorf(msg)
 				}
 			} else {
 				data, err := h.mar.MarshalToString(protoResponse.(proto.Message))
 				if err != nil {
-					writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
+					writeRespWithHeaders(resp, http.StatusInternalServerError, []byte("Internal Server Error!"), responseHeaders)
 					return fmt.Errorf("Internal Server Error!")
 				} else {
-					ctx = headers.AddToResponseHeaders(ctx, "Content-Type", "application/json")
-					hdr := headers.ResponseHeadersFromContext(ctx)
-					responseHeaders := processWhitelist(hdr, append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
 					writeRespWithHeaders(resp, http.StatusOK, []byte(data), responseHeaders)
 					return nil
 				}

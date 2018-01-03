@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -44,7 +45,7 @@ func encoder(req *http.Request, reqObject interface{}) error {
 	return fmt.Errorf("Error: invalid url")
 }
 
-func decoder(w http.ResponseWriter, decoderError, endpointError error, respObject interface{}) {
+func decoder(ctx context.Context, w http.ResponseWriter, decoderError, endpointError error, respObject interface{}) {
 	log.Println("serviceReponse", respObject)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Noo Hello world"))
