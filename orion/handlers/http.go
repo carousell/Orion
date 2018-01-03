@@ -221,6 +221,9 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url
 					writeRespWithHeaders(resp, http.StatusInternalServerError, []byte("Internal Server Error!"), responseHeaders)
 					return fmt.Errorf("Internal Server Error!")
 				} else {
+					ctx = headers.AddToResponseHeaders(ctx, "Content-Type", "application/json")
+					hdr := headers.ResponseHeadersFromContext(ctx)
+					responseHeaders := processWhitelist(hdr, append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
 					writeRespWithHeaders(resp, http.StatusOK, []byte(data), responseHeaders)
 					return nil
 				}
