@@ -24,6 +24,7 @@ import (
 )
 
 var (
+	// DefaultHTTPResponseHeaders are reponse headers that are whitelisted by default
 	DefaultHTTPResponseHeaders = []string{
 		"Content-Type",
 	}
@@ -123,7 +124,7 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 			writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
 			log.Println("panic", r)
 			log.Print(string(debug.Stack()))
-			utils.FinishNRTransaction(ctx, fmt.Errorf("Panic!!"))
+			utils.FinishNRTransaction(ctx, fmt.Errorf("panic"))
 		}
 	}(resp, ctx)
 	req = req.WithContext(ctx)

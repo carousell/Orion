@@ -63,7 +63,7 @@ goinstall:
 	go get -u github.com/carousell/Orion/protoc-gen-orion
 
 macinstall:
-	brew install protobuf`
+	brew install protobuf
 
 gen:
 	go generate ./orion ./utils ./interceptors

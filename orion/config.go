@@ -66,6 +66,7 @@ type NewRelicConfig struct {
 
 //BuildDefaultConfig builds a default config object for Orion
 func BuildDefaultConfig(name string) Config {
+	setup(name)
 	readConfig(name)
 	return Config{
 		GRPCOnly:                  viper.GetBool("orion.GRPCOnly"),
@@ -136,7 +137,6 @@ func setup(name string) {
 }
 
 func readConfig(name string) error {
-	setup(name)
 	log.Println("msg", "Reading config")
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {
