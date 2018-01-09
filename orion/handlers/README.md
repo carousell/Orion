@@ -44,6 +44,7 @@
 ## <a name="pkg-variables">Variables</a>
 ``` go
 var (
+    // DefaultHTTPResponseHeaders are reponse headers that are whitelisted by default
     DefaultHTTPResponseHeaders = []string{
         "Content-Type",
     }
@@ -60,7 +61,7 @@ Decodable interface that is implemented by a handler that supports custom HTTP d
 
 ## <a name="Decoder">type</a> [Decoder](./types.go#L32)
 ``` go
-type Decoder func(w http.ResponseWriter, decoderError, endpointError error, respObject interface{})
+type Decoder func(ctx context.Context, w http.ResponseWriter, decoderError, endpointError error, respObject interface{})
 ```
 
 ## <a name="Encodeable">type</a> [Encodeable](./types.go#L35-L37)
@@ -88,7 +89,7 @@ GRPCMethodHandler is the method type as defined in grpc-go
 type HTTPHandler func(http.ResponseWriter, *http.Request) bool
 ```
 
-## <a name="HTTPHandlerConfig">type</a> [HTTPHandlerConfig](./http.go#L33-L35)
+## <a name="HTTPHandlerConfig">type</a> [HTTPHandlerConfig](./http.go#L34-L36)
 ``` go
 type HTTPHandlerConfig struct {
     EnableProtoURL bool
@@ -119,7 +120,7 @@ func NewGRPCHandler() Handler
 ```
 NewGRPCHandler creates a new GRPC handler
 
-### <a name="NewHTTPHandler">func</a> [NewHTTPHandler](./http.go#L38)
+### <a name="NewHTTPHandler">func</a> [NewHTTPHandler](./http.go#L39)
 ``` go
 func NewHTTPHandler(config HTTPHandlerConfig) Handler
 ```

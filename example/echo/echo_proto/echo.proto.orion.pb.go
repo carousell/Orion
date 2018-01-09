@@ -26,6 +26,10 @@ func RegisterEchoServiceUpperProxyEncoder(svr orion.Server, encoder orion.Encode
 	orion.RegisterEncoders(svr, "EchoService", "UpperProxy", []string{"POST", "PUT"}, "", encoder)
 }
 
+func RegisterEchoServiceUpperProxyHandler(svr orion.Server, handler orion.HTTPHandler) {
+	orion.RegisterHandler(svr, "EchoService", "UpperProxy", "", handler)
+}
+
 func RegisterEchoServiceUpperProxyDecoder(svr orion.Server, decoder orion.Decoder) {
 	orion.RegisterDecoder(svr, "EchoService", "UpperProxy", decoder)
 }

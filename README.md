@@ -5,6 +5,7 @@ Orion is written in golang, please follow instructions on [https://golang.org/do
 ```
 brew install golang
 ```
+Make sure you are on go 1.9 or later
 add the following lines to your `~/.profile`
 ```
 export GOPATH="$HOME/code/go"

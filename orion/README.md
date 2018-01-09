@@ -375,7 +375,7 @@ type HystrixConfig struct {
 ```
 HystrixConfig is configuration used by hystrix
 
-### <a name="BuildDefaultHystrixConfig">func</a> [BuildDefaultHystrixConfig](./config.go#L88)
+### <a name="BuildDefaultHystrixConfig">func</a> [BuildDefaultHystrixConfig](./config.go#L89)
 ``` go
 func BuildDefaultHystrixConfig() HystrixConfig
 ```
@@ -435,7 +435,7 @@ type NewRelicConfig struct {
 ```
 NewRelicConfig is the configuration for newrelic
 
-### <a name="BuildDefaultNewRelicConfig">func</a> [BuildDefaultNewRelicConfig](./config.go#L103)
+### <a name="BuildDefaultNewRelicConfig">func</a> [BuildDefaultNewRelicConfig](./config.go#L104)
 ``` go
 func BuildDefaultNewRelicConfig() NewRelicConfig
 ```
@@ -495,7 +495,7 @@ type ZipkinConfig struct {
 ```
 ZipkinConfig is the configuration for the zipkin collector
 
-### <a name="BuildDefaultZipkinConfig">func</a> [BuildDefaultZipkinConfig](./config.go#L96)
+### <a name="BuildDefaultZipkinConfig">func</a> [BuildDefaultZipkinConfig](./config.go#L97)
 ``` go
 func BuildDefaultZipkinConfig() ZipkinConfig
 ```
