@@ -809,10 +809,10 @@
 			"revisionTime": "2017-03-21T23:07:31Z"
 		},
 		{
-			"checksumSHA1": "iqUXcP3VA+G1/gVLRpQpBUt/BuA=",
+			"checksumSHA1": "DZkYNX2w0P8kfM5fZcqltuA2x5Q=",
 			"path": "github.com/satori/uuid",
-			"revision": "5bf94b69c6b68ee1b541973bb8e1144db23a194b",
-			"revisionTime": "2017-03-21T23:07:31Z"
+			"revision": "36e9d2ebbde5e3f13ab2e25625fd453271d6522e",
+			"revisionTime": "2018-01-03T17:44:51Z"
 		},
 		{
 			"checksumSHA1": "dW6L6oTOv4XfIahhwNzxb2Qu9to=",

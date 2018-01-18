@@ -54,8 +54,9 @@ func (w *workerInfo) String() string {
 }
 
 func newWorkerInfo(ctx context.Context, payload string) *workerInfo {
+	uuidValue, _ := uuid.NewV4()
 	wi := &workerInfo{
-		ID:      uuid.NewV4().String(),
+		ID:      uuidValue.String(),
 		Payload: payload,
 	}
 	wi.MarshalTraceInfo(ctx)
