@@ -380,7 +380,11 @@ func (t *http2Client) NewStream(ctx context.Context, callHdr *CallHdr) (_ *Strea
 	for _, c := range t.creds {
 		data, err := c.GetRequestMetadata(ctx, audience)
 		if err != nil {
-			return nil, streamErrorf(codes.Internal, "transport: %v", err)
+			if _, ok := status.FromError(err); ok {
+				return nil, err
+			}
+
+			return nil, streamErrorf(codes.Unauthenticated, "transport: %v", err)
 		}
 		for k, v := range data {
 			// Capital header names are illegal in HTTP/2.
@@ -645,6 +649,8 @@ func (t *http2Client) Write(s *Stream, hdr []byte, data []byte, opts *Options) e
 	select {
 	case <-s.ctx.Done():
 		return ContextErr(s.ctx.Err())
+	case <-s.done:
+		return io.EOF
 	case <-t.ctx.Done():
 		return ErrConnClosing
 	default:
@@ -1110,12 +1116,13 @@ func (t *http2Client) operateHeaders(frame *http2.MetaHeadersFrame) {
 	}()
 
 	s.mu.Lock()
-	if !endStream {
-		s.recvCompress = state.encoding
-	}
 	if !s.headerDone {
-		if !endStream && len(state.mdata) > 0 {
-			s.header = state.mdata
+		// Headers frame is not actually a trailers-only frame.
+		if !endStream {
+			s.recvCompress = state.encoding
+			if len(state.mdata) > 0 {
+				s.header = state.mdata
+			}
 		}
 		close(s.headerChan)
 		s.headerDone = true

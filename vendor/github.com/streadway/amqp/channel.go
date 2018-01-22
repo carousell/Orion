@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 // 0      1         3             7                  size+7 size+8
@@ -29,6 +30,7 @@ type Channel struct {
 	m          sync.Mutex // struct field mutex
 	confirmM   sync.Mutex // publisher confirms state mutex
 	notifyM    sync.RWMutex
+	rpcM       sync.Mutex
 
 	connection *Connection
 
@@ -168,6 +170,11 @@ func (ch *Channel) open() error {
 // Performs a request/response call for when the message is not NoWait and is
 // specified as Synchronous.
 func (ch *Channel) call(req message, res ...message) error {
+	if req.wait() {
+		ch.rpcM.Lock()
+		defer ch.rpcM.Unlock()
+	}
+
 	if err := ch.send(req); err != nil {
 		return err
 	}
@@ -197,6 +204,15 @@ func (ch *Channel) call(req message, res ...message) error {
 			// error on the Connection.  This indicates we have already been
 			// shutdown and if were waiting, will have returned from the errors chan.
 			return ErrClosed
+		case <-time.After(ch.connection.Config.Heartbeat):
+			ch.transition((*Channel).recvMethod)
+			// drain any stale response that might have arrived before the state transition happened
+			select {
+			case <-ch.rpc:
+			case <-time.After(time.Millisecond):
+			}
+
+			return ErrChannelOpTimeout
 		}
 	}
 
@@ -624,7 +640,11 @@ started with noAck.
 When global is true, these Qos settings apply to all existing and future
 consumers on all channels on the same connection.  When false, the Channel.Qos
 settings will apply to all existing and future consumers on this channel.
-RabbitMQ does not implement the global flag.
+
+Please see the RabbitMQ Consumer Prefetch documentation for an explanation of
+how the global flag is implemented in RabbitMQ, as it differs from the
+AMQP 0.9.1 specification in that global Qos settings are limited in scope to
+channels, not connections (https://www.rabbitmq.com/consumer-prefetch.html).
 
 To get round-robin behavior between consumers consuming from the same queue on
 different connections, set the prefetch count to 1, and the next available
