@@ -257,50 +257,50 @@
 		{
 			"checksumSHA1": "rJhPFhBja6/fuqlZuuZbILh3ir8=",
 			"path": "github.com/carousell/machinery/v1",
-			"revision": "24ede95ca11764f9976940f0cea03b5f5aabec0d",
-			"revisionTime": "2017-12-20T10:49:04Z"
+			"revision": "f1332efcf9bab38723e9e83be0ec6e0b39c92def",
+			"revisionTime": "2018-01-22T10:36:59Z"
 		},
 		{
 			"checksumSHA1": "sh6bPep1v9IGc3lvYC7qXoeUX1M=",
 			"path": "github.com/carousell/machinery/v1/backends",
-			"revision": "24ede95ca11764f9976940f0cea03b5f5aabec0d",
-			"revisionTime": "2017-12-20T10:49:04Z"
+			"revision": "f1332efcf9bab38723e9e83be0ec6e0b39c92def",
+			"revisionTime": "2018-01-22T10:36:59Z"
 		},
 		{
-			"checksumSHA1": "wH3QY1T0UOmviUQ0zK7rAF1ZZBA=",
+			"checksumSHA1": "M0Djser2g8tmtOsLrH2bkfJWAiY=",
 			"path": "github.com/carousell/machinery/v1/brokers",
-			"revision": "24ede95ca11764f9976940f0cea03b5f5aabec0d",
-			"revisionTime": "2017-12-20T10:49:04Z"
+			"revision": "f1332efcf9bab38723e9e83be0ec6e0b39c92def",
+			"revisionTime": "2018-01-22T10:36:59Z"
 		},
 		{
 			"checksumSHA1": "t1RGDj3g9JucEkTyn1/S2uZUSQ0=",
 			"path": "github.com/carousell/machinery/v1/common",
-			"revision": "24ede95ca11764f9976940f0cea03b5f5aabec0d",
-			"revisionTime": "2017-12-20T10:49:04Z"
+			"revision": "f1332efcf9bab38723e9e83be0ec6e0b39c92def",
+			"revisionTime": "2018-01-22T10:36:59Z"
 		},
 		{
-			"checksumSHA1": "kLuNw7YIR5xluhaW3DVBn9fOyOQ=",
+			"checksumSHA1": "uGGTqyq7djQ+6HhTJupjvnYe95o=",
 			"path": "github.com/carousell/machinery/v1/config",
-			"revision": "24ede95ca11764f9976940f0cea03b5f5aabec0d",
-			"revisionTime": "2017-12-20T10:49:04Z"
+			"revision": "f1332efcf9bab38723e9e83be0ec6e0b39c92def",
+			"revisionTime": "2018-01-22T10:36:59Z"
 		},
 		{
 			"checksumSHA1": "L30FqpuHTSyZkG+BYVxsu1QiHLU=",
 			"path": "github.com/carousell/machinery/v1/log",
-			"revision": "24ede95ca11764f9976940f0cea03b5f5aabec0d",
-			"revisionTime": "2017-12-20T10:49:04Z"
+			"revision": "f1332efcf9bab38723e9e83be0ec6e0b39c92def",
+			"revisionTime": "2018-01-22T10:36:59Z"
 		},
 		{
 			"checksumSHA1": "b6j/2N97o0PGWfEkNbkhuboEbeE=",
 			"path": "github.com/carousell/machinery/v1/retry",
-			"revision": "24ede95ca11764f9976940f0cea03b5f5aabec0d",
-			"revisionTime": "2017-12-20T10:49:04Z"
+			"revision": "f1332efcf9bab38723e9e83be0ec6e0b39c92def",
+			"revisionTime": "2018-01-22T10:36:59Z"
 		},
 		{
 			"checksumSHA1": "+m/zlfTWL5Y2uY6jh2Cmjg86hPg=",
 			"path": "github.com/carousell/machinery/v1/tasks",
-			"revision": "24ede95ca11764f9976940f0cea03b5f5aabec0d",
-			"revisionTime": "2017-12-20T10:49:04Z"
+			"revision": "f1332efcf9bab38723e9e83be0ec6e0b39c92def",
+			"revisionTime": "2018-01-22T10:36:59Z"
 		},
 		{
 			"checksumSHA1": "mrz/kicZiUaHxkyfvC/DyQcr8Do=",

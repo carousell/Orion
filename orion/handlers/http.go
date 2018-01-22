@@ -148,7 +148,7 @@ func prepareContext(req *http.Request, info *pathInfo) context.Context {
 	}
 
 	// populate options
-	ctx = options.AddToOptions(ctx, modifiers.Request_HTTP, true)
+	ctx = options.AddToOptions(ctx, modifiers.RequestHTTP, true)
 
 	// translate from http zipkin context to gRPC
 	wireContext, err := opentracing.GlobalTracer().Extract(
@@ -243,7 +243,7 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url
 }
 
 func (h *httpHandler) serialize(ctx context.Context, msg proto.Message) ([]byte, string, error) {
-	serType, _ := modifiers.GetSerilizationType(ctx)
+	serType, _ := modifiers.GetSerialization(ctx)
 	if serType == "" {
 		serType = modifiers.JSONPB
 	}

@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	Request_HTTP = "OrionRequestHTTP"
-	Request_gRPC = "OrionRequestGRPC"
+	RequestHTTP  = "OrionRequestHTTP"
+	RequestGRPC  = "OrionRequestGRPC"
 	serializeOut = "SerializeOut"
 	JSON         = "JSON"
 	JSONPB       = "JSONPB"
@@ -32,7 +32,7 @@ func SerializeOutProtBuf(ctx context.Context) {
 }
 
 // GetSerializationType gets the serialization type for the given response
-func GetSerilizationType(ctx context.Context) (string, bool) {
+func GetSerialization(ctx context.Context) (string, bool) {
 	opt := options.FromContext(ctx)
 	val, found := opt.Get(serializeOut)
 	if !found {

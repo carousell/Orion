@@ -31,12 +31,18 @@ var (
 		PrometheusInitializer(),
 		PprofInitializer(),
 		HTTPZipkinInitializer(),
+		ErrorLoggingInitializer(),
 	}
 )
 
 //HystrixInitializer returns a Initializer implementation for Hystrix
 func HystrixInitializer() Initializer {
 	return &hystrixInitializer{}
+}
+
+//ErrorLoggingInitializer returns a Initializer implementation for error notifier
+func ErrorLoggingInitializer() Initializer {
+	return &errorLoggingInitializer{}
 }
 
 //ZipkinInitializer returns a Initializer implementation for Zipkin
@@ -236,7 +242,7 @@ func (e *errorLoggingInitializer) Init(svr Server) error {
 	notifier.SetEnvironemnt(env)
 	// rollbar
 	notifier.InitRollbar(token, env)
-	log.Println("rollbar-token", token, "env", env)
+	log.Println("rollbarToken", token, "env", env)
 	return nil
 }
 

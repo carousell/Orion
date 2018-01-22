@@ -134,7 +134,8 @@ func (server *Server) SendTask(signature *tasks.Signature) (*backends.AsyncResul
 
 	// Auto generate a UUID if not set already
 	if signature.UUID == "" {
-		signature.UUID = fmt.Sprintf("task_%v", uuid.NewV4())
+		u, _ := uuid.NewV4()
+		signature.UUID = fmt.Sprintf("task_%v", u.String())
 	}
 
 	// Set initial task state to PENDING

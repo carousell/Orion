@@ -77,7 +77,7 @@ func NewRelicInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		opt := options.FromContext(ctx)
 		// dont log NR for HTTP request, let HTTP Handler manage it
-		if _, found := opt.Get(modifiers.Request_HTTP); found {
+		if _, found := opt.Get(modifiers.RequestHTTP); found {
 			return handler(ctx, req)
 		}
 		ctx = utils.StartNRTransaction(info.FullMethod, ctx, nil, nil)
@@ -97,7 +97,7 @@ func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		opt := options.FromContext(ctx)
 		// dont log Error for HTTP request, let HTTP Handler manage it
-		if _, found := opt.Get(modifiers.Request_HTTP); found {
+		if _, found := opt.Get(modifiers.RequestHTTP); found {
 			return handler(ctx, req)
 		}
 		resp, err = handler(ctx, req)

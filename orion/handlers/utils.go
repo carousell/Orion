@@ -51,7 +51,9 @@ func chainUnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnarySer
 
 func getInterceptors(svc interface{}) grpc.UnaryServerInterceptor {
 
-	opts := interceptors.DefaultInterceptors()
+	opts := []grpc.UnaryServerInterceptor{optionsInterceptor}
+
+	opts = append(opts, interceptors.DefaultInterceptors()...)
 
 	interceptor, ok := svc.(Interceptor)
 	if ok {
@@ -64,8 +66,8 @@ func getInterceptors(svc interface{}) grpc.UnaryServerInterceptor {
 func optionsInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	ctx = options.AddToOptions(ctx, "", "")
 	opt := options.FromContext(ctx)
-	if _, isHTTP := opt.Get(modifiers.Request_HTTP); !isHTTP {
-		options.AddToOptions(ctx, modifiers.Request_gRPC, true)
+	if _, isHTTP := opt.Get(modifiers.RequestHTTP); !isHTTP {
+		options.AddToOptions(ctx, modifiers.RequestGRPC, true)
 	}
 	return handler(ctx, req)
 }
