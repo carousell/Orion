@@ -53,3 +53,10 @@ type Handler interface {
 	Run(httpListener net.Listener) error
 	Stop(timeout time.Duration) error
 }
+
+var (
+	//JSONContentType is the content type for which we give json response
+	JSONContentType = []string{"application/json"}
+	//ProtoContentType is the content type for which we give proto response
+	PROTOContetType = []string{"application/protobuf", "application/proto", "application/proto"}
+)

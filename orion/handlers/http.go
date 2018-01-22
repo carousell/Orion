@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -11,8 +12,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/carousell/Orion/orion/modifiers"
 	"github.com/carousell/Orion/utils"
+	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/headers"
+	"github.com/carousell/Orion/utils/options"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gorilla/mux"
@@ -113,11 +117,17 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 			log.Println("panic", r)
 			log.Print(string(debug.Stack()))
 			utils.FinishNRTransaction(ctx, fmt.Errorf("panic"))
+			notifier.NotifyOnPanic(req.URL.String(), ctx)
 		}
 	}(resp, ctx)
 	req = req.WithContext(ctx)
 	err := h.serveHTTP(resp, req, url)
-	utils.FinishNRTransaction(req.Context(), err)
+	if modifiers.HasDontLogError(ctx) {
+		utils.FinishNRTransaction(req.Context(), nil)
+	} else {
+		notifier.Notify(err, req.URL.String(), ctx)
+		utils.FinishNRTransaction(req.Context(), err)
+	}
 }
 
 func prepareContext(req *http.Request, info *pathInfo) context.Context {
@@ -132,6 +142,13 @@ func prepareContext(req *http.Request, info *pathInfo) context.Context {
 			ctx = headers.AddToRequestHeaders(ctx, hdr, req.Header.Get(hdr))
 		}
 	}
+	// put content type in
+	if val := req.Header.Get("Content-Type"); val != "" {
+		ctx = headers.AddToRequestHeaders(ctx, "Content-Type", val)
+	}
+
+	// populate options
+	ctx = options.AddToOptions(ctx, modifiers.Request_HTTP, true)
 
 	// translate from http zipkin context to gRPC
 	wireContext, err := opentracing.GlobalTracer().Extract(
@@ -216,22 +233,43 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url
 					return fmt.Errorf(msg)
 				}
 			} else {
-				data, err := h.mar.MarshalToString(protoResponse.(proto.Message))
-				if err != nil {
-					writeRespWithHeaders(resp, http.StatusInternalServerError, []byte("Internal Server Error!"), responseHeaders)
-					return fmt.Errorf("Internal Server Error!")
-				} else {
-					ctx = headers.AddToResponseHeaders(ctx, "Content-Type", "application/json")
-					hdr := headers.ResponseHeadersFromContext(ctx)
-					responseHeaders := processWhitelist(hdr, append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
-					writeRespWithHeaders(resp, http.StatusOK, []byte(data), responseHeaders)
-					return nil
-				}
+				return h.serializeOut(ctx, resp, protoResponse.(proto.Message), responseHeaders)
 			}
 		}
 	} else {
 		writeResp(resp, http.StatusNotFound, []byte("Not Found!"))
 		return fmt.Errorf("Not Found!")
+	}
+}
+
+func (h *httpHandler) serialize(ctx context.Context, msg proto.Message) ([]byte, string, error) {
+	serType, _ := modifiers.GetSerilizationType(ctx)
+	if serType == "" {
+		serType = modifiers.JSONPB
+	}
+	switch serType {
+	case modifiers.JSONPB:
+		sData, err := h.mar.MarshalToString(msg)
+		return []byte(sData), "application/json", err
+	case modifiers.ProtoBuf:
+		data, err := proto.Marshal(msg)
+		return data, "application/octet-stream", err
+	default:
+		// modifiers.JSON goes in here
+		data, err := json.Marshal(msg)
+		return data, "application/json", err
+	}
+}
+
+func (h *httpHandler) serializeOut(ctx context.Context, resp http.ResponseWriter, msg proto.Message, responseHeaders http.Header) error {
+	data, contentType, err := h.serialize(ctx, msg)
+	if err != nil {
+		writeRespWithHeaders(resp, http.StatusInternalServerError, []byte("Internal Server Error!"), responseHeaders)
+		return fmt.Errorf("Internal Server Error!")
+	} else {
+		responseHeaders.Add("Content-Type", contentType)
+		writeRespWithHeaders(resp, http.StatusOK, data, responseHeaders)
+		return nil
 	}
 }
 

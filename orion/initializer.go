@@ -8,9 +8,11 @@ import (
 	_ "net/http/pprof" // import pprof
 	"os"
 	"strings"
+	"time"
 
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/carousell/Orion/utils"
+	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/httptripper"
 	logg "github.com/go-kit/kit/log"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
@@ -155,7 +157,11 @@ func (z *zipkinInitializer) Init(svr Server) error {
 		stdopentracing.SetGlobalTracer(z.tracer)
 		// close old collector
 		if oldCollector != nil {
-			oldCollector.Close()
+			go func(oldCollector zipkin.Collector) {
+				// close old collector after 5 seconds
+				time.Sleep(time.Second * 5)
+				oldCollector.Close()
+			}(oldCollector)
 		}
 	} else {
 		stdopentracing.SetGlobalTracer(stdopentracing.NoopTracer{})
@@ -220,6 +226,17 @@ func (h *httpZipkinInitializer) ReInit(svr Server) error {
 type errorLoggingInitializer struct{}
 
 func (e *errorLoggingInitializer) Init(svr Server) error {
+	token := svr.GetOrionConfig().RollbarToken
+	if strings.TrimSpace(token) == "" {
+		log.Println("warning", "rollbar token is empty not initializing rollbar")
+		return nil
+	}
+	env := svr.GetOrionConfig().Env
+	// environment for error notification
+	notifier.SetEnvironemnt(env)
+	// rollbar
+	notifier.InitRollbar(token, env)
+	log.Println("rollbar-token", token, "env", env)
 	return nil
 }
 

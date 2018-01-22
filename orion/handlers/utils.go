@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/carousell/Orion/interceptors"
+	"github.com/carousell/Orion/orion/modifiers"
+	"github.com/carousell/Orion/utils/options"
 	"google.golang.org/grpc"
 )
 
@@ -59,6 +61,15 @@ func getInterceptors(svc interface{}) grpc.UnaryServerInterceptor {
 	return chainUnaryServer(opts...)
 }
 
+func optionsInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	ctx = options.AddToOptions(ctx, "", "")
+	opt := options.FromContext(ctx)
+	if _, isHTTP := opt.Get(modifiers.Request_HTTP); !isHTTP {
+		options.AddToOptions(ctx, modifiers.Request_gRPC, true)
+	}
+	return handler(ctx, req)
+}
+
 // grpcInterceptor acts as default interceptor for gprc and applies service specific interceptors based on implementation
 func grpcInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
@@ -80,7 +91,7 @@ func processWhitelist(data map[string][]string, allowedKeys []string) map[string
 		if _, found := whitelistedKeys[strings.ToLower(k)]; found {
 			whitelistedMap[k] = v
 		} else {
-			log.Println("warn", "rejected headers not in whitelist", k, v)
+			log.Println("warning", "rejected headers not in whitelist", k, v)
 		}
 	}
 

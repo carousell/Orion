@@ -10,8 +10,11 @@
 ## <a name="pkg-imports">Imported Packages</a>
 
 - [github.com/carousell/Orion/interceptors](./../../interceptors)
+- [github.com/carousell/Orion/orion/modifiers](./../modifiers)
 - [github.com/carousell/Orion/utils](./../../utils)
+- [github.com/carousell/Orion/utils/errors/notifier](./../../utils/errors/notifier)
 - [github.com/carousell/Orion/utils/headers](./../../utils/headers)
+- [github.com/carousell/Orion/utils/options](./../../utils/options)
 - [github.com/gogo/protobuf/jsonpb](https://godoc.org/github.com/gogo/protobuf/jsonpb)
 - [github.com/gogo/protobuf/proto](https://godoc.org/github.com/gogo/protobuf/proto)
 - [github.com/gorilla/mux](https://godoc.org/github.com/gorilla/mux)
@@ -42,6 +45,14 @@
 [grpc.go](./grpc.go) [http.go](./http.go) [types.go](./types.go) [utils.go](./utils.go) 
 
 ## <a name="pkg-variables">Variables</a>
+``` go
+var (
+    //JSONContentType is the content type for which we give json response
+    JSONContentType = []string{"application/json"}
+    //ProtoContentType is the content type for which we give proto response
+    PROTOContetType = []string{"application/protobuf", "application/proto", "application/proto"}
+)
+```
 ``` go
 var (
     // DefaultHTTPResponseHeaders are reponse headers that are whitelisted by default
@@ -89,7 +100,7 @@ GRPCMethodHandler is the method type as defined in grpc-go
 type HTTPHandler func(http.ResponseWriter, *http.Request) bool
 ```
 
-## <a name="HTTPHandlerConfig">type</a> [HTTPHandlerConfig](./http.go#L34-L36)
+## <a name="HTTPHandlerConfig">type</a> [HTTPHandlerConfig](./http.go#L38-L40)
 ``` go
 type HTTPHandlerConfig struct {
     EnableProtoURL bool
@@ -120,7 +131,7 @@ func NewGRPCHandler() Handler
 ```
 NewGRPCHandler creates a new GRPC handler
 
-### <a name="NewHTTPHandler">func</a> [NewHTTPHandler](./http.go#L39)
+### <a name="NewHTTPHandler">func</a> [NewHTTPHandler](./http.go#L43)
 ``` go
 func NewHTTPHandler(config HTTPHandlerConfig) Handler
 ```

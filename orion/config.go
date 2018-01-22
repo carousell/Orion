@@ -42,6 +42,10 @@ type Config struct {
 	ZipkinConfig ZipkinConfig
 	//NewRelicConfig is the configuration options for new relic
 	NewRelicConfig NewRelicConfig
+	//RollbarToken is the token to be used in rollbar
+	RollbarToken string
+	//Env is the environment this service is running in
+	Env string
 }
 
 // HystrixConfig is configuration used by hystrix
