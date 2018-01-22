@@ -121,7 +121,7 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 		}
 	}(resp, ctx)
 	req = req.WithContext(ctx)
-	err := h.serveHTTP(resp, req, url)
+	ctx, err := h.serveHTTP(resp, req, url)
 	if modifiers.HasDontLogError(ctx) {
 		utils.FinishNRTransaction(req.Context(), nil)
 	} else {
@@ -184,7 +184,7 @@ func grpcErrorToHTTP(err error, defaultStatus int, defaultMessage string) (int, 
 	return code, msg
 }
 
-func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url string) error {
+func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url string) (context.Context, error) {
 	info, ok := h.paths[url]
 	if ok {
 		ctx := prepareContext(req, info)
@@ -194,7 +194,7 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url
 			req = req.WithContext(ctx)
 			if info.httpHandler(resp, req) {
 				// short circuit if handler has handled request
-				return nil
+				return ctx, nil
 			}
 		}
 
@@ -217,28 +217,28 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url
 			//apply decoder if any
 			info.decoder(ctx, resp, decErr, err, protoResponse)
 			if decErr != nil {
-				return decErr
+				return ctx, decErr
 			}
-			return err
+			return ctx, err
 		} else {
 			hdr := headers.ResponseHeadersFromContext(ctx)
 			responseHeaders := processWhitelist(hdr, append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
 			if err != nil {
 				if decErr != nil {
 					writeRespWithHeaders(resp, http.StatusBadRequest, []byte("Bad Request!"), responseHeaders)
-					return fmt.Errorf("Bad Request!")
+					return ctx, fmt.Errorf("Bad Request!")
 				} else {
 					code, msg := grpcErrorToHTTP(err, http.StatusInternalServerError, "Internal Server Error!")
 					writeRespWithHeaders(resp, code, []byte(msg), responseHeaders)
-					return fmt.Errorf(msg)
+					return ctx, fmt.Errorf(msg)
 				}
 			} else {
-				return h.serializeOut(ctx, resp, protoResponse.(proto.Message), responseHeaders)
+				return ctx, h.serializeOut(ctx, resp, protoResponse.(proto.Message), responseHeaders)
 			}
 		}
 	} else {
 		writeResp(resp, http.StatusNotFound, []byte("Not Found!"))
-		return fmt.Errorf("Not Found!")
+		return req.Context(), fmt.Errorf("Not Found!")
 	}
 }
 
