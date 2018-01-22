@@ -245,7 +245,7 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url
 func (h *httpHandler) serialize(ctx context.Context, msg proto.Message) ([]byte, string, error) {
 	serType, _ := modifiers.GetSerialization(ctx)
 	if serType == "" {
-		serType = modifiers.JSONPB
+		serType = modifiers.JSON
 	}
 	switch serType {
 	case modifiers.JSONPB:
