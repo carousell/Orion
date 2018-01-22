@@ -82,6 +82,8 @@ func BuildDefaultConfig(name string) Config {
 		EnableProtoURL:            viper.GetBool("orion.EnableProtoURL"),
 		EnablePrometheus:          viper.GetBool("orion.EnablePrometheus"),
 		EnablePrometheusHistogram: viper.GetBool("orion.EnablePrometheusHistogram"),
+		RollbarToken:              viper.GetString("orion.rollbar-token"),
+		Env:                       viper.GetString("orion.Env"),
 		OrionServerName:           name,
 		HystrixConfig:             BuildDefaultHystrixConfig(),
 		ZipkinConfig:              BuildDefaultZipkinConfig(),
@@ -128,6 +130,7 @@ func setConfigDefaults() {
 	viper.SetDefault("orion.HotReload", true)
 	viper.SetDefault("orion.EnablePrometheus", true)
 	viper.SetDefault("orion.EnablePrometheusHistogram", false)
+	viper.SetDefault("orion.Env", "development")
 }
 
 // sets up the config parser
