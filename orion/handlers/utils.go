@@ -65,8 +65,7 @@ func getInterceptors(svc interface{}) grpc.UnaryServerInterceptor {
 
 func optionsInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	ctx = options.AddToOptions(ctx, "", "")
-	opt := options.FromContext(ctx)
-	if _, isHTTP := opt.Get(modifiers.RequestHTTP); !isHTTP {
+	if !modifiers.IsHTTPRequest(ctx) {
 		options.AddToOptions(ctx, modifiers.RequestGRPC, true)
 	}
 	return handler(ctx, req)

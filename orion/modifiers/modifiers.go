@@ -52,3 +52,17 @@ func HasDontLogError(ctx context.Context) bool {
 	_, found := opt.Get(IgnoreError)
 	return found
 }
+
+// IsHTTPRequest returns true if this is pure http request
+func IsHTTPRequest(ctx context.Context) bool {
+	opt := options.FromContext(ctx)
+	_, found := opt.Get(RequestHTTP)
+	return found
+}
+
+// IsGRPCRequest returns true if this is pure grpc request
+func IsGRPCRequest(ctx context.Context) bool {
+	opt := options.FromContext(ctx)
+	_, found := opt.Get(RequestGRPC)
+	return found
+}

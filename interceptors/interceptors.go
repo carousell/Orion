@@ -11,7 +11,6 @@ import (
 	"github.com/carousell/Orion/orion/modifiers"
 	"github.com/carousell/Orion/utils"
 	"github.com/carousell/Orion/utils/errors/notifier"
-	"github.com/carousell/Orion/utils/options"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	newrelic "github.com/newrelic/go-agent"
@@ -64,9 +63,12 @@ func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 //ResponseTimeLoggingInterceptor logs response time for each request on server
 func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		defer func(begin time.Time) {
-			log.Println("method", info.FullMethod, "error", err, "took", time.Since(begin))
-		}(time.Now())
+		// dont log for HTTP request, let HTTP Handler manage it
+		if !modifiers.IsHTTPRequest(ctx) {
+			defer func(begin time.Time) {
+				log.Println("method", info.FullMethod, "error", err, "took", time.Since(begin))
+			}(time.Now())
+		}
 		resp, err = handler(ctx, req)
 		return resp, err
 	}
@@ -75,9 +77,8 @@ func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 //NewRelicInterceptor intercepts all server actions and reports them to newrelic
 func NewRelicInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		opt := options.FromContext(ctx)
 		// dont log NR for HTTP request, let HTTP Handler manage it
-		if _, found := opt.Get(modifiers.RequestHTTP); found {
+		if modifiers.IsHTTPRequest(ctx) {
 			return handler(ctx, req)
 		}
 		ctx = utils.StartNRTransaction(info.FullMethod, ctx, nil, nil)
@@ -95,9 +96,8 @@ func NewRelicInterceptor() grpc.UnaryServerInterceptor {
 //ServerErrorInterceptor intercepts all server actions and reports them to error notifier
 func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		opt := options.FromContext(ctx)
 		// dont log Error for HTTP request, let HTTP Handler manage it
-		if _, found := opt.Get(modifiers.RequestHTTP); found {
+		if modifiers.IsHTTPRequest(ctx) {
 			return handler(ctx, req)
 		}
 		resp, err = handler(ctx, req)

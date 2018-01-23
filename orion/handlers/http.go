@@ -109,19 +109,21 @@ func (h *httpHandler) getHTTPHandler(url string) http.HandlerFunc {
 }
 
 func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url string) {
+	var err error
 	ctx := utils.StartNRTransaction(url, req.Context(), req, resp)
-	defer func(resp http.ResponseWriter, ctx context.Context) {
+	defer func(resp http.ResponseWriter, ctx context.Context, t time.Time) {
 		// panic handler
 		if r := recover(); r != nil {
 			writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
-			log.Println("panic", r)
+			log.Println("panic", r, "method", req.URL.String())
 			log.Print(string(debug.Stack()))
 			utils.FinishNRTransaction(ctx, fmt.Errorf("panic"))
 			notifier.NotifyOnPanic(req.URL.String(), ctx)
 		}
-	}(resp, ctx)
+		log.Println("method", req.URL.String(), "error", err, "took", time.Since(t))
+	}(resp, ctx, time.Now())
 	req = req.WithContext(ctx)
-	ctx, err := h.serveHTTP(resp, req, url)
+	ctx, err = h.serveHTTP(resp, req, url)
 	if modifiers.HasDontLogError(ctx) {
 		utils.FinishNRTransaction(req.Context(), nil)
 	} else {
