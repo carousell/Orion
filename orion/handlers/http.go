@@ -115,7 +115,7 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 		// panic handler
 		if r := recover(); r != nil {
 			writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
-			log.Println("panic", r, "path", req.URL.String(), "method", req.Method, "error", err, "took", time.Since(t))
+			log.Println("panic", r, "path", req.URL.String(), "method", req.Method, "took", time.Since(t))
 			log.Print(string(debug.Stack()))
 			utils.FinishNRTransaction(ctx, fmt.Errorf("panic: %s", r))
 			notifier.NotifyOnPanic(req.URL.String(), ctx)
