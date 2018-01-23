@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/carousell/Orion/orion/modifiers"
 	"google.golang.org/grpc"
 )
 
@@ -55,8 +56,15 @@ type Handler interface {
 }
 
 var (
-	//JSONContentType is the content type for which we give json response
-	JSONContentType = []string{"application/json"}
-	//ProtoContentType is the content type for which we give proto response
-	PROTOContetType = []string{"application/protobuf", "application/proto", "application/proto"}
+	//ContextTypeMap is the mapping of content-type with marshaling type
+	ContentTypeMap = map[string]string{
+		"application/json":                modifiers.JSON,
+		"application/jsonpb":              modifiers.JSONPB,
+		"application/x-jsonpb":            modifiers.JSONPB,
+		"application/protobuf":            modifiers.ProtoBuf,
+		"application/proto":               modifiers.ProtoBuf,
+		"application/x-proto":             modifiers.ProtoBuf,
+		"application/vnd.google.protobuf": modifiers.ProtoBuf,
+		"application/octet-stream":        modifiers.ProtoBuf,
+	}
 )

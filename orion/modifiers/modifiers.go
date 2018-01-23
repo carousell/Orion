@@ -27,7 +27,7 @@ func SerializeOutJSONPB(ctx context.Context) {
 }
 
 // SerializeOutProtoBuf forces the output to be protobuf binary for http request
-func SerializeOutProtBuf(ctx context.Context) {
+func SerializeOutProtoBuf(ctx context.Context) {
 	options.AddToOptions(ctx, serializeOut, ProtoBuf)
 }
 

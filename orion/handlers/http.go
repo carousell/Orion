@@ -144,9 +144,16 @@ func prepareContext(req *http.Request, info *pathInfo) context.Context {
 			ctx = headers.AddToRequestHeaders(ctx, hdr, req.Header.Get(hdr))
 		}
 	}
-	// put content type in
-	if val := req.Header.Get("Content-Type"); val != "" {
-		ctx = headers.AddToRequestHeaders(ctx, "Content-Type", val)
+
+	if values, found := req.Header["Content-Type"]; found {
+		for _, value := range values {
+			headers.AddToRequestHeaders(ctx, "Content-Type", value)
+		}
+	}
+	if values, found := req.Header["Accept"]; found {
+		for _, value := range values {
+			headers.AddToRequestHeaders(ctx, "Accept", value)
+		}
 	}
 
 	// populate options
@@ -247,7 +254,10 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url
 func (h *httpHandler) serialize(ctx context.Context, msg proto.Message) ([]byte, string, error) {
 	serType, _ := modifiers.GetSerialization(ctx)
 	if serType == "" {
-		serType = modifiers.JSON
+		serType = ContentTypeFromHeaders(ctx)
+		if serType == "" {
+			serType = modifiers.JSON
+		}
 	}
 	switch serType {
 	case modifiers.JSONPB:
@@ -256,6 +266,8 @@ func (h *httpHandler) serialize(ctx context.Context, msg proto.Message) ([]byte,
 	case modifiers.ProtoBuf:
 		data, err := proto.Marshal(msg)
 		return data, "application/octet-stream", err
+	case modifiers.JSON:
+		fallthrough
 	default:
 		// modifiers.JSON goes in here
 		data, err := json.Marshal(msg)

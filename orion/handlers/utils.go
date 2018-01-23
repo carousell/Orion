@@ -7,6 +7,7 @@ import (
 
 	"github.com/carousell/Orion/interceptors"
 	"github.com/carousell/Orion/orion/modifiers"
+	"github.com/carousell/Orion/utils/headers"
 	"github.com/carousell/Orion/utils/options"
 	"google.golang.org/grpc"
 )
@@ -97,4 +98,24 @@ func processWhitelist(data map[string][]string, allowedKeys []string) map[string
 	}
 
 	return whitelistedMap
+}
+
+//contentTypeFromHeaders searches for a matching content type
+func ContentTypeFromHeaders(ctx context.Context) string {
+	hdrs := headers.RequestHeadersFromContext(ctx)
+	if values, found := hdrs["Accept"]; found {
+		for _, v := range values {
+			if t, ok := ContentTypeMap[v]; ok {
+				return t
+			}
+		}
+	}
+	if values, found := hdrs["Content-Type"]; found {
+		for _, v := range values {
+			if t, ok := ContentTypeMap[v]; ok {
+				return t
+			}
+		}
+	}
+	return ""
 }

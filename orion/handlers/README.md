@@ -27,6 +27,7 @@
 
 ## <a name="pkg-index">Index</a>
 * [Variables](#pkg-variables)
+* [func ContentTypeFromHeaders(ctx context.Context) string](#ContentTypeFromHeaders)
 * [type Decodable](#Decodable)
 * [type Decoder](#Decoder)
 * [type Encodeable](#Encodeable)
@@ -47,10 +48,17 @@
 ## <a name="pkg-variables">Variables</a>
 ``` go
 var (
-    //JSONContentType is the content type for which we give json response
-    JSONContentType = []string{"application/json"}
-    //ProtoContentType is the content type for which we give proto response
-    PROTOContetType = []string{"application/protobuf", "application/proto", "application/proto"}
+    //ContextTypeMap is the mapping of content-type with marshaling type
+    ContentTypeMap = map[string]string{
+        "application/json":                modifiers.JSON,
+        "application/jsonpb":              modifiers.JSONPB,
+        "application/x-jsonpb":            modifiers.JSONPB,
+        "application/protobuf":            modifiers.ProtoBuf,
+        "application/proto":               modifiers.ProtoBuf,
+        "application/x-proto":             modifiers.ProtoBuf,
+        "application/vnd.google.protobuf": modifiers.ProtoBuf,
+        "application/octet-stream":        modifiers.ProtoBuf,
+    }
 )
 ```
 ``` go
@@ -62,7 +70,13 @@ var (
 )
 ```
 
-## <a name="Decodable">type</a> [Decodable](./types.go#L40-L42)
+## <a name="ContentTypeFromHeaders">func</a> [ContentTypeFromHeaders](./utils.go#L104)
+``` go
+func ContentTypeFromHeaders(ctx context.Context) string
+```
+contentTypeFromHeaders searches for a matching content type
+
+## <a name="Decodable">type</a> [Decodable](./types.go#L41-L43)
 ``` go
 type Decodable interface {
     AddDecoder(serviceName, method string, decoder Decoder)
@@ -70,12 +84,12 @@ type Decodable interface {
 ```
 Decodable interface that is implemented by a handler that supports custom HTTP decoder
 
-## <a name="Decoder">type</a> [Decoder](./types.go#L32)
+## <a name="Decoder">type</a> [Decoder](./types.go#L33)
 ``` go
 type Decoder func(ctx context.Context, w http.ResponseWriter, decoderError, endpointError error, respObject interface{})
 ```
 
-## <a name="Encodeable">type</a> [Encodeable](./types.go#L35-L37)
+## <a name="Encodeable">type</a> [Encodeable](./types.go#L36-L38)
 ``` go
 type Encodeable interface {
     AddEncoder(serviceName, method string, httpMethod []string, path string, encoder Encoder)
@@ -83,19 +97,19 @@ type Encodeable interface {
 ```
 Encodeable interface that is implemented by a handler that supports custom HTTP encoder
 
-## <a name="Encoder">type</a> [Encoder](./types.go#L30)
+## <a name="Encoder">type</a> [Encoder](./types.go#L31)
 ``` go
 type Encoder func(req *http.Request, reqObject interface{}) error
 ```
 Encoder is the function type needed for request encoders
 
-## <a name="GRPCMethodHandler">type</a> [GRPCMethodHandler](./types.go#L13)
+## <a name="GRPCMethodHandler">type</a> [GRPCMethodHandler](./types.go#L14)
 ``` go
 type GRPCMethodHandler func(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error)
 ```
 GRPCMethodHandler is the method type as defined in grpc-go
 
-## <a name="HTTPHandler">type</a> [HTTPHandler](./types.go#L48)
+## <a name="HTTPHandler">type</a> [HTTPHandler](./types.go#L49)
 ``` go
 type HTTPHandler func(http.ResponseWriter, *http.Request) bool
 ```
@@ -108,14 +122,14 @@ type HTTPHandlerConfig struct {
 ```
 HTTPHandlerConfig is the configuration for HTTP Handler
 
-## <a name="HTTPInterceptor">type</a> [HTTPInterceptor](./types.go#L44-L46)
+## <a name="HTTPInterceptor">type</a> [HTTPInterceptor](./types.go#L45-L47)
 ``` go
 type HTTPInterceptor interface {
     AddHTTPHandler(serviceName, method string, path string, handler HTTPHandler)
 }
 ```
 
-## <a name="Handler">type</a> [Handler](./types.go#L51-L55)
+## <a name="Handler">type</a> [Handler](./types.go#L52-L56)
 ``` go
 type Handler interface {
     Add(sd *grpc.ServiceDesc, ss interface{}) error
@@ -137,7 +151,7 @@ func NewHTTPHandler(config HTTPHandlerConfig) Handler
 ```
 NewHTTPHandler creates a new HTTP handler
 
-## <a name="Interceptor">type</a> [Interceptor](./types.go#L16-L19)
+## <a name="Interceptor">type</a> [Interceptor](./types.go#L17-L20)
 ``` go
 type Interceptor interface {
     // gets an array of Server Interceptors
@@ -146,7 +160,7 @@ type Interceptor interface {
 ```
 Interceptor interface when implemented by a service allows that service to provide custom interceptors
 
-## <a name="WhitelistedHeaders">type</a> [WhitelistedHeaders](./types.go#L22-L27)
+## <a name="WhitelistedHeaders">type</a> [WhitelistedHeaders](./types.go#L23-L28)
 ``` go
 type WhitelistedHeaders interface {
     //GetRequestHeaders retuns a list of all whitelisted request headers
