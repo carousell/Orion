@@ -80,7 +80,7 @@ func generateHeader(g *generator.Generator, file *descriptor.FileDescriptorProto
 }
 
 // Generate the file
-func generate(g *generator.Generator, file *descriptor.FileDescriptorProto, encoders []string) {
+func generate(g *generator.Generator, file *descriptor.FileDescriptorProto, encoders map[string][]string) {
 	for _, svc := range file.GetService() {
 		origServName := svc.GetName()
 		fullServName := origServName
@@ -93,8 +93,10 @@ func generate(g *generator.Generator, file *descriptor.FileDescriptorProto, enco
 		P(g)
 		P(g, "func Register", servName, "OrionServer(srv orion.ServiceFactory, orionServer orion.Server) {")
 		P(g, "\torionServer.RegisterService(&", serviceDescVar, `, srv)`)
-		for _, encoder := range encoders {
-			P(g, "\t"+encoder+"(orionServer, nil)")
+		if enc, found := encoders[svc.String()]; found {
+			for _, encoder := range enc {
+				P(g, "\t"+encoder+"(orionServer, nil)")
+			}
 		}
 		P(g, "}")
 	}
@@ -148,8 +150,8 @@ func parseComments(line string) *commentsInfo {
 	return nil
 }
 
-func generateCustomURL(g *generator.Generator, file *descriptor.FileDescriptorProto) []string {
-	encoders := make([]string, 0)
+func generateCustomURL(g *generator.Generator, file *descriptor.FileDescriptorProto) map[string][]string {
+	encoders := make(map[string][]string)
 	comments := extractComments(file)
 	for index, svc := range file.GetService() {
 		path := fmt.Sprintf("6,%d", index) // 6 means service.
@@ -168,7 +170,10 @@ func generateCustomURL(g *generator.Generator, file *descriptor.FileDescriptorPr
 							}
 							methodsString := strings.Join(methods, ", ")
 							funcName := "Register" + svc.GetName() + method.GetName() + "Encoder"
-							encoders = append(encoders, funcName)
+							if _, found := encoders[svc.GetName()]; !found {
+								encoders[svc.String()] = make([]string, 0)
+							}
+							encoders[svc.String()] = append(encoders[svc.String()], funcName)
 							P(g, "")
 							P(g, "func ", funcName, "(svr orion.Server, encoder orion.Encoder) {")
 							P(g, "\torion.RegisterEncoders(svr, \""+svc.GetName()+"\", \""+method.GetName()+"\", []string{"+methodsString+"}, \""+option.Path+"\", encoder)")
