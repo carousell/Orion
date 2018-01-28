@@ -84,10 +84,12 @@ func (h *hystrixInitializer) Init(svr Server) error {
 	hystrix.DefaultVolumeThreshold = 75
 
 	if strings.TrimSpace(config.HystrixConfig.StatsdAddr) != "" {
+		name := config.OrionServerName + ".hystrix"
+		name = strings.Replace(name, "-", "_", 10)
 
 		c, err := plugins.InitializeStatsdCollector(&plugins.StatsdCollectorConfig{
 			StatsdAddr: config.HystrixConfig.StatsdAddr,
-			Prefix:     config.OrionServerName,
+			Prefix:     name,
 		})
 		if err == nil {
 			metricCollector.Registry.Register(c.NewStatsdCollector)
