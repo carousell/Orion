@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/afex/hystrix-go/hystrix"
+	metricCollector "github.com/afex/hystrix-go/hystrix/metric_collector"
+	"github.com/afex/hystrix-go/plugins"
 	"github.com/carousell/Orion/utils"
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/httptripper"
@@ -74,15 +76,30 @@ type hystrixInitializer struct {
 }
 
 func (h *hystrixInitializer) Init(svr Server) error {
+	config := svr.GetOrionConfig()
 	hystrix.DefaultTimeout = 1000 // one sec
 	hystrix.DefaultMaxConcurrent = 300
 	hystrix.DefaultErrorPercentThreshold = 75
 	hystrix.DefaultSleepWindow = 1000
 	hystrix.DefaultVolumeThreshold = 75
 
+	if strings.TrimSpace(config.HystrixConfig.StatsdAddr) != "" {
+
+		c, err := plugins.InitializeStatsdCollector(&plugins.StatsdCollectorConfig{
+			StatsdAddr: config.HystrixConfig.StatsdAddr,
+			Prefix:     config.OrionServerName,
+		})
+		if err == nil {
+			metricCollector.Registry.Register(c.NewStatsdCollector)
+			log.Println("HystrixStatsd", config.HystrixConfig.StatsdAddr)
+		} else {
+			log.Println("Hystrix", err.Error())
+		}
+
+	}
 	hystrixStreamHandler := hystrix.NewStreamHandler()
 	hystrixStreamHandler.Start()
-	port := svr.GetOrionConfig().HystrixConfig.Port
+	port := config.HystrixConfig.Port
 	log.Println("HystrixPort", port)
 	go http.ListenAndServe(net.JoinHostPort("", port), hystrixStreamHandler)
 	return nil

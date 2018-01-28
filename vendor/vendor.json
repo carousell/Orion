@@ -15,6 +15,12 @@
 			"revision": ""
 		},
 		{
+			"checksumSHA1": "6aVylorTzM3zjH7VUCzYk+C1NYM=",
+			"path": "github.com/DataDog/datadog-go/statsd",
+			"revision": "f00b998766d86bddcd1834cd59d336808e282060",
+			"revisionTime": "2018-01-25T13:18:19Z"
+		},
+		{
 			"checksumSHA1": "urLBKDRueOlDoGhSYQA2zs8wbBU=",
 			"path": "github.com/RichardKnop/logging",
 			"revision": "66aaaba182584c20ec574b064975974f92f0936a",
@@ -41,6 +47,12 @@
 		{
 			"checksumSHA1": "ERbZ6cXXPJhus2uCOo5A6uFFfQw=",
 			"path": "github.com/afex/hystrix-go/hystrix/rolling",
+			"revision": "f118cd938f786d24f46cc307981d8f63b7951020",
+			"revisionTime": "2017-08-15T23:46:12Z"
+		},
+		{
+			"checksumSHA1": "4VQ9qhdWm//LpqYKko1LED5FpXw=",
+			"path": "github.com/afex/hystrix-go/plugins",
 			"revision": "f118cd938f786d24f46cc307981d8f63b7951020",
 			"revisionTime": "2017-08-15T23:46:12Z"
 		},
@@ -229,6 +241,12 @@
 			"path": "github.com/bugsnag/panicwrap",
 			"revision": "dd8df9a3778aaebc569794383e5c4ce87d6fd89e",
 			"revisionTime": "2017-08-29T15:24:06Z"
+		},
+		{
+			"checksumSHA1": "LLpNBPmfIT0zJ8xU2vgMaN4O+qw=",
+			"path": "github.com/cactus/go-statsd-client/statsd",
+			"revision": "86d30459eba45bfe63c8cb67b5bbdf95f038b7cb",
+			"revisionTime": "2018-01-19T09:10:32Z"
 		},
 		{
 			"checksumSHA1": "/agPdBMI2jxGWZbCJv+QDqqcIXw=",
@@ -797,10 +815,10 @@
 			"revisionTime": "2017-12-26T18:39:07Z"
 		},
 		{
-			"checksumSHA1": "6u6M+ydTkWgOlM+UK+wOYnHhpAU=",
+			"checksumSHA1": "oY/QEEFSa+kRKlgeIIAhCOYbnrE=",
 			"path": "github.com/rcrowley/go-metrics",
-			"revision": "e181e095bae94582363434144c61a9653aff6e50",
-			"revisionTime": "2017-11-28T17:04:26Z"
+			"revision": "8732c616f52954686704c8645fe1a9d59e9df7c1",
+			"revisionTime": "2018-01-25T23:19:41Z"
 		},
 		{
 			"checksumSHA1": "eDQ6f1EsNf+frcRO/9XukSEchm8=",

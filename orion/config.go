@@ -54,6 +54,8 @@ type HystrixConfig struct {
 	Port string
 	//CommandConfig is configuration for individual commands
 	CommandConfig map[string]hystrix.CommandConfig
+	//StatsdAddr is the address of the statsd hosts to send hystrix data to
+	StatsdAddr string
 }
 
 //ZipkinConfig is the configuration for the zipkin collector
@@ -96,6 +98,7 @@ func BuildDefaultHystrixConfig() HystrixConfig {
 	return HystrixConfig{
 		Port:          viper.GetString("orion.HystrixPort"),
 		CommandConfig: make(map[string]hystrix.CommandConfig),
+		StatsdAddr:    viper.GetString("orion.HystrixStatsd"),
 	}
 }
 
@@ -125,8 +128,6 @@ func setConfigDefaults() {
 	viper.SetDefault("orion.ZipkinAddr", "")
 	viper.SetDefault("orion.env", "dev")
 	viper.SetDefault("orion.rollbar-token", "")
-	viper.SetDefault("orion.newrelic-servicename", "")
-	viper.SetDefault("orion.newrelic-api-key", "")
 	viper.SetDefault("orion.HotReload", true)
 	viper.SetDefault("orion.EnablePrometheus", true)
 	viper.SetDefault("orion.EnablePrometheusHistogram", false)
