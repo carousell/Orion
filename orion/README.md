@@ -107,6 +107,8 @@ First follow the install guide at <a href="https://github.com/carousell/Orion/bl
 ## <a name="pkg-imports">Imported Packages</a>
 
 - [github.com/afex/hystrix-go/hystrix](https://godoc.org/github.com/afex/hystrix-go/hystrix)
+- [github.com/afex/hystrix-go/hystrix/metric_collector](https://godoc.org/github.com/afex/hystrix-go/hystrix/metric_collector)
+- [github.com/afex/hystrix-go/plugins](https://godoc.org/github.com/afex/hystrix-go/plugins)
 - [github.com/carousell/Orion/orion/handlers](./handlers)
 - [github.com/carousell/Orion/utils](./../utils)
 - [github.com/carousell/Orion/utils/errors/notifier](./../utils/errors/notifier)
@@ -200,7 +202,7 @@ var (
 )
 ```
 
-## <a name="AddConfigPath">func</a> [AddConfigPath](./config.go#L160)
+## <a name="AddConfigPath">func</a> [AddConfigPath](./config.go#L161)
 ``` go
 func AddConfigPath(path ...string)
 ```
@@ -233,7 +235,7 @@ func RegisterHandler(svr Server, serviceName, method string, path string, handle
 ```
 RegisterHandler allows registering an HTTP handler for a given path
 
-## <a name="ResetConfigPath">func</a> [ResetConfigPath](./config.go#L168)
+## <a name="ResetConfigPath">func</a> [ResetConfigPath](./config.go#L169)
 ``` go
 func ResetConfigPath()
 ```
@@ -277,7 +279,7 @@ type Config struct {
 ```
 Config is the configuration used by Orion core
 
-### <a name="BuildDefaultConfig">func</a> [BuildDefaultConfig](./config.go#L72)
+### <a name="BuildDefaultConfig">func</a> [BuildDefaultConfig](./config.go#L74)
 ``` go
 func BuildDefaultConfig(name string) Config
 ```
@@ -371,18 +373,20 @@ type HTTPHandler = handlers.HTTPHandler
 ```
 HTTPHandler is the http interceptor
 
-## <a name="HystrixConfig">type</a> [HystrixConfig](./config.go#L52-L57)
+## <a name="HystrixConfig">type</a> [HystrixConfig](./config.go#L52-L59)
 ``` go
 type HystrixConfig struct {
     //Port is the port to start hystrix stream handler on
     Port string
     //CommandConfig is configuration for individual commands
     CommandConfig map[string]hystrix.CommandConfig
+    //StatsdAddr is the address of the statsd hosts to send hystrix data to
+    StatsdAddr string
 }
 ```
 HystrixConfig is configuration used by hystrix
 
-### <a name="BuildDefaultHystrixConfig">func</a> [BuildDefaultHystrixConfig](./config.go#L95)
+### <a name="BuildDefaultHystrixConfig">func</a> [BuildDefaultHystrixConfig](./config.go#L97)
 ``` go
 func BuildDefaultHystrixConfig() HystrixConfig
 ```
@@ -397,49 +401,49 @@ type Initializer interface {
 ```
 Initializer is the interface needed to be implemented by custom initializers
 
-### <a name="ErrorLoggingInitializer">func</a> [ErrorLoggingInitializer](./initializer.go#L44)
+### <a name="ErrorLoggingInitializer">func</a> [ErrorLoggingInitializer](./initializer.go#L46)
 ``` go
 func ErrorLoggingInitializer() Initializer
 ```
 ErrorLoggingInitializer returns a Initializer implementation for error notifier
 
-### <a name="HTTPZipkinInitializer">func</a> [HTTPZipkinInitializer](./initializer.go#L69)
+### <a name="HTTPZipkinInitializer">func</a> [HTTPZipkinInitializer](./initializer.go#L71)
 ``` go
 func HTTPZipkinInitializer() Initializer
 ```
 HTTPZipkinInitializer returns an Initializer implementation for httptripper which appends zipkin trace info to all outgoing HTTP requests
 
-### <a name="HystrixInitializer">func</a> [HystrixInitializer](./initializer.go#L39)
+### <a name="HystrixInitializer">func</a> [HystrixInitializer](./initializer.go#L41)
 ``` go
 func HystrixInitializer() Initializer
 ```
 HystrixInitializer returns a Initializer implementation for Hystrix
 
-### <a name="NewRelicInitializer">func</a> [NewRelicInitializer](./initializer.go#L54)
+### <a name="NewRelicInitializer">func</a> [NewRelicInitializer](./initializer.go#L56)
 ``` go
 func NewRelicInitializer() Initializer
 ```
 NewRelicInitializer returns a Initializer implementation for NewRelic
 
-### <a name="PprofInitializer">func</a> [PprofInitializer](./initializer.go#L64)
+### <a name="PprofInitializer">func</a> [PprofInitializer](./initializer.go#L66)
 ``` go
 func PprofInitializer() Initializer
 ```
 PprofInitializer returns a Initializer implementation for Pprof
 
-### <a name="PrometheusInitializer">func</a> [PrometheusInitializer](./initializer.go#L59)
+### <a name="PrometheusInitializer">func</a> [PrometheusInitializer](./initializer.go#L61)
 ``` go
 func PrometheusInitializer() Initializer
 ```
 PrometheusInitializer returns a Initializer implementation for Prometheus
 
-### <a name="ZipkinInitializer">func</a> [ZipkinInitializer](./initializer.go#L49)
+### <a name="ZipkinInitializer">func</a> [ZipkinInitializer](./initializer.go#L51)
 ``` go
 func ZipkinInitializer() Initializer
 ```
 ZipkinInitializer returns a Initializer implementation for Zipkin
 
-## <a name="NewRelicConfig">type</a> [NewRelicConfig](./config.go#L66-L69)
+## <a name="NewRelicConfig">type</a> [NewRelicConfig](./config.go#L68-L71)
 ``` go
 type NewRelicConfig struct {
     APIKey      string
@@ -448,7 +452,7 @@ type NewRelicConfig struct {
 ```
 NewRelicConfig is the configuration for newrelic
 
-### <a name="BuildDefaultNewRelicConfig">func</a> [BuildDefaultNewRelicConfig](./config.go#L110)
+### <a name="BuildDefaultNewRelicConfig">func</a> [BuildDefaultNewRelicConfig](./config.go#L113)
 ``` go
 func BuildDefaultNewRelicConfig() NewRelicConfig
 ```
@@ -499,7 +503,7 @@ type ServiceFactory interface {
 ```
 ServiceFactory is the interface that need to be implemented by client that provides with a new service object
 
-## <a name="ZipkinConfig">type</a> [ZipkinConfig](./config.go#L60-L63)
+## <a name="ZipkinConfig">type</a> [ZipkinConfig](./config.go#L62-L65)
 ``` go
 type ZipkinConfig struct {
     //Addr is the address of the zipkin collector
@@ -508,7 +512,7 @@ type ZipkinConfig struct {
 ```
 ZipkinConfig is the configuration for the zipkin collector
 
-### <a name="BuildDefaultZipkinConfig">func</a> [BuildDefaultZipkinConfig](./config.go#L103)
+### <a name="BuildDefaultZipkinConfig">func</a> [BuildDefaultZipkinConfig](./config.go#L106)
 ``` go
 func BuildDefaultZipkinConfig() ZipkinConfig
 ```

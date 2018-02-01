@@ -66,4 +66,4 @@ macinstall:
 	brew install protobuf
 
 gen:
-	go generate ./orion ./utils ./interceptors
+	go generate ./orion ./utils ./interceptors ./example
