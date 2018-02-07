@@ -372,8 +372,13 @@ func (h *httpHandler) Run(httpListener net.Listener) error {
 		if strings.TrimSpace(info.encoderPath) != "" && info.encoderPath != url {
 			continue
 		}
+		routeUrl := url
 		r.Methods(info.httpMethod...).Path(url).Handler(h.getHTTPHandler(url))
-		fmt.Println("\t", info.httpMethod, url)
+		if !strings.HasSuffix(url, "/") {
+			routeUrl = url + "/"
+			r.Methods(info.httpMethod...).Path(url + "/").Handler(h.getHTTPHandler(url))
+		}
+		fmt.Println("\t", info.httpMethod, routeUrl)
 	}
 	h.svr = &http.Server{
 		ReadTimeout:  5 * time.Second,
