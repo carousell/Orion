@@ -37,8 +37,10 @@ func (g *grpcHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 }
 
 func (g *grpcHandler) Run(grpcListener net.Listener) error {
+	g.mu.Lock()
 	log.Println("GRPC", "server starting")
 	grpc_prometheus.Register(g.grpcServer)
+	g.mu.Unlock()
 	return g.grpcServer.Serve(grpcListener)
 }
 

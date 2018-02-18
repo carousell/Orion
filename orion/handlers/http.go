@@ -366,6 +366,7 @@ func (h *httpHandler) AddDecoder(serviceName, method string, decoder Decoder) {
 }
 
 func (h *httpHandler) Run(httpListener net.Listener) error {
+	h.mu.Lock()
 	r := mux.NewRouter()
 	fmt.Println("Mapped URLs: ")
 	for url, info := range h.paths {
@@ -385,6 +386,7 @@ func (h *httpHandler) Run(httpListener net.Listener) error {
 		WriteTimeout: 10 * time.Second,
 		Handler:      r,
 	}
+	h.mu.Unlock()
 	return h.svr.Serve(httpListener)
 }
 
