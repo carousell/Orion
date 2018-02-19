@@ -40,8 +40,9 @@ func (g *grpcHandler) Run(grpcListener net.Listener) error {
 	g.mu.Lock()
 	log.Println("GRPC", "server starting")
 	grpc_prometheus.Register(g.grpcServer)
+	s := g.grpcServer
 	g.mu.Unlock()
-	return g.grpcServer.Serve(grpcListener)
+	return s.Serve(grpcListener)
 }
 
 func (g *grpcHandler) Stop(timeout time.Duration) error {
