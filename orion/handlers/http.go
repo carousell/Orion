@@ -386,8 +386,9 @@ func (h *httpHandler) Run(httpListener net.Listener) error {
 		WriteTimeout: 10 * time.Second,
 		Handler:      r,
 	}
+	s := h.svr
 	h.mu.Unlock()
-	return h.svr.Serve(httpListener)
+	return s.Serve(httpListener)
 }
 
 func (h *httpHandler) Stop(timeout time.Duration) error {
