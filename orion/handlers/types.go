@@ -30,6 +30,7 @@ type WhitelistedHeaders interface {
 //Encoder is the function type needed for request encoders
 type Encoder func(req *http.Request, reqObject interface{}) error
 
+//Decoder is the function type needed for response decoders
 type Decoder func(ctx context.Context, w http.ResponseWriter, decoderError, endpointError error, respObject interface{})
 
 //Encodeable interface that is implemented by a handler that supports custom HTTP encoder
@@ -42,10 +43,12 @@ type Decodable interface {
 	AddDecoder(serviceName, method string, decoder Decoder)
 }
 
+//HTTPInterceptor allows intercepting an HTTP connection
 type HTTPInterceptor interface {
 	AddHTTPHandler(serviceName, method string, path string, handler HTTPHandler)
 }
 
+// HTTPHandler is the funtion that handles HTTP request
 type HTTPHandler func(http.ResponseWriter, *http.Request) bool
 
 //Handler implements a service handler that is used by orion server
@@ -56,7 +59,7 @@ type Handler interface {
 }
 
 var (
-	//ContextTypeMap is the mapping of content-type with marshaling type
+	//ContentTypeMap is the mapping of content-type with marshaling type
 	ContentTypeMap = map[string]string{
 		"application/json":                modifiers.JSON,
 		"application/jsonpb":              modifiers.JSONPB,

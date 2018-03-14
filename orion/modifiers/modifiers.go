@@ -6,6 +6,7 @@ import (
 	"github.com/carousell/Orion/utils/options"
 )
 
+// constatnts for specific serializers
 const (
 	RequestHTTP  = "OrionRequestHTTP"
 	RequestGRPC  = "OrionRequestGRPC"
@@ -31,7 +32,7 @@ func SerializeOutProtoBuf(ctx context.Context) {
 	options.AddToOptions(ctx, serializeOut, ProtoBuf)
 }
 
-// GetSerializationType gets the serialization type for the given response
+// GetSerialization gets the serialization type for the given response
 func GetSerialization(ctx context.Context) (string, bool) {
 	opt := options.FromContext(ctx)
 	val, found := opt.Get(serializeOut)

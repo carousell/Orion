@@ -230,26 +230,22 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url
 				return ctx, decErr
 			}
 			return ctx, err
-		} else {
-			hdr := headers.ResponseHeadersFromContext(ctx)
-			responseHeaders := processWhitelist(hdr, append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
-			if err != nil {
-				if decErr != nil {
-					writeRespWithHeaders(resp, http.StatusBadRequest, []byte("Bad Request!"), responseHeaders)
-					return ctx, fmt.Errorf("Bad Request!")
-				} else {
-					code, msg := grpcErrorToHTTP(err, http.StatusInternalServerError, "Internal Server Error!")
-					writeRespWithHeaders(resp, code, []byte(msg), responseHeaders)
-					return ctx, fmt.Errorf(msg)
-				}
-			} else {
-				return ctx, h.serializeOut(ctx, resp, protoResponse.(proto.Message), responseHeaders)
-			}
 		}
-	} else {
-		writeResp(resp, http.StatusNotFound, []byte("Not Found!"))
-		return req.Context(), fmt.Errorf("Not Found!")
+		hdr := headers.ResponseHeadersFromContext(ctx)
+		responseHeaders := processWhitelist(hdr, append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
+		if err != nil {
+			if decErr != nil {
+				writeRespWithHeaders(resp, http.StatusBadRequest, []byte("Bad Request!"), responseHeaders)
+				return ctx, fmt.Errorf("Bad Request")
+			}
+			code, msg := grpcErrorToHTTP(err, http.StatusInternalServerError, "Internal Server Error!")
+			writeRespWithHeaders(resp, code, []byte(msg), responseHeaders)
+			return ctx, fmt.Errorf(msg)
+		}
+		return ctx, h.serializeOut(ctx, resp, protoResponse.(proto.Message), responseHeaders)
 	}
+	writeResp(resp, http.StatusNotFound, []byte("Not Found!"))
+	return req.Context(), fmt.Errorf("Not Found")
 }
 
 func (h *httpHandler) serialize(ctx context.Context, msg proto.Message) ([]byte, string, error) {
@@ -280,12 +276,11 @@ func (h *httpHandler) serializeOut(ctx context.Context, resp http.ResponseWriter
 	data, contentType, err := h.serialize(ctx, msg)
 	if err != nil {
 		writeRespWithHeaders(resp, http.StatusInternalServerError, []byte("Internal Server Error!"), responseHeaders)
-		return fmt.Errorf("Internal Server Error!")
-	} else {
-		responseHeaders.Add("Content-Type", contentType)
-		writeRespWithHeaders(resp, http.StatusOK, data, responseHeaders)
-		return nil
+		return fmt.Errorf("Internal Server Error")
 	}
+	responseHeaders.Add("Content-Type", contentType)
+	writeRespWithHeaders(resp, http.StatusOK, data, responseHeaders)
+	return nil
 }
 
 func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
@@ -372,13 +367,13 @@ func (h *httpHandler) Run(httpListener net.Listener) error {
 		if strings.TrimSpace(info.encoderPath) != "" && info.encoderPath != url {
 			continue
 		}
-		routeUrl := url
+		routeURL := url
 		r.Methods(info.httpMethod...).Path(url).Handler(h.getHTTPHandler(url))
 		if !strings.HasSuffix(url, "/") {
-			routeUrl = url + "/"
+			routeURL = url + "/"
 			r.Methods(info.httpMethod...).Path(url + "/").Handler(h.getHTTPHandler(url))
 		}
-		fmt.Println("\t", info.httpMethod, routeUrl)
+		fmt.Println("\t", info.httpMethod, routeURL)
 	}
 	h.svr = &http.Server{
 		ReadTimeout:  5 * time.Second,

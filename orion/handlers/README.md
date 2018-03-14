@@ -48,7 +48,7 @@
 ## <a name="pkg-variables">Variables</a>
 ``` go
 var (
-    //ContextTypeMap is the mapping of content-type with marshaling type
+    //ContentTypeMap is the mapping of content-type with marshaling type
     ContentTypeMap = map[string]string{
         "application/json":                modifiers.JSON,
         "application/jsonpb":              modifiers.JSONPB,
@@ -74,9 +74,9 @@ var (
 ``` go
 func ContentTypeFromHeaders(ctx context.Context) string
 ```
-contentTypeFromHeaders searches for a matching content type
+ContentTypeFromHeaders searches for a matching content type
 
-## <a name="Decodable">type</a> [Decodable](./types.go#L41-L43)
+## <a name="Decodable">type</a> [Decodable](./types.go#L42-L44)
 ``` go
 type Decodable interface {
     AddDecoder(serviceName, method string, decoder Decoder)
@@ -84,12 +84,13 @@ type Decodable interface {
 ```
 Decodable interface that is implemented by a handler that supports custom HTTP decoder
 
-## <a name="Decoder">type</a> [Decoder](./types.go#L33)
+## <a name="Decoder">type</a> [Decoder](./types.go#L34)
 ``` go
 type Decoder func(ctx context.Context, w http.ResponseWriter, decoderError, endpointError error, respObject interface{})
 ```
+Decoder is the function type needed for response decoders
 
-## <a name="Encodeable">type</a> [Encodeable](./types.go#L36-L38)
+## <a name="Encodeable">type</a> [Encodeable](./types.go#L37-L39)
 ``` go
 type Encodeable interface {
     AddEncoder(serviceName, method string, httpMethod []string, path string, encoder Encoder)
@@ -109,10 +110,11 @@ type GRPCMethodHandler func(srv interface{}, ctx context.Context, dec func(inter
 ```
 GRPCMethodHandler is the method type as defined in grpc-go
 
-## <a name="HTTPHandler">type</a> [HTTPHandler](./types.go#L49)
+## <a name="HTTPHandler">type</a> [HTTPHandler](./types.go#L52)
 ``` go
 type HTTPHandler func(http.ResponseWriter, *http.Request) bool
 ```
+HTTPHandler is the funtion that handles HTTP request
 
 ## <a name="HTTPHandlerConfig">type</a> [HTTPHandlerConfig](./http.go#L38-L40)
 ``` go
@@ -122,14 +124,15 @@ type HTTPHandlerConfig struct {
 ```
 HTTPHandlerConfig is the configuration for HTTP Handler
 
-## <a name="HTTPInterceptor">type</a> [HTTPInterceptor](./types.go#L45-L47)
+## <a name="HTTPInterceptor">type</a> [HTTPInterceptor](./types.go#L47-L49)
 ``` go
 type HTTPInterceptor interface {
     AddHTTPHandler(serviceName, method string, path string, handler HTTPHandler)
 }
 ```
+HTTPInterceptor allows intercepting an HTTP connection
 
-## <a name="Handler">type</a> [Handler](./types.go#L52-L56)
+## <a name="Handler">type</a> [Handler](./types.go#L55-L59)
 ``` go
 type Handler interface {
     Add(sd *grpc.ServiceDesc, ss interface{}) error

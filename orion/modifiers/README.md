@@ -37,50 +37,51 @@ const (
     IgnoreError = "IGNORE_ERROR"
 )
 ```
+constatnts for specific serializers
 
-## <a name="DontLogError">func</a> [DontLogError](./modifiers.go#L45)
+## <a name="DontLogError">func</a> [DontLogError](./modifiers.go#L46)
 ``` go
 func DontLogError(ctx context.Context)
 ```
 DontLogError makes sure, error returned is not reported to external services
 
-## <a name="GetSerialization">func</a> [GetSerialization](./modifiers.go#L35)
+## <a name="GetSerialization">func</a> [GetSerialization](./modifiers.go#L36)
 ``` go
 func GetSerialization(ctx context.Context) (string, bool)
 ```
-GetSerializationType gets the serialization type for the given response
+GetSerialization gets the serialization type for the given response
 
-## <a name="HasDontLogError">func</a> [HasDontLogError](./modifiers.go#L50)
+## <a name="HasDontLogError">func</a> [HasDontLogError](./modifiers.go#L51)
 ``` go
 func HasDontLogError(ctx context.Context) bool
 ```
 HasDontLogError check ifs the error should be reported or not
 
-## <a name="IsGRPCRequest">func</a> [IsGRPCRequest](./modifiers.go#L64)
+## <a name="IsGRPCRequest">func</a> [IsGRPCRequest](./modifiers.go#L65)
 ``` go
 func IsGRPCRequest(ctx context.Context) bool
 ```
 IsGRPCRequest returns true if this is pure grpc request
 
-## <a name="IsHTTPRequest">func</a> [IsHTTPRequest](./modifiers.go#L57)
+## <a name="IsHTTPRequest">func</a> [IsHTTPRequest](./modifiers.go#L58)
 ``` go
 func IsHTTPRequest(ctx context.Context) bool
 ```
 IsHTTPRequest returns true if this is pure http request
 
-## <a name="SerializeOutJSON">func</a> [SerializeOutJSON](./modifiers.go#L20)
+## <a name="SerializeOutJSON">func</a> [SerializeOutJSON](./modifiers.go#L21)
 ``` go
 func SerializeOutJSON(ctx context.Context)
 ```
 SerializeOutJSON forces the output to be json.Marshal for http request
 
-## <a name="SerializeOutJSONPB">func</a> [SerializeOutJSONPB](./modifiers.go#L25)
+## <a name="SerializeOutJSONPB">func</a> [SerializeOutJSONPB](./modifiers.go#L26)
 ``` go
 func SerializeOutJSONPB(ctx context.Context)
 ```
 SerializeOutJSONPB forces the output to be jsonpb.Marshal for http request
 
-## <a name="SerializeOutProtoBuf">func</a> [SerializeOutProtoBuf](./modifiers.go#L30)
+## <a name="SerializeOutProtoBuf">func</a> [SerializeOutProtoBuf](./modifiers.go#L31)
 ``` go
 func SerializeOutProtoBuf(ctx context.Context)
 ```

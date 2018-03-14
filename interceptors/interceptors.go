@@ -18,6 +18,7 @@ import (
 )
 
 var (
+	//FilterMethods is the list of methods that are filtered by default
 	FilterMethods = []string{"Healthcheck"}
 )
 

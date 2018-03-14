@@ -201,12 +201,7 @@ func NotifyOnPanic(rawData ...interface{}) {
 	}
 	if rollbarInited {
 		if r := recover(); r != nil {
-			var e errors.ErrorExt
-			//if _, ok := r.(error); ok {
-			//	e = errors.WrapWithSkip(e, "Panic ", 1)
-			//} else {
-			e = errors.NewWithSkip("Panic: ", 1)
-			//}
+			e := errors.NewWithSkip("Panic: ", 1)
 			rollbar.ErrorWithStack(rollbar.CRIT, e, convToRollbar(e.StackFrame()), &rollbar.Field{Name: "panic", Data: r})
 			panic(r)
 		}
@@ -229,24 +224,6 @@ func SetEnvironemnt(env string) {
 	rollbar.Environment = env
 }
 
-/*
-func NotifyingMiddleware(name string) endpoint.Middleware {
-	return func(next endpoint.Endpoint) endpoint.Endpoint {
-		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			m := MetaData{
-				"Name": name,
-			}
-			defer NotifyOnPanic()
-			response, err = next(ctx, request)
-			if err != nil {
-				Notify(err, m, ctx, request)
-			}
-			return response, err
-		}
-	}
-}
-*/
-
 func SetTraceId(ctx context.Context) context.Context {
 	if GetTraceId(ctx) != "" {
 		return ctx
@@ -268,18 +245,6 @@ func GetTraceId(ctx context.Context) string {
 	v, _ := data.(string)
 	return v
 }
-
-/*
-func TracingMiddleware() endpoint.Middleware {
-	return func(next endpoint.Endpoint) endpoint.Endpoint {
-		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			ctx = SetTraceId(ctx)
-			response, err = next(ctx, request)
-			return response, err
-		}
-	}
-}
-*/
 
 func SetServerRoot(path string) {
 	serverRoot = path

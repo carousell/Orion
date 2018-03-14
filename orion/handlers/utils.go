@@ -100,7 +100,7 @@ func processWhitelist(data map[string][]string, allowedKeys []string) map[string
 	return whitelistedMap
 }
 
-//contentTypeFromHeaders searches for a matching content type
+//ContentTypeFromHeaders searches for a matching content type
 func ContentTypeFromHeaders(ctx context.Context) string {
 	hdrs := headers.RequestHeadersFromContext(ctx)
 	if values, found := hdrs["Accept"]; found {
