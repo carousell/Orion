@@ -39,8 +39,7 @@ func NewChain(signatures ...*Signature) *Chain {
 	// Auto generate task UUIDs if needed
 	for _, signature := range signatures {
 		if signature.UUID == "" {
-			u, _ := uuid.NewV4()
-			signature.UUID = fmt.Sprintf("task_%v", u.String())
+			signature.UUID = fmt.Sprintf("task_%v", uuid.NewV4())
 		}
 	}
 
@@ -58,14 +57,12 @@ func NewChain(signatures ...*Signature) *Chain {
 // NewGroup creates a new group of tasks to be processed in parallel
 func NewGroup(signatures ...*Signature) *Group {
 	// Generate a group UUID
-	u, _ := uuid.NewV4()
-	groupUUID := fmt.Sprintf("group_%v", u.String())
+	groupUUID := fmt.Sprintf("group_%v", uuid.NewV4())
 
 	// Auto generate task UUIDs if needed, group tasks by common group UUID
 	for _, signature := range signatures {
 		if signature.UUID == "" {
-			u, _ := uuid.NewV4()
-			signature.UUID = fmt.Sprintf("task_%v", u.String())
+			signature.UUID = fmt.Sprintf("task_%v", uuid.NewV4())
 		}
 		signature.GroupUUID = groupUUID
 		signature.GroupTaskCount = len(signatures)
@@ -81,8 +78,7 @@ func NewGroup(signatures ...*Signature) *Group {
 // to be executed after all tasks in the group has completed)
 func NewChord(group *Group, callback *Signature) *Chord {
 	// Generate a UUID for the chord callback
-	u, _ := uuid.NewV4()
-	callback.UUID = fmt.Sprintf("chord_%v", u.String())
+	callback.UUID = fmt.Sprintf("chord_%v", uuid.NewV4())
 
 	// Add a chord callback to all tasks
 	for _, signature := range group.Tasks {

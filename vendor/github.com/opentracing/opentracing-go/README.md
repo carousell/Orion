@@ -35,7 +35,7 @@ The simplest starting point is `./default_tracer.go`. As early as possible, call
     }
 ```
 
-##### Non-Singleton initialization
+#### Non-Singleton initialization
 
 If you prefer direct control to singletons, manage ownership of the
 `opentracing.Tracer` implementation explicitly.
@@ -161,3 +161,11 @@ Tracing system implementors may be able to reuse or copy-paste-modify the `basic
 ## API compatibility
 
 For the time being, "mild" backwards-incompatible changes may be made without changing the major version number. As OpenTracing and `opentracing-go` mature, backwards compatibility will become more of a priority.
+
+## Tracer test suite
+
+A test suite is available in the [harness](https://godoc.org/github.com/opentracing/opentracing-go/harness) package that can assist Tracer implementors to assert that their Tracer is working correctly.
+
+## License
+
+[MIT License](./LICENSE).

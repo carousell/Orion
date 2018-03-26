@@ -54,7 +54,10 @@ func parseTarget(target string) (ret resolver.Target) {
 	if !ok {
 		return resolver.Target{Endpoint: target}
 	}
-	ret.Authority, ret.Endpoint, _ = split2(ret.Endpoint, "/")
+	ret.Authority, ret.Endpoint, ok = split2(ret.Endpoint, "/")
+	if !ok {
+		return resolver.Target{Endpoint: target}
+	}
 	return ret
 }
 
@@ -83,9 +86,7 @@ func newCCResolverWrapper(cc *ClientConn) (*ccResolverWrapper, error) {
 	}
 
 	var err error
-	ccr.resolver, err = rb.Build(cc.parsedTarget, ccr, resolver.BuildOption{
-		UserOptions: cc.dopts.resolverBuildUserOptions,
-	})
+	ccr.resolver, err = rb.Build(cc.parsedTarget, ccr, resolver.BuildOption{})
 	if err != nil {
 		return nil, err
 	}
