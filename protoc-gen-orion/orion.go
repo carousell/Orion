@@ -170,7 +170,7 @@ func generateCustomURL(g *generator.Generator, file *descriptor.FileDescriptorPr
 							}
 							methodsString := strings.Join(methods, ", ")
 							funcName := "Register" + svc.GetName() + method.GetName() + "Encoder"
-							if _, found := encoders[svc.GetName()]; !found {
+							if _, found := encoders[svc.String()]; !found {
 								encoders[svc.String()] = make([]string, 0)
 							}
 							encoders[svc.String()] = append(encoders[svc.String()], funcName)
