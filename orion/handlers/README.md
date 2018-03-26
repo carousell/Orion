@@ -18,7 +18,7 @@
 - [github.com/gogo/protobuf/jsonpb](https://godoc.org/github.com/gogo/protobuf/jsonpb)
 - [github.com/gogo/protobuf/proto](https://godoc.org/github.com/gogo/protobuf/proto)
 - [github.com/gorilla/mux](https://godoc.org/github.com/gorilla/mux)
-- [github.com/grpc-ecosystem/go-grpc-middleware/util/metautils](https://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware/util/metautils)
+- github.com/grpc-ecosystem/go-grpc-middleware/util/metautils
 - [github.com/grpc-ecosystem/go-grpc-prometheus](https://godoc.org/github.com/grpc-ecosystem/go-grpc-prometheus)
 - [github.com/opentracing/opentracing-go](https://godoc.org/github.com/opentracing/opentracing-go)
 - [google.golang.org/grpc](https://godoc.org/google.golang.org/grpc)

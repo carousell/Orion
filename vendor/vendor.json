@@ -249,30 +249,6 @@
 			"revisionTime": "2018-01-19T09:10:32Z"
 		},
 		{
-			"checksumSHA1": "/agPdBMI2jxGWZbCJv+QDqqcIXw=",
-			"path": "github.com/carousell/go-utils/utils",
-			"revision": "6fdd43e43be64100f8962341f338c7d16da14bd6",
-			"revisionTime": "2018-01-04T07:31:10Z"
-		},
-		{
-			"checksumSHA1": "aGKseRwZI+00THQZAVRL9uk0g2A=",
-			"path": "github.com/carousell/go-utils/utils/errors",
-			"revision": "6fdd43e43be64100f8962341f338c7d16da14bd6",
-			"revisionTime": "2018-01-04T07:31:10Z"
-		},
-		{
-			"checksumSHA1": "j0NP1zHy9TYfroq+nMm6BmNJHCs=",
-			"path": "github.com/carousell/go-utils/utils/errors/notifier",
-			"revision": "6fdd43e43be64100f8962341f338c7d16da14bd6",
-			"revisionTime": "2018-01-04T07:31:10Z"
-		},
-		{
-			"checksumSHA1": "jO0z5kAuUzr3AEN1I7InjG4AHM0=",
-			"path": "github.com/carousell/go-utils/utils/spanutils",
-			"revision": "6fdd43e43be64100f8962341f338c7d16da14bd6",
-			"revisionTime": "2018-01-04T07:31:10Z"
-		},
-		{
 			"checksumSHA1": "rJhPFhBja6/fuqlZuuZbILh3ir8=",
 			"path": "github.com/carousell/machinery/v1",
 			"revision": "f1332efcf9bab38723e9e83be0ec6e0b39c92def",
@@ -375,20 +351,8 @@
 			"revisionTime": "2017-11-19T05:34:21Z"
 		},
 		{
-			"checksumSHA1": "0x6tKraaJRo//YVEB2FotP2Mhww=",
-			"path": "github.com/go-kit/kit/endpoint",
-			"revision": "953e747656a7bbb5e1f998608b460458958b70cc",
-			"revisionTime": "2017-12-19T00:03:56Z"
-		},
-		{
 			"checksumSHA1": "KrIRJ4p3nRze4NcxfgX5+N9+D1M=",
 			"path": "github.com/go-kit/kit/log",
-			"revision": "953e747656a7bbb5e1f998608b460458958b70cc",
-			"revisionTime": "2017-12-19T00:03:56Z"
-		},
-		{
-			"checksumSHA1": "qVNlGKkuj56lWYtY+4wHYmNcdZU=",
-			"path": "github.com/go-kit/kit/transport/http",
 			"revision": "953e747656a7bbb5e1f998608b460458958b70cc",
 			"revisionTime": "2017-12-19T00:03:56Z"
 		},
@@ -1063,12 +1027,6 @@
 		{
 			"checksumSHA1": "WpWF+bDzObsHf+bjoGpb/abeFxo=",
 			"path": "google.golang.org/grpc/resolver/dns",
-			"revision": "b71aced4a2a1ee80a1cbbd26b85a57623790d7f4",
-			"revisionTime": "2018-01-19T17:37:59Z"
-		},
-		{
-			"checksumSHA1": "+JzDc+wsEWeYhqsKV4AzAK14SZg=",
-			"path": "google.golang.org/grpc/resolver/manual",
 			"revision": "b71aced4a2a1ee80a1cbbd26b85a57623790d7f4",
 			"revisionTime": "2018-01-19T17:37:59Z"
 		},

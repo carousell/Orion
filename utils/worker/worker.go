@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/carousell/go-utils/utils/spanutils"
+	"github.com/carousell/Orion/utils/spanutils"
 	"github.com/carousell/machinery/v1"
 	machineryConfig "github.com/carousell/machinery/v1/config"
 	"github.com/carousell/machinery/v1/tasks"
