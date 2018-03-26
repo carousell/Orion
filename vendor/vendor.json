@@ -27,6 +27,66 @@
 			"revisionTime": "2017-12-19T15:03:33Z"
 		},
 		{
+			"checksumSHA1": "jHJOmR9OGfmA7DiFiiXdk20AOBI=",
+			"path": "github.com/RichardKnop/machinery/v1",
+			"revision": "55e9fa0bfa5129aba4c68dce04930c9311432e19",
+			"revisionTime": "2018-03-22T03:11:50Z"
+		},
+		{
+			"checksumSHA1": "HPyaX9k4LCPTmB2PS1LjmIARqQg=",
+			"path": "github.com/RichardKnop/machinery/v1/backends",
+			"revision": "55e9fa0bfa5129aba4c68dce04930c9311432e19",
+			"revisionTime": "2018-03-22T03:11:50Z"
+		},
+		{
+			"checksumSHA1": "DSl7dx4xYpPYo47MixNuKMS6H4U=",
+			"path": "github.com/RichardKnop/machinery/v1/brokers",
+			"revision": "55e9fa0bfa5129aba4c68dce04930c9311432e19",
+			"revisionTime": "2018-03-22T03:11:50Z"
+		},
+		{
+			"checksumSHA1": "Srxt2zM90eZ5YXArU9HFWzR5IPw=",
+			"path": "github.com/RichardKnop/machinery/v1/common",
+			"revision": "55e9fa0bfa5129aba4c68dce04930c9311432e19",
+			"revisionTime": "2018-03-22T03:11:50Z"
+		},
+		{
+			"checksumSHA1": "P3lSmfjHHKbO4Z5FPKYMFHpajtM=",
+			"path": "github.com/RichardKnop/machinery/v1/config",
+			"revision": "55e9fa0bfa5129aba4c68dce04930c9311432e19",
+			"revisionTime": "2018-03-22T03:11:50Z"
+		},
+		{
+			"checksumSHA1": "SLzC++Io8YdjJdH8vjMj1f1U2tA=",
+			"path": "github.com/RichardKnop/machinery/v1/log",
+			"revision": "55e9fa0bfa5129aba4c68dce04930c9311432e19",
+			"revisionTime": "2018-03-22T03:11:50Z"
+		},
+		{
+			"checksumSHA1": "7u2rgFHd0rIOObXERyDT6E8vUeM=",
+			"path": "github.com/RichardKnop/machinery/v1/retry",
+			"revision": "55e9fa0bfa5129aba4c68dce04930c9311432e19",
+			"revisionTime": "2018-03-22T03:11:50Z"
+		},
+		{
+			"checksumSHA1": "L0vLip0t2wYtHuQ2fyZfFzuYiBs=",
+			"path": "github.com/RichardKnop/machinery/v1/tasks",
+			"revision": "55e9fa0bfa5129aba4c68dce04930c9311432e19",
+			"revisionTime": "2018-03-22T03:11:50Z"
+		},
+		{
+			"checksumSHA1": "No753udwDCxZZlcSIqKmMgO64Ig=",
+			"path": "github.com/RichardKnop/machinery/v1/tracing",
+			"revision": "55e9fa0bfa5129aba4c68dce04930c9311432e19",
+			"revisionTime": "2018-03-22T03:11:50Z"
+		},
+		{
+			"checksumSHA1": "7kpYEA7uxPfx2JbF76yUY+EETCk=",
+			"path": "github.com/RichardKnop/redsync",
+			"revision": "54b27db64c180751e7049321a2e109ff220ccdcc",
+			"revisionTime": "2018-03-20T15:12:46Z"
+		},
+		{
 			"checksumSHA1": "cFe+2GQPsARnm+5tr75DuHgYhRE=",
 			"path": "github.com/Shopify/sarama",
 			"revision": "5e8fd95863bd4a894fcd29225547d56967f189ad",
@@ -183,6 +243,18 @@
 			"revisionTime": "2018-03-23T20:51:19Z"
 		},
 		{
+			"checksumSHA1": "yHfT5DTbeCLs4NE2Rgnqrhe15ls=",
+			"path": "github.com/aws/aws-sdk-go/private/protocol/json/jsonutil",
+			"revision": "1290f149475c1e17154d89a87a38f403c56c0c7e",
+			"revisionTime": "2018-03-23T20:51:19Z"
+		},
+		{
+			"checksumSHA1": "R00RL5jJXRYq1iiK1+PGvMfvXyM=",
+			"path": "github.com/aws/aws-sdk-go/private/protocol/jsonrpc",
+			"revision": "1290f149475c1e17154d89a87a38f403c56c0c7e",
+			"revisionTime": "2018-03-23T20:51:19Z"
+		},
+		{
 			"checksumSHA1": "SBBVYdLcocjdPzMWgDuR8vcOfDQ=",
 			"path": "github.com/aws/aws-sdk-go/private/protocol/query",
 			"revision": "1290f149475c1e17154d89a87a38f403c56c0c7e",
@@ -203,6 +275,24 @@
 		{
 			"checksumSHA1": "0qYPUga28aQVkxZgBR3Z86AbGUQ=",
 			"path": "github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil",
+			"revision": "1290f149475c1e17154d89a87a38f403c56c0c7e",
+			"revisionTime": "2018-03-23T20:51:19Z"
+		},
+		{
+			"checksumSHA1": "8JiVrxMjFSdBOfVWCy1QU+JzB08=",
+			"path": "github.com/aws/aws-sdk-go/service/dynamodb",
+			"revision": "1290f149475c1e17154d89a87a38f403c56c0c7e",
+			"revisionTime": "2018-03-23T20:51:19Z"
+		},
+		{
+			"checksumSHA1": "/I6I2nR59isqKtSpEnTfLRWZ8Mc=",
+			"path": "github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute",
+			"revision": "1290f149475c1e17154d89a87a38f403c56c0c7e",
+			"revisionTime": "2018-03-23T20:51:19Z"
+		},
+		{
+			"checksumSHA1": "jiu18uX90vwyNtuge8QorSRALDw=",
+			"path": "github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface",
 			"revision": "1290f149475c1e17154d89a87a38f403c56c0c7e",
 			"revisionTime": "2018-03-23T20:51:19Z"
 		},
@@ -261,54 +351,6 @@
 			"revisionTime": "2018-02-18T02:01:23Z"
 		},
 		{
-			"checksumSHA1": "rJhPFhBja6/fuqlZuuZbILh3ir8=",
-			"path": "github.com/carousell/machinery/v1",
-			"revision": "f1332efcf9bab38723e9e83be0ec6e0b39c92def",
-			"revisionTime": "2018-01-22T10:36:59Z"
-		},
-		{
-			"checksumSHA1": "sh6bPep1v9IGc3lvYC7qXoeUX1M=",
-			"path": "github.com/carousell/machinery/v1/backends",
-			"revision": "f1332efcf9bab38723e9e83be0ec6e0b39c92def",
-			"revisionTime": "2018-01-22T10:36:59Z"
-		},
-		{
-			"checksumSHA1": "M0Djser2g8tmtOsLrH2bkfJWAiY=",
-			"path": "github.com/carousell/machinery/v1/brokers",
-			"revision": "f1332efcf9bab38723e9e83be0ec6e0b39c92def",
-			"revisionTime": "2018-01-22T10:36:59Z"
-		},
-		{
-			"checksumSHA1": "t1RGDj3g9JucEkTyn1/S2uZUSQ0=",
-			"path": "github.com/carousell/machinery/v1/common",
-			"revision": "f1332efcf9bab38723e9e83be0ec6e0b39c92def",
-			"revisionTime": "2018-01-22T10:36:59Z"
-		},
-		{
-			"checksumSHA1": "uGGTqyq7djQ+6HhTJupjvnYe95o=",
-			"path": "github.com/carousell/machinery/v1/config",
-			"revision": "f1332efcf9bab38723e9e83be0ec6e0b39c92def",
-			"revisionTime": "2018-01-22T10:36:59Z"
-		},
-		{
-			"checksumSHA1": "L30FqpuHTSyZkG+BYVxsu1QiHLU=",
-			"path": "github.com/carousell/machinery/v1/log",
-			"revision": "f1332efcf9bab38723e9e83be0ec6e0b39c92def",
-			"revisionTime": "2018-01-22T10:36:59Z"
-		},
-		{
-			"checksumSHA1": "b6j/2N97o0PGWfEkNbkhuboEbeE=",
-			"path": "github.com/carousell/machinery/v1/retry",
-			"revision": "f1332efcf9bab38723e9e83be0ec6e0b39c92def",
-			"revisionTime": "2018-01-22T10:36:59Z"
-		},
-		{
-			"checksumSHA1": "+m/zlfTWL5Y2uY6jh2Cmjg86hPg=",
-			"path": "github.com/carousell/machinery/v1/tasks",
-			"revision": "f1332efcf9bab38723e9e83be0ec6e0b39c92def",
-			"revisionTime": "2018-01-22T10:36:59Z"
-		},
-		{
 			"checksumSHA1": "CSPbwbyzqA6sfORicn4HFtIhF/c=",
 			"path": "github.com/davecgh/go-spew/spew",
 			"revision": "8991bc29aa16c548c550c7ff78260e27b9ab7c73",
@@ -343,18 +385,6 @@
 			"path": "github.com/fsnotify/fsnotify",
 			"revision": "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9",
 			"revisionTime": "2018-01-10T05:33:47Z"
-		},
-		{
-			"checksumSHA1": "2UmMbNHc8FBr98mJFN1k8ISOIHk=",
-			"path": "github.com/garyburd/redigo/internal",
-			"revision": "e8e59ed1cd89662b75af5d1109e39e5dc148cc00",
-			"revisionTime": "2018-03-20T13:09:17Z"
-		},
-		{
-			"checksumSHA1": "3kM5bMyfqvdCfgQdOb01CR1aA74=",
-			"path": "github.com/garyburd/redigo/redis",
-			"revision": "e8e59ed1cd89662b75af5d1109e39e5dc148cc00",
-			"revisionTime": "2018-03-20T13:09:17Z"
 		},
 		{
 			"checksumSHA1": "/iKii9vqT+2alMukmUZEIzNCO34=",
@@ -457,6 +487,18 @@
 			"path": "github.com/golang/snappy",
 			"revision": "553a641470496b2327abcac10b36396bd98e45c9",
 			"revisionTime": "2017-02-15T23:32:05Z"
+		},
+		{
+			"checksumSHA1": "w3QCCIYHgZzIXQ+xTl7oLfFrXHs=",
+			"path": "github.com/gomodule/redigo/internal",
+			"revision": "80111bd88543fa8b77b49c94c6f326c17390a8df",
+			"revisionTime": "2018-03-23T09:42:00Z"
+		},
+		{
+			"checksumSHA1": "HgOVOUtWUYHcNe8aipwuEZ7YLow=",
+			"path": "github.com/gomodule/redigo/redis",
+			"revision": "80111bd88543fa8b77b49c94c6f326c17390a8df",
+			"revisionTime": "2018-03-23T09:42:00Z"
 		},
 		{
 			"checksumSHA1": "g/V4qrXjUGG9B+e3hB+4NAYJ5Gs=",
@@ -1125,12 +1167,6 @@
 			"path": "gopkg.in/mgo.v2/internal/scram",
 			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
 			"revisionTime": "2016-08-18T02:01:20Z"
-		},
-		{
-			"checksumSHA1": "skSPSmzg+vfeVlePztLzUdZH7sA=",
-			"path": "gopkg.in/redsync.v1",
-			"revision": "98dabdf1c8574561bf976911c14ff652c47b1ddf",
-			"revisionTime": "2016-06-17T03:24:05Z"
 		},
 		{
 			"checksumSHA1": "HmUAWd1Jm25cGH4Pyf3Zgp2RhkI=",

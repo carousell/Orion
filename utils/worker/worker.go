@@ -4,10 +4,10 @@ import (
 	"context"
 	"log"
 
+	"github.com/RichardKnop/machinery/v1"
+	machineryConfig "github.com/RichardKnop/machinery/v1/config"
+	"github.com/RichardKnop/machinery/v1/tasks"
 	"github.com/carousell/Orion/utils/spanutils"
-	"github.com/carousell/machinery/v1"
-	machineryConfig "github.com/carousell/machinery/v1/config"
-	"github.com/carousell/machinery/v1/tasks"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 )

@@ -3,7 +3,7 @@ package worker
 import (
 	"context"
 
-	"github.com/carousell/machinery/v1/tasks"
+	"github.com/RichardKnop/machinery/v1/tasks"
 )
 
 //Worker is the interface for worker
