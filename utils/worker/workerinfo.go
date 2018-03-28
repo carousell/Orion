@@ -8,7 +8,7 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/satori/uuid"
+	"github.com/satori/go.uuid"
 )
 
 type workerInfo struct {
