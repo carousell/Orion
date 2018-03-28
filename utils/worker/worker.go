@@ -124,6 +124,7 @@ func (w *worker) init(config Config) {
 			AMQP: &machineryConfig.AMQPConfig{
 				Exchange:     "machinery_exchange",
 				ExchangeType: "direct",
+				BindingKey:   config.RabbitConfig.QueueName,
 			},
 			NoUnixSignals: true,
 		}
