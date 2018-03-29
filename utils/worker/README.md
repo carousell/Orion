@@ -16,7 +16,7 @@
 - [github.com/grpc-ecosystem/go-grpc-middleware/util/metautils](https://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware/util/metautils)
 - [github.com/opentracing/opentracing-go](https://godoc.org/github.com/opentracing/opentracing-go)
 - [github.com/opentracing/opentracing-go/ext](https://godoc.org/github.com/opentracing/opentracing-go/ext)
-- [github.com/satori/uuid](https://godoc.org/github.com/satori/uuid)
+- [github.com/satori/go.uuid](https://godoc.org/github.com/satori/go.uuid)
 
 ## <a name="pkg-index">Index</a>
 * [type Config](#Config)
