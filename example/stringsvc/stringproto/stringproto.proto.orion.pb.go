@@ -10,6 +10,14 @@ import (
 // If you see error please update your orion-protoc-gen by running 'go get -u github.com/carousell/Orion/protoc-gen-orion'
 var _ = orion.ProtoGenVersion1_0
 
+// Encoders
+
+// Handlers
+
+// Decoders
+
+// RegisterStringServiceOrionServer registers StringService to Orion server
 func RegisterStringServiceOrionServer(srv orion.ServiceFactory, orionServer orion.Server) {
 	orionServer.RegisterService(&_StringService_serviceDesc, srv)
+
 }
