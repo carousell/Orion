@@ -7,6 +7,17 @@ import (
 	orion "github.com/carousell/Orion/orion"
 )
 
+// If you see error please update your orion-protoc-gen by running 'go get -u github.com/carousell/Orion/protoc-gen-orion'
+var _ = orion.ProtoGenVersion1_0
+
+// Encoders
+
+// Handlers
+
+// Decoders
+
+// RegisterSimpleServiceOrionServer registers SimpleService to Orion server
 func RegisterSimpleServiceOrionServer(srv orion.ServiceFactory, orionServer orion.Server) {
 	orionServer.RegisterService(&_SimpleService_serviceDesc, srv)
+
 }
