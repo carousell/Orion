@@ -59,16 +59,21 @@ type DefaultServerImpl struct {
 	dataBag map[string]interface{}
 }
 
+func getSvcKey(serviceName, method string) string {
+	return serviceName + "-" + method
+}
+
 //AddEncoder is the implementation of handlers.Encodable
 func (d *DefaultServerImpl) AddEncoder(serviceName, method string, httpMethod []string, path string, encoder handlers.Encoder) {
 	if d.encoders == nil {
 		d.encoders = make(map[string]*encoderInfo)
 	}
+	key := getSvcKey(serviceName, method)
 	ei := new(encoderInfo)
-	if info, ok := d.encoders[path]; ok {
+	if info, ok := d.encoders[key]; ok {
 		ei = info
 	} else {
-		d.encoders[path] = ei
+		d.encoders[key] = ei
 	}
 	ei.serviceName = serviceName
 	ei.method = method
@@ -82,11 +87,12 @@ func (d *DefaultServerImpl) AddHTTPHandler(serviceName string, method string, pa
 	if d.encoders == nil {
 		d.encoders = make(map[string]*encoderInfo)
 	}
+	key := getSvcKey(serviceName, method)
 	ei := new(encoderInfo)
-	if info, ok := d.encoders[path]; ok {
+	if info, ok := d.encoders[key]; ok {
 		ei = info
 	} else {
-		d.encoders[path] = ei
+		d.encoders[key] = ei
 	}
 	ei.serviceName = serviceName
 	ei.method = method
