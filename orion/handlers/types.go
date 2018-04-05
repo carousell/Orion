@@ -58,6 +58,11 @@ type Handler interface {
 	Stop(timeout time.Duration) error
 }
 
+//CommonConfig is the config that is common across both http and grpc handlers
+type CommonConfig struct {
+	NoDefaultInterceptors bool
+}
+
 var (
 	//ContentTypeMap is the mapping of content-type with marshaling type
 	ContentTypeMap = map[string]string{

@@ -50,11 +50,17 @@ func chainUnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnarySer
 	}
 }
 
-func getInterceptors(svc interface{}) grpc.UnaryServerInterceptor {
+func getInterceptors(svc interface{}, config CommonConfig) grpc.UnaryServerInterceptor {
 
 	opts := []grpc.UnaryServerInterceptor{optionsInterceptor}
 
-	opts = append(opts, interceptors.DefaultInterceptors()...)
+	if config.NoDefaultInterceptors {
+		// only add logging interceptor
+		opts = append(opts, interceptors.ResponseTimeLoggingInterceptor())
+	} else {
+		// Add default interceptors
+		opts = append(opts, interceptors.DefaultInterceptors()...)
+	}
 
 	interceptor, ok := svc.(Interceptor)
 	if ok {
@@ -73,10 +79,10 @@ func optionsInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 }
 
 // grpcInterceptor acts as default interceptor for gprc and applies service specific interceptors based on implementation
-func grpcInterceptor() grpc.UnaryServerInterceptor {
+func grpcInterceptor(config CommonConfig) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		// fetch interceptors from the service implementation and apply
-		interceptor := getInterceptors(info.Server)
+		interceptor := getInterceptors(info.Server, config)
 		return interceptor(ctx, req, info, handler)
 	}
 }

@@ -36,13 +36,14 @@ var (
 
 //HTTPHandlerConfig is the configuration for HTTP Handler
 type HTTPHandlerConfig struct {
+	CommonConfig
 	EnableProtoURL bool
 }
 
 //NewHTTPHandler creates a new HTTP handler
 func NewHTTPHandler(config HTTPHandlerConfig) Handler {
 	return &httpHandler{
-		protoURL: config.EnableProtoURL,
+		config: config,
 	}
 }
 
@@ -79,11 +80,11 @@ type pathInfo struct {
 }
 
 type httpHandler struct {
-	mu       sync.Mutex
-	paths    map[string]*pathInfo
-	mar      jsonpb.Marshaler
-	svr      *http.Server
-	protoURL bool
+	mu     sync.Mutex
+	paths  map[string]*pathInfo
+	mar    jsonpb.Marshaler
+	svr    *http.Server
+	config HTTPHandlerConfig
 }
 
 func writeResp(resp http.ResponseWriter, status int, data []byte) {
@@ -296,7 +297,7 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 		svc:  ss,
 	}
 
-	svcInfo.interceptors = getInterceptors(ss)
+	svcInfo.interceptors = getInterceptors(ss, h.config.CommonConfig)
 	if headers, ok := ss.(WhitelistedHeaders); ok {
 		svcInfo.requestHeaders = headers.GetRequestHeaders()
 		svcInfo.responseHeaders = headers.GetResponseHeaders()
@@ -312,7 +313,8 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 		url := generateURL(sd.ServiceName, m.MethodName)
 		h.paths[url] = info
 
-		if h.protoURL {
+		if h.config.EnableProtoURL {
+			// add proto urls if enabled
 			protoURL := generateProtoURL(sd.ServiceName, m.MethodName)
 			h.paths[protoURL] = info
 		}

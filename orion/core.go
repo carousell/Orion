@@ -170,7 +170,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			log.Println("error", err)
 		}
 		log.Println("gRPCListnerPort", grpcPort)
-		handler := handlers.NewGRPCHandler()
+		handler := handlers.NewGRPCHandler(handlers.GRPCConfig{})
 		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,
 			listener: grpcListener,
