@@ -435,16 +435,22 @@
 			"revisionTime": "2018-03-20T10:55:59Z"
 		},
 		{
+			"checksumSHA1": "eG45Hg4ZnB4b1KuqsMknc5eAx4A=",
+			"path": "github.com/golang/protobuf/jsonpb",
+			"revision": "e09c5db296004fbe3f74490e84dcd62c3c5ddb1b",
+			"revisionTime": "2018-03-28T16:31:53Z"
+		},
+		{
 			"checksumSHA1": "WX1+2gktHcBmE9MGwFSGs7oqexU=",
 			"path": "github.com/golang/protobuf/proto",
-			"revision": "bbd03ef6da3a115852eaf24c8a1c46aeb39aa175",
-			"revisionTime": "2018-02-02T18:43:18Z"
+			"revision": "e09c5db296004fbe3f74490e84dcd62c3c5ddb1b",
+			"revisionTime": "2018-03-28T16:31:53Z"
 		},
 		{
 			"checksumSHA1": "XNHQiRltA7NQJV0RvUroY+cf+zg=",
 			"path": "github.com/golang/protobuf/protoc-gen-go/descriptor",
-			"revision": "bbd03ef6da3a115852eaf24c8a1c46aeb39aa175",
-			"revisionTime": "2018-02-02T18:43:18Z"
+			"revision": "e09c5db296004fbe3f74490e84dcd62c3c5ddb1b",
+			"revisionTime": "2018-03-28T16:31:53Z"
 		},
 		{
 			"checksumSHA1": "38O7kR9lOvy5LU65btLAwev1uhg=",
@@ -455,8 +461,8 @@
 		{
 			"checksumSHA1": "KxpGuQ5LSMaImXONLN/YM3shGcQ=",
 			"path": "github.com/golang/protobuf/protoc-gen-go/plugin",
-			"revision": "bbd03ef6da3a115852eaf24c8a1c46aeb39aa175",
-			"revisionTime": "2018-02-02T18:43:18Z"
+			"revision": "e09c5db296004fbe3f74490e84dcd62c3c5ddb1b",
+			"revisionTime": "2018-03-28T16:31:53Z"
 		},
 		{
 			"checksumSHA1": "VfkiItDBFFkZluaAMAzJipDXNBY=",
@@ -475,6 +481,12 @@
 			"path": "github.com/golang/protobuf/ptypes/duration",
 			"revision": "bbd03ef6da3a115852eaf24c8a1c46aeb39aa175",
 			"revisionTime": "2018-02-02T18:43:18Z"
+		},
+		{
+			"checksumSHA1": "Ylq6kq3KWBy6mu68oyEwenhNMdg=",
+			"path": "github.com/golang/protobuf/ptypes/struct",
+			"revision": "e09c5db296004fbe3f74490e84dcd62c3c5ddb1b",
+			"revisionTime": "2018-03-28T16:31:53Z"
 		},
 		{
 			"checksumSHA1": "O2ItP5rmfrgxPufhjJXbFlXuyL8=",
@@ -637,6 +649,12 @@
 			"path": "github.com/matttproud/golang_protobuf_extensions/pbutil",
 			"revision": "c12348ce28de40eed0136aa2b644d0ee0650e56c",
 			"revisionTime": "2016-04-24T11:30:07Z"
+		},
+		{
+			"checksumSHA1": "gFTZTmMQcbEzFKPWzFWGtsr7rLI=",
+			"path": "github.com/micro/protobuf/protoc-gen-go/generator",
+			"revision": "ebd3be6d4fdb1ef0b460e26dd5de441fb5006d38",
+			"revisionTime": "2018-03-21T16:16:05Z"
 		},
 		{
 			"checksumSHA1": "Yvzge1YQcD/wSDXLD5qNHqmI/0s=",
