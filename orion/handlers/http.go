@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -21,6 +22,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	"github.com/mitchellh/mapstructure"
 	opentracing "github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -173,26 +175,65 @@ func prepareContext(req *http.Request, info *pathInfo) context.Context {
 	return ctx
 }
 
-func grpcErrorToHTTP(err error, defaultStatus int, defaultMessage string) (int, string) {
+// GrpcErrorToHTTP converts gRPC error code into HTTP response status code.
+// See: https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
+func GrpcErrorToHTTP(err error, defaultStatus int, defaultMessage string) (int, string) {
 	code := defaultStatus
 	msg := defaultMessage
 	if s, ok := status.FromError(err); ok {
+		msg = s.Message()
 		switch s.Code() {
 		case codes.NotFound:
 			code = http.StatusNotFound
-			msg = s.Message()
 		case codes.InvalidArgument:
 			code = http.StatusBadRequest
-			msg = s.Message()
 		case codes.Unauthenticated:
 			code = http.StatusUnauthorized
-			msg = s.Message()
 		case codes.PermissionDenied:
 			code = http.StatusForbidden
-			msg = s.Message()
+		case codes.OK:
+			code = http.StatusOK
+		case codes.Canceled:
+			code = http.StatusRequestTimeout
+		case codes.Unknown:
+			code = http.StatusInternalServerError
+		case codes.DeadlineExceeded:
+			code = http.StatusGatewayTimeout
+		case codes.AlreadyExists:
+			code = http.StatusConflict
+		case codes.ResourceExhausted:
+			code = http.StatusTooManyRequests
+		case codes.FailedPrecondition:
+			code = http.StatusBadRequest
+		case codes.Aborted:
+			code = http.StatusConflict
+		case codes.OutOfRange:
+			code = http.StatusBadRequest
+		case codes.Unimplemented:
+			code = http.StatusNotImplemented
+		case codes.Internal:
+			code = http.StatusInternalServerError
+		case codes.Unavailable:
+			code = http.StatusServiceUnavailable
+		case codes.DataLoss:
+			code = http.StatusInternalServerError
 		}
 	}
 	return code, msg
+}
+
+func defaultEncoder(r interface{}, req *http.Request) error {
+	protoReq := r.(proto.Message)
+	// check and map url params to request
+	params := mux.Vars(req)
+	if len(params) > 0 {
+		mapstructure.Decode(params, protoReq)
+	}
+	err := jsonpb.Unmarshal(req.Body, protoReq)
+	if req.Method == http.MethodGet && err == io.EOF {
+		return nil
+	}
+	return err
 }
 
 func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url string) (context.Context, error) {
@@ -210,15 +251,14 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url
 		}
 
 		// decoder func
-		var decErr error
+		var encErr error
 		dec := func(r interface{}) error {
-			if info.encoder == nil {
-				protoReq := r.(proto.Message)
-				decErr = jsonpb.Unmarshal(req.Body, protoReq)
-				return decErr
+			if info.encoder != nil {
+				encErr = info.encoder(req, r)
+			} else {
+				encErr = defaultEncoder(r, req)
 			}
-			decErr = info.encoder(req, r)
-			return decErr
+			return encErr
 		}
 
 		// make service call
@@ -226,20 +266,21 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url
 
 		if info.decoder != nil {
 			//apply decoder if any
-			info.decoder(ctx, resp, decErr, err, protoResponse)
-			if decErr != nil {
-				return ctx, decErr
+			info.decoder(ctx, resp, encErr, err, protoResponse)
+			if encErr != nil {
+				return ctx, encErr
 			}
 			return ctx, err
 		}
+
 		hdr := headers.ResponseHeadersFromContext(ctx)
 		responseHeaders := processWhitelist(hdr, append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
 		if err != nil {
-			if decErr != nil {
+			if encErr != nil {
 				writeRespWithHeaders(resp, http.StatusBadRequest, []byte("Bad Request!"), responseHeaders)
 				return ctx, fmt.Errorf("Bad Request")
 			}
-			code, msg := grpcErrorToHTTP(err, http.StatusInternalServerError, "Internal Server Error!")
+			code, msg := GrpcErrorToHTTP(err, http.StatusInternalServerError, "Internal Server Error!")
 			writeRespWithHeaders(resp, code, []byte(msg), responseHeaders)
 			return ctx, fmt.Errorf(msg)
 		}

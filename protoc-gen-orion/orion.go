@@ -19,7 +19,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	google_protobuf "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/micro/protobuf/protoc-gen-go/generator"
 )
@@ -182,7 +181,7 @@ func generateFile(d *data) *plugin.CodeGeneratorResponse_File {
 	return file
 }
 
-func populate(file *google_protobuf.FileDescriptorProto) *data {
+func populate(file *descriptor.FileDescriptorProto) *data {
 	d := new(data)
 	d.FileName = *file.Name
 	d.PackageName = file.GetPackage()
@@ -202,7 +201,7 @@ func generate(d *data, file *descriptor.FileDescriptorProto) {
 		if pkg := file.GetPackage(); pkg != "" {
 			fullServName = pkg + "." + fullServName
 		}
-		servName := generator.CamelCase(origServName)
+		servName := generator.CamelCase(origServName) // use the same logic from go-grpc generator
 		serviceDescVar := "_" + servName + "_serviceDesc"
 
 		s := new(service)
