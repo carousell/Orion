@@ -23,11 +23,27 @@ type ErrorExt interface {
 	Cause() error
 }
 
+type NotifyExt interface {
+	ShouldNotify() bool
+	Notified(status bool)
+}
+
 type customError struct {
-	Msg   string
-	stack []uintptr
-	frame []StackFrame
-	cause error
+	Msg          string
+	stack        []uintptr
+	frame        []StackFrame
+	cause        error
+	shouldNotify bool
+}
+
+// implements notifier.NotifyExt
+func (c *customError) ShouldNotify() bool {
+	return c.shouldNotify
+}
+
+// implements notifier.NotifyExt
+func (c *customError) Notified(status bool) {
+	c.shouldNotify = !status
 }
 
 func (c customError) Error() string {
@@ -122,6 +138,9 @@ func WrapWithSkip(err error, msg string, skip int) ErrorExt {
 		}
 		c.stack = e.Callers()
 		c.frame = e.StackFrame()
+		if n, ok := e.(NotifyExt); ok {
+			c.shouldNotify = n.ShouldNotify()
+		}
 		return c
 	} else {
 		c := &customError{

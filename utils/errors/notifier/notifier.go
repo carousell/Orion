@@ -92,6 +92,21 @@ func NotifyWithLevelAndSkip(err error, skip int, level string, rawData ...interf
 		return nil
 	}
 
+	if n, ok := err.(errors.NotifyExt); ok {
+		if !n.ShouldNotify() {
+			return err
+		}
+		n.Notified(true)
+	}
+	return doNotify(err, skip, level, rawData...)
+
+}
+
+func doNotify(err error, skip int, level string, rawData ...interface{}) error {
+	if err == nil {
+		return nil
+	}
+
 	list := make([]interface{}, 0)
 	for pos := range rawData {
 		data := rawData[pos]
