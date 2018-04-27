@@ -222,7 +222,10 @@ func GrpcErrorToHTTP(err error, defaultStatus int, defaultMessage string) (int, 
 	return code, msg
 }
 
-func defaultEncoder(r interface{}, req *http.Request) error {
+// DefaultEncoder encodes a HTTP request if none are registered. This encoder
+// populates the proto message with URL route variables or fields from a JSON
+// body if either are available.
+func DefaultEncoder(req *http.Request, r interface{}) error {
 	protoReq := r.(proto.Message)
 	// check and map url params to request
 	params := mux.Vars(req)
@@ -256,7 +259,7 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url
 			if info.encoder != nil {
 				encErr = info.encoder(req, r)
 			} else {
-				encErr = defaultEncoder(r, req)
+				encErr = DefaultEncoder(req, r)
 			}
 			return encErr
 		}
