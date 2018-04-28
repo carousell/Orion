@@ -9,10 +9,10 @@
 
 ## <a name="pkg-imports">Imported Packages</a>
 
-- [github.com/carousell/go-utils/utils/spanutils](./../../../go-utils/utils/spanutils)
-- [github.com/carousell/machinery/v1](./../../../machinery/v1)
-- [github.com/carousell/machinery/v1/config](./../../../machinery/v1/config)
-- [github.com/carousell/machinery/v1/tasks](./../../../machinery/v1/tasks)
+- [github.com/RichardKnop/machinery/v1](https://godoc.org/github.com/RichardKnop/machinery/v1)
+- [github.com/RichardKnop/machinery/v1/config](https://godoc.org/github.com/RichardKnop/machinery/v1/config)
+- [github.com/RichardKnop/machinery/v1/tasks](https://godoc.org/github.com/RichardKnop/machinery/v1/tasks)
+- [github.com/carousell/Orion/utils/spanutils](./../spanutils)
 - [github.com/grpc-ecosystem/go-grpc-middleware/util/metautils](https://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware/util/metautils)
 - [github.com/opentracing/opentracing-go](https://godoc.org/github.com/opentracing/opentracing-go)
 - [github.com/opentracing/opentracing-go/ext](https://godoc.org/github.com/opentracing/opentracing-go/ext)

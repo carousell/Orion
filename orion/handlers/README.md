@@ -15,11 +15,12 @@
 - [github.com/carousell/Orion/utils/errors/notifier](./../../utils/errors/notifier)
 - [github.com/carousell/Orion/utils/headers](./../../utils/headers)
 - [github.com/carousell/Orion/utils/options](./../../utils/options)
-- [github.com/gogo/protobuf/jsonpb](https://godoc.org/github.com/gogo/protobuf/jsonpb)
-- [github.com/gogo/protobuf/proto](https://godoc.org/github.com/gogo/protobuf/proto)
+- [github.com/golang/protobuf/jsonpb](https://godoc.org/github.com/golang/protobuf/jsonpb)
+- [github.com/golang/protobuf/proto](https://godoc.org/github.com/golang/protobuf/proto)
 - [github.com/gorilla/mux](https://godoc.org/github.com/gorilla/mux)
-- github.com/grpc-ecosystem/go-grpc-middleware/util/metautils
+- [github.com/grpc-ecosystem/go-grpc-middleware/util/metautils](https://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware/util/metautils)
 - [github.com/grpc-ecosystem/go-grpc-prometheus](https://godoc.org/github.com/grpc-ecosystem/go-grpc-prometheus)
+- [github.com/mitchellh/mapstructure](https://godoc.org/github.com/mitchellh/mapstructure)
 - [github.com/opentracing/opentracing-go](https://godoc.org/github.com/opentracing/opentracing-go)
 - [google.golang.org/grpc](https://godoc.org/google.golang.org/grpc)
 - [google.golang.org/grpc/codes](https://godoc.org/google.golang.org/grpc/codes)
@@ -28,16 +29,20 @@
 ## <a name="pkg-index">Index</a>
 * [Variables](#pkg-variables)
 * [func ContentTypeFromHeaders(ctx context.Context) string](#ContentTypeFromHeaders)
+* [func DefaultEncoder(req \*http.Request, r interface{}) error](#DefaultEncoder)
+* [func GrpcErrorToHTTP(err error, defaultStatus int, defaultMessage string) (int, string)](#GrpcErrorToHTTP)
+* [type CommonConfig](#CommonConfig)
 * [type Decodable](#Decodable)
 * [type Decoder](#Decoder)
 * [type Encodeable](#Encodeable)
 * [type Encoder](#Encoder)
+* [type GRPCConfig](#GRPCConfig)
 * [type GRPCMethodHandler](#GRPCMethodHandler)
 * [type HTTPHandler](#HTTPHandler)
 * [type HTTPHandlerConfig](#HTTPHandlerConfig)
 * [type HTTPInterceptor](#HTTPInterceptor)
 * [type Handler](#Handler)
-  * [func NewGRPCHandler() Handler](#NewGRPCHandler)
+  * [func NewGRPCHandler(config GRPCConfig) Handler](#NewGRPCHandler)
   * [func NewHTTPHandler(config HTTPHandlerConfig) Handler](#NewHTTPHandler)
 * [type Interceptor](#Interceptor)
 * [type WhitelistedHeaders](#WhitelistedHeaders)
@@ -70,11 +75,34 @@ var (
 )
 ```
 
-## <a name="ContentTypeFromHeaders">func</a> [ContentTypeFromHeaders](./utils.go#L104)
+## <a name="ContentTypeFromHeaders">func</a> [ContentTypeFromHeaders](./utils.go#L110)
 ``` go
 func ContentTypeFromHeaders(ctx context.Context) string
 ```
 ContentTypeFromHeaders searches for a matching content type
+
+## <a name="DefaultEncoder">func</a> [DefaultEncoder](./http.go#L228)
+``` go
+func DefaultEncoder(req *http.Request, r interface{}) error
+```
+DefaultEncoder encodes a HTTP request if none are registered. This encoder
+populates the proto message with URL route variables or fields from a JSON
+body if either are available.
+
+## <a name="GrpcErrorToHTTP">func</a> [GrpcErrorToHTTP](./http.go#L180)
+``` go
+func GrpcErrorToHTTP(err error, defaultStatus int, defaultMessage string) (int, string)
+```
+GrpcErrorToHTTP converts gRPC error code into HTTP response status code.
+See: <a href="https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto">https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto</a>
+
+## <a name="CommonConfig">type</a> [CommonConfig](./types.go#L62-L64)
+``` go
+type CommonConfig struct {
+    NoDefaultInterceptors bool
+}
+```
+CommonConfig is the config that is common across both http and grpc handlers
 
 ## <a name="Decodable">type</a> [Decodable](./types.go#L42-L44)
 ``` go
@@ -86,7 +114,7 @@ Decodable interface that is implemented by a handler that supports custom HTTP d
 
 ## <a name="Decoder">type</a> [Decoder](./types.go#L34)
 ``` go
-type Decoder func(ctx context.Context, w http.ResponseWriter, decoderError, endpointError error, respObject interface{})
+type Decoder func(ctx context.Context, w http.ResponseWriter, encodeError, endpointError error, respObject interface{})
 ```
 Decoder is the function type needed for response decoders
 
@@ -104,6 +132,14 @@ type Encoder func(req *http.Request, reqObject interface{}) error
 ```
 Encoder is the function type needed for request encoders
 
+## <a name="GRPCConfig">type</a> [GRPCConfig](./grpc.go#L14-L16)
+``` go
+type GRPCConfig struct {
+    CommonConfig
+}
+```
+GRPCConfig is the configuration for GRPC Handler
+
 ## <a name="GRPCMethodHandler">type</a> [GRPCMethodHandler](./types.go#L14)
 ``` go
 type GRPCMethodHandler func(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error)
@@ -116,9 +152,10 @@ type HTTPHandler func(http.ResponseWriter, *http.Request) bool
 ```
 HTTPHandler is the funtion that handles HTTP request
 
-## <a name="HTTPHandlerConfig">type</a> [HTTPHandlerConfig](./http.go#L38-L40)
+## <a name="HTTPHandlerConfig">type</a> [HTTPHandlerConfig](./http.go#L40-L43)
 ``` go
 type HTTPHandlerConfig struct {
+    CommonConfig
     EnableProtoURL bool
 }
 ```
@@ -142,13 +179,13 @@ type Handler interface {
 ```
 Handler implements a service handler that is used by orion server
 
-### <a name="NewGRPCHandler">func</a> [NewGRPCHandler](./grpc.go#L14)
+### <a name="NewGRPCHandler">func</a> [NewGRPCHandler](./grpc.go#L19)
 ``` go
-func NewGRPCHandler() Handler
+func NewGRPCHandler(config GRPCConfig) Handler
 ```
 NewGRPCHandler creates a new GRPC handler
 
-### <a name="NewHTTPHandler">func</a> [NewHTTPHandler](./http.go#L43)
+### <a name="NewHTTPHandler">func</a> [NewHTTPHandler](./http.go#L46)
 ``` go
 func NewHTTPHandler(config HTTPHandlerConfig) Handler
 ```
