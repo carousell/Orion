@@ -56,6 +56,7 @@ type DefaultServerImpl struct {
 	handlers     []*handlerInfo
 	initializers []Initializer
 
+	serviceRegisterOrder []string
 	dataBag map[string]interface{}
 }
 
@@ -208,7 +209,8 @@ func (d *DefaultServerImpl) signalWatcher() {
 
 			// reload services
 			oldServices := []*svcInfo{}
-			for _, info := range d.services {
+			for _, serviceName := range d.serviceRegisterOrder {
+				info := d.services[serviceName]
 				d.registerService(info.sd, info.sf, true)
 				oldServices = append(oldServices, info)
 			}
@@ -298,6 +300,10 @@ func (d *DefaultServerImpl) registerService(sd *grpc.ServiceDesc, sf ServiceFact
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
+	if d.serviceRegisterOrder == nil {
+		d.serviceRegisterOrder = make([]string,0)
+	}
+
 	if d.services == nil {
 		d.services = make(map[string]*svcInfo)
 	}
@@ -305,6 +311,8 @@ func (d *DefaultServerImpl) registerService(sd *grpc.ServiceDesc, sf ServiceFact
 	_, ok := d.services[sd.ServiceName]
 	if ok && !reload {
 		return errors.New("error: service " + sd.ServiceName + " already added!")
+	} else if !ok && !reload { 		// Add service registered for first time
+		d.serviceRegisterOrder = append(d.serviceRegisterOrder, sd.ServiceName)
 	}
 	// create a obejct from factory and check types
 	ss := sf.NewService(d)
