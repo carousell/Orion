@@ -10,19 +10,23 @@ var (
 	basePath = ""
 )
 
+//StackFrame represents the stackframe for tracing exception
 type StackFrame struct {
 	File string `json:"file"`
 	Line int    `json:"line"`
 	Func string `json:"function"`
 }
 
+//ErrorExt is the interface that defines a error, any ErrorExt implementors can use and override errors and notifier package
 type ErrorExt interface {
 	error
 	Callers() []uintptr
 	StackFrame() []StackFrame
+	//Cause returns the original error object that caused this error
 	Cause() error
 }
 
+//NotifyExt is the interface defination for notifier related options
 type NotifyExt interface {
 	ShouldNotify() bool
 	Notified(status bool)
@@ -111,26 +115,33 @@ func packageFuncName(pc uintptr) (string, string) {
 	return packageName, funcName
 }
 
+//New creates a new error with stack trace
 func New(msg string) ErrorExt {
 	return NewWithSkip(msg, 1)
 }
 
+//NewWithSkip creates a new error skipping the number of function on the stack
 func NewWithSkip(msg string, skip int) ErrorExt {
 	return WrapWithSkip(fmt.Errorf(msg), "", skip+1)
 }
 
+//Wrap wraps an existing error and appends stack information if it does not exists
 func Wrap(err error, msg string) ErrorExt {
 	return WrapWithSkip(err, msg, 1)
 }
 
+//WrapWithSkip wraps an existing error and appends stack information if it does not exists skipping the number of function on the stack
 func WrapWithSkip(err error, msg string, skip int) ErrorExt {
 	if err == nil {
 		return nil
 	}
+
 	msg = strings.TrimSpace(msg)
 	if msg != "" {
 		msg = msg + " :"
 	}
+
+	//if we have stack information reuse that
 	if e, ok := err.(ErrorExt); ok {
 		c := &customError{
 			Msg:   msg + e.Error(),
@@ -142,14 +153,14 @@ func WrapWithSkip(err error, msg string, skip int) ErrorExt {
 			c.shouldNotify = n.ShouldNotify()
 		}
 		return c
-	} else {
-		c := &customError{
-			Msg:   msg + err.Error(),
-			cause: err,
-		}
-		c.generateStack(skip + 1)
-		return c
 	}
+
+	c := &customError{
+		Msg:   msg + err.Error(),
+		cause: err,
+	}
+	c.generateStack(skip + 1)
+	return c
 }
 
 func SetBaseFilePath(path string) {

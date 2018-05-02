@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	newRelicTransactionId string = "NewRelicTransaction"
+	newRelicTransactionID = "NewRelicTransaction"
 )
 
 var (
@@ -19,6 +19,7 @@ var (
 	NewRelicApp newrelic.Application
 )
 
+//GetHostname fetches the hostname of the system
 func GetHostname() string {
 	host := os.Getenv("HOST")
 	if host == "" {
@@ -28,8 +29,9 @@ func GetHostname() string {
 	return host
 }
 
+//GetNewRelicTransactionFromContext fetches the new relic transaction that is stored in the context
 func GetNewRelicTransactionFromContext(ctx context.Context) newrelic.Transaction {
-	t := ctx.Value(newRelicTransactionId)
+	t := ctx.Value(newRelicTransactionID)
 	if t != nil {
 		txn, ok := t.(newrelic.Transaction)
 		if ok {
@@ -39,10 +41,12 @@ func GetNewRelicTransactionFromContext(ctx context.Context) newrelic.Transaction
 	return nil
 }
 
+//StoreNewRelicTransactionToContext stores a new relic transaction object to context
 func StoreNewRelicTransactionToContext(ctx context.Context, t newrelic.Transaction) context.Context {
-	return context.WithValue(ctx, newRelicTransactionId, t)
+	return context.WithValue(ctx, newRelicTransactionID, t)
 }
 
+//StartNRTransaction starts a new newrelic transaction
 func StartNRTransaction(path string, ctx context.Context, req *http.Request, w http.ResponseWriter) context.Context {
 	if NewRelicApp != nil {
 		// check if transaction has been initialized
@@ -62,6 +66,7 @@ func StartNRTransaction(path string, ctx context.Context, req *http.Request, w h
 	return ctx
 }
 
+//FinishNRTransaction finishes an existing transaction
 func FinishNRTransaction(ctx context.Context, err error) {
 	t := GetNewRelicTransactionFromContext(ctx)
 	if t != nil {

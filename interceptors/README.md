@@ -59,19 +59,19 @@ func DefaultInterceptors() []grpc.UnaryServerInterceptor
 ```
 DefaultInterceptors are the set of default interceptors that are applied to all Orion methods
 
-## <a name="GRPCClientInterceptor">func</a> [GRPCClientInterceptor](./interceptors.go#L126)
+## <a name="GRPCClientInterceptor">func</a> [GRPCClientInterceptor](./interceptors.go#L128)
 ``` go
 func GRPCClientInterceptor() grpc.UnaryClientInterceptor
 ```
 GRPCClientInterceptor is the interceptor that intercepts all cleint requests and adds tracing info to them
 
-## <a name="HystrixClientInterceptor">func</a> [HystrixClientInterceptor](./interceptors.go#L131)
+## <a name="HystrixClientInterceptor">func</a> [HystrixClientInterceptor](./interceptors.go#L133)
 ``` go
 func HystrixClientInterceptor() grpc.UnaryClientInterceptor
 ```
 HystrixClientInterceptor is the interceptor that intercepts all cleint requests and adds hystrix info to them
 
-## <a name="NewRelicClientInterceptor">func</a> [NewRelicClientInterceptor](./interceptors.go#L113)
+## <a name="NewRelicClientInterceptor">func</a> [NewRelicClientInterceptor](./interceptors.go#L115)
 ``` go
 func NewRelicClientInterceptor(address string) grpc.UnaryClientInterceptor
 ```

@@ -97,6 +97,8 @@ func NewRelicInterceptor() grpc.UnaryServerInterceptor {
 //ServerErrorInterceptor intercepts all server actions and reports them to error notifier
 func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		// set trace id if not set
+		ctx = notifier.SetTraceId(ctx)
 		// dont log Error for HTTP request, let HTTP Handler manage it
 		if modifiers.IsHTTPRequest(ctx) {
 			return handler(ctx, req)

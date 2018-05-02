@@ -23,13 +23,11 @@ var (
 )
 
 const (
-	tracerId string = "tracerId"
+	tracerID string = "tracerId"
 )
 
-type MetaData map[string]interface{}
-
-func InitAirbrake(projectId int64, projectKey string) {
-	airbrake = gobrake.NewNotifier(projectId, projectKey)
+func InitAirbrake(projectID int64, projectKey string) {
+	airbrake = gobrake.NewNotifier(projectID, projectKey)
 }
 
 func InitBugsnag(config bugsnag.Configuration) {
@@ -123,13 +121,13 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 			list = append(list, rawData[pos])
 		}
 	}
-	var traceId string
+	var traceID string
 	for _, d := range list {
 		if c, ok := d.(context.Context); ok {
 			if span := stdopentracing.SpanFromContext(c); span != nil {
-				traceId = span.BaggageItem("trace")
+				traceID = span.BaggageItem("trace")
 			} else {
-				traceId = GetTraceId(c)
+				traceID = GetTraceId(c)
 			}
 			break
 		}
@@ -149,8 +147,8 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 				n.Context[k] = v
 			}
 		}
-		if traceId != "" {
-			n.Context["traceId"] = traceId
+		if traceID != "" {
+			n.Context["traceId"] = traceID
 		}
 		airbrake.SendNoticeAsync(n)
 	}
@@ -165,8 +163,8 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 				fields = append(fields, &rollbar.Field{Name: k, Data: v})
 			}
 		}
-		if traceId != "" {
-			fields = append(fields, &rollbar.Field{Name: "traceId", Data: traceId})
+		if traceID != "" {
+			fields = append(fields, &rollbar.Field{Name: "traceId", Data: traceID})
 		}
 		fields = append(fields, &rollbar.Field{Name: "server", Data: map[string]interface{}{"hostname": getHostname(), "root": getServerRoot()}})
 		if e, ok := err.(errors.ErrorExt); ok {
@@ -243,17 +241,17 @@ func SetTraceId(ctx context.Context) context.Context {
 	if GetTraceId(ctx) != "" {
 		return ctx
 	}
-	var traceId string
+	var traceID string
 	if span := stdopentracing.SpanFromContext(ctx); span != nil {
-		traceId = span.BaggageItem("trace")
+		traceID = span.BaggageItem("trace")
 	} else {
-		traceId = uuid.NewUUID().String()
+		traceID = uuid.NewUUID().String()
 	}
-	return context.WithValue(ctx, tracerId, traceId)
+	return context.WithValue(ctx, tracerID, traceID)
 }
 
 func GetTraceId(ctx context.Context) string {
-	data := ctx.Value(tracerId)
+	data := ctx.Value(tracerID)
 	if data == nil {
 		return ""
 	}
