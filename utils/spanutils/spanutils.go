@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+// TracingSpan defines an interface for implementing a tracing span
 type TracingSpan interface {
 	End()
 	Finish()
@@ -56,6 +57,7 @@ func (span *tracingSpan) SetQuery(query string) {
 	}
 }
 
+//NewInternalSpan starts a span for tracing internal actions
 func NewInternalSpan(ctx context.Context, name string) (TracingSpan, context.Context) {
 	zip, ctx := opentracing.StartSpanFromContext(ctx, name)
 	txn := utils.GetNewRelicTransactionFromContext(ctx)
@@ -69,6 +71,7 @@ func NewInternalSpan(ctx context.Context, name string) (TracingSpan, context.Con
 	}, ctx
 }
 
+//NewDatastoreSpan starts a span for tracing data store actions
 func NewDatastoreSpan(ctx context.Context, name string, datastore string) (TracingSpan, context.Context) {
 	if !strings.HasPrefix(name, datastore) {
 		name = datastore + name
@@ -103,17 +106,19 @@ func buildExternalSpan(ctx context.Context, name string, url string) (*tracingSp
 	}, ctx
 }
 
+//NewExternalSpan starts a span for tracing external actions
 func NewExternalSpan(ctx context.Context, name string, url string) (TracingSpan, context.Context) {
 	return buildExternalSpan(ctx, name, url)
 }
 
+//NewHTTPExternalSpan starts a span for tracing external HTTP actions
 func NewHTTPExternalSpan(ctx context.Context, name string, url string, hdr http.Header) (TracingSpan, context.Context) {
 	s, ctx := buildExternalSpan(ctx, name, url)
-	traceHTTPHeaders(s.openSpan, ctx, hdr)
+	traceHTTPHeaders(ctx, s.openSpan, hdr)
 	return s, ctx
 }
 
-func traceHTTPHeaders(sp opentracing.Span, ctx context.Context, hdr http.Header) {
+func traceHTTPHeaders(ctx context.Context, sp opentracing.Span, hdr http.Header) {
 	// Transmit the span's TraceContext as HTTP headers on our
 	// outbound request.
 	opentracing.GlobalTracer().Inject(
@@ -147,6 +152,7 @@ func (w metadataReaderWriter) ForeachKey(handler func(key, val string) error) er
 	return nil
 }
 
+//ClientSpan starts a new client span linked to the existing spans if any are found
 func ClientSpan(operationName string, ctx context.Context) (context.Context, opentracing.Span) {
 	tracer := opentracing.GlobalTracer()
 	var clientSpan opentracing.Span

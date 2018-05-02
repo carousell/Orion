@@ -16,6 +16,7 @@ type hdr struct {
 	http.Header
 }
 
+//RequestHeadersFromContext returns all request headers passed in through context
 func RequestHeadersFromContext(ctx context.Context) http.Header {
 	if h := ctx.Value(requestHeadersKey); h != nil {
 		if headers, ok := h.(*hdr); ok {
@@ -25,6 +26,7 @@ func RequestHeadersFromContext(ctx context.Context) http.Header {
 	return nil
 }
 
+//ResponseHeadersFromContext returns all response headers passed in through context
 func ResponseHeadersFromContext(ctx context.Context) http.Header {
 	if h := ctx.Value(responseHeadersKey); h != nil {
 		if headers, ok := h.(*hdr); ok {
@@ -34,6 +36,7 @@ func ResponseHeadersFromContext(ctx context.Context) http.Header {
 	return nil
 }
 
+//AddToRequestHeaders adds a request header to headers passed in through context
 func AddToRequestHeaders(ctx context.Context, key string, value string) context.Context {
 	h := RequestHeadersFromContext(ctx)
 	if h == nil {
@@ -46,6 +49,7 @@ func AddToRequestHeaders(ctx context.Context, key string, value string) context.
 	return ctx
 }
 
+//AddToResponseHeaders adds a response header to headers that will returned through context
 func AddToResponseHeaders(ctx context.Context, key string, value string) context.Context {
 	h := ResponseHeadersFromContext(ctx)
 	if h == nil {
