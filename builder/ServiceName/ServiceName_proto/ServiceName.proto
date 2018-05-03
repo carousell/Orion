@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package ServiceName_proto;
+
+service ServiceName{
+    rpc Echo (EchoRequest) returns (EchoResponse){
+    }
+    // ORION:URL: GET/POST/OPTIONS /api/1.0/upper/{msg}
+    rpc Upper (UpperRequest) returns (UpperResponse){
+    }
+
+    // ORION:URL: POST/PUT
+    rpc UpperProxy (UpperRequest) returns (UpperResponse) {
+    }
+}
+
+
+message EchoRequest {
+    string msg = 1;
+}
+
+message EchoResponse {
+    string msg = 1;
+}
+
+message UpperRequest {
+    string msg = 1;
+}
+
+message UpperResponse {
+    string msg = 1;
+}
