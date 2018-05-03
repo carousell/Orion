@@ -19,7 +19,7 @@ SVC=`echo ${SVC:0:1} | tr  '[a-z]' '[A-Z]'`${SVC:1}
 echo "creating $SVC"
 #copy to servicename
 SVC_PATH=$GOPATH/src/$PKG/$SVC/
-mkdir $SVC_PATH
+mkdir -p $SVC_PATH
 cp -r . $SVC_PATH
 rm -rf $SVC_PATH/.git
 rm -rf $SVC_PATH/create.sh
