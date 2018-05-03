@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"strings"
 
 	bugsnag "github.com/bugsnag/bugsnag-go"
 	"github.com/carousell/Orion/utils/errors"
@@ -23,7 +24,7 @@ var (
 )
 
 const (
-	tracerID string = "tracerId"
+	tracerID = "tracerId"
 )
 
 func InitAirbrake(projectID int64, projectKey string) {
@@ -243,8 +244,14 @@ func SetTraceId(ctx context.Context) context.Context {
 	}
 	var traceID string
 	if span := stdopentracing.SpanFromContext(ctx); span != nil {
-		traceID = span.BaggageItem("trace")
-	} else {
+		trace := span.BaggageItem("trace")
+		if trace == "" {
+			traceID = uuid.NewUUID().String()
+			span.SetBaggageItem("trace", traceID)
+		}
+	}
+	// if no trace id then create one
+	if strings.TrimSpace(traceID) == "" {
 		traceID = uuid.NewUUID().String()
 	}
 	return context.WithValue(ctx, tracerID, traceID)

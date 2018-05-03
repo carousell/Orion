@@ -163,6 +163,7 @@ func WrapWithSkip(err error, msg string, skip int) ErrorExt {
 	return c
 }
 
+//SetBaseFilePath sets the base file path for linking source code with reported stack information
 func SetBaseFilePath(path string) {
 	path = strings.TrimSpace(path)
 	if path != "" {
