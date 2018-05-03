@@ -11,6 +11,7 @@ import (
 	"github.com/carousell/Orion/orion/modifiers"
 	"github.com/carousell/Orion/utils"
 	"github.com/carousell/Orion/utils/errors/notifier"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	newrelic "github.com/newrelic/go-agent"
@@ -35,10 +36,11 @@ func filterFromZipkin(ctx context.Context, fullMethodName string) bool {
 func DefaultInterceptors() []grpc.UnaryServerInterceptor {
 	return []grpc.UnaryServerInterceptor{
 		ResponseTimeLoggingInterceptor(),
-		ServerErrorInterceptor(),
-		NewRelicInterceptor(),
+		grpc_ctxtags.UnaryServerInterceptor(),
 		grpc_opentracing.UnaryServerInterceptor(grpc_opentracing.WithFilterFunc(filterFromZipkin)),
 		grpc_prometheus.UnaryServerInterceptor,
+		ServerErrorInterceptor(),
+		NewRelicInterceptor(),
 	}
 }
 
@@ -99,6 +101,11 @@ func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		// set trace id if not set
 		ctx = notifier.SetTraceId(ctx)
+
+		t := grpc_ctxtags.Extract(ctx)
+		if t != nil {
+			t.Set("trace", notifier.GetTraceId(ctx))
+		}
 		// dont log Error for HTTP request, let HTTP Handler manage it
 		if modifiers.IsHTTPRequest(ctx) {
 			return handler(ctx, req)

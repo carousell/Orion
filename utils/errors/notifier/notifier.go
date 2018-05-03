@@ -9,6 +9,7 @@ import (
 
 	bugsnag "github.com/bugsnag/bugsnag-go"
 	"github.com/carousell/Orion/utils/errors"
+	"github.com/carousell/Orion/utils/options"
 	stdopentracing "github.com/opentracing/opentracing-go"
 	"github.com/pborman/uuid"
 	"github.com/stvp/rollbar"
@@ -24,7 +25,7 @@ var (
 )
 
 const (
-	tracerID = "tracerId"
+	TracerID = "tracerId"
 )
 
 func InitAirbrake(projectID int64, projectKey string) {
@@ -127,7 +128,8 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		if c, ok := d.(context.Context); ok {
 			if span := stdopentracing.SpanFromContext(c); span != nil {
 				traceID = span.BaggageItem("trace")
-			} else {
+			}
+			if strings.TrimSpace(traceID) == "" {
 				traceID = GetTraceId(c)
 			}
 			break
@@ -244,26 +246,22 @@ func SetTraceId(ctx context.Context) context.Context {
 	}
 	var traceID string
 	if span := stdopentracing.SpanFromContext(ctx); span != nil {
-		trace := span.BaggageItem("trace")
-		if trace == "" {
-			traceID = uuid.NewUUID().String()
-			span.SetBaggageItem("trace", traceID)
-		}
+		traceID = span.BaggageItem("trace")
 	}
 	// if no trace id then create one
 	if strings.TrimSpace(traceID) == "" {
 		traceID = uuid.NewUUID().String()
 	}
-	return context.WithValue(ctx, tracerID, traceID)
+	return options.AddToOptions(ctx, TracerID, traceID)
 }
 
 func GetTraceId(ctx context.Context) string {
-	data := ctx.Value(tracerID)
-	if data == nil {
-		return ""
+	if o := options.FromContext(ctx); o != nil {
+		if data, found := o.Get(TracerID); found {
+			return data.(string)
+		}
 	}
-	v, _ := data.(string)
-	return v
+	return ""
 }
 
 func SetServerRoot(path string) {
