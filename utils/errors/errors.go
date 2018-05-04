@@ -156,8 +156,9 @@ func WrapWithSkip(err error, msg string, skip int) ErrorExt {
 	}
 
 	c := &customError{
-		Msg:   msg + err.Error(),
-		cause: err,
+		Msg:          msg + err.Error(),
+		cause:        err,
+		shouldNotify: true,
 	}
 	c.generateStack(skip + 1)
 	return c
