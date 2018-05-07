@@ -36,7 +36,8 @@ type wrappedWork func(payload string) error
 
 //ScheduleConfig is the config used when scheduling a task
 type ScheduleConfig struct {
-	retries int
+	retries   int
+	queueName string
 }
 
 //ScheduleOption represents different options available for Schedule
