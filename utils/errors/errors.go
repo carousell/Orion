@@ -26,7 +26,7 @@ type ErrorExt interface {
 	Cause() error
 }
 
-//NotifyExt is the interface defination for notifier related options
+//NotifyExt is the interface definition for notifier related options
 type NotifyExt interface {
 	ShouldNotify() bool
 	Notified(status bool)

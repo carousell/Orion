@@ -30,7 +30,7 @@ import (
 )
 
 var (
-	// DefaultHTTPResponseHeaders are reponse headers that are whitelisted by default
+	// DefaultHTTPResponseHeaders are response headers that are whitelisted by default
 	DefaultHTTPResponseHeaders = []string{
 		"Content-Type",
 	}
@@ -82,11 +82,13 @@ type pathInfo struct {
 }
 
 type httpHandler struct {
-	mu     sync.Mutex
-	paths  map[string]*pathInfo
-	mar    jsonpb.Marshaler
-	svr    *http.Server
-	config HTTPHandlerConfig
+	mu          sync.Mutex
+	paths       map[string]*pathInfo
+	defEncoders map[string]Encoder
+	defDecoders map[string]Decoder
+	mar         jsonpb.Marshaler
+	svr         *http.Server
+	config      HTTPHandlerConfig
 }
 
 func writeResp(resp http.ResponseWriter, status int, data []byte) {
@@ -258,6 +260,9 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url
 		dec := func(r interface{}) error {
 			if info.encoder != nil {
 				encErr = info.encoder(req, r)
+			} else if enc, ok := h.defEncoders[info.svc.desc.ServiceName]; ok {
+				// check ofr default encoder and invoke it
+				encErr = enc(req, r)
 			} else {
 				encErr = DefaultEncoder(req, r)
 			}
@@ -270,6 +275,12 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url
 		if info.decoder != nil {
 			//apply decoder if any
 			info.decoder(ctx, resp, encErr, err, protoResponse)
+			if encErr != nil {
+				return ctx, encErr
+			}
+			return ctx, err
+		} else if dec, ok := h.defDecoders[info.svc.desc.ServiceName]; ok {
+			dec(ctx, resp, encErr, err, protoResponse)
 			if encErr != nil {
 				return ctx, encErr
 			}
@@ -384,6 +395,15 @@ func (h *httpHandler) AddEncoder(serviceName, method string, httpMethod []string
 	}
 }
 
+func (h *httpHandler) AddDefaultEncoder(serviceName string, encoder Encoder) {
+	if h.defEncoders == nil {
+		h.defEncoders = make(map[string]Encoder)
+	}
+	if encoder != nil {
+		h.defEncoders[serviceName] = encoder
+	}
+}
+
 func (h *httpHandler) AddHTTPHandler(serviceName string, method string, path string, handler HTTPHandler) {
 	if h.paths != nil {
 		url := generateURL(serviceName, method)
@@ -403,6 +423,15 @@ func (h *httpHandler) AddDecoder(serviceName, method string, decoder Decoder) {
 		} else {
 			fmt.Println("url not found", url, h.paths)
 		}
+	}
+}
+
+func (h *httpHandler) AddDefaultDecoder(serviceName string, decoder Decoder) {
+	if h.defDecoders == nil {
+		h.defDecoders = make(map[string]Decoder)
+	}
+	if decoder != nil {
+		h.defDecoders[serviceName] = decoder
 	}
 }
 

@@ -25,18 +25,21 @@ var (
 )
 
 const (
-	TracerID = "tracerId"
+	tracerID = "tracerId"
 )
 
+// InitAirbrake inits airbrake configuration
 func InitAirbrake(projectID int64, projectKey string) {
 	airbrake = gobrake.NewNotifier(projectID, projectKey)
 }
 
+//InitBugsnag inits bugsnag configuration
 func InitBugsnag(config bugsnag.Configuration) {
 	bugsnag.Configure(config)
 	bugsnagInited = true
 }
 
+//InitRollbar inits rollbar configuration
 func InitRollbar(token, env string) {
 	rollbar.Token = token
 	rollbar.Environment = env
@@ -252,12 +255,12 @@ func SetTraceId(ctx context.Context) context.Context {
 	if strings.TrimSpace(traceID) == "" {
 		traceID = uuid.NewUUID().String()
 	}
-	return options.AddToOptions(ctx, TracerID, traceID)
+	return options.AddToOptions(ctx, tracerID, traceID)
 }
 
 func GetTraceId(ctx context.Context) string {
 	if o := options.FromContext(ctx); o != nil {
-		if data, found := o.Get(TracerID); found {
+		if data, found := o.Get(tracerID); found {
 			return data.(string)
 		}
 	}

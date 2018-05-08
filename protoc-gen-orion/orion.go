@@ -197,10 +197,6 @@ func generate(d *data, file *descriptor.FileDescriptorProto) {
 	for index, svc := range file.GetService() {
 
 		origServName := svc.GetName()
-		fullServName := origServName
-		if pkg := file.GetPackage(); pkg != "" {
-			fullServName = pkg + "." + fullServName
-		}
 		servName := generator.CamelCase(origServName) // use the same logic from go-grpc generator
 		serviceDescVar := "_" + servName + "_serviceDesc"
 

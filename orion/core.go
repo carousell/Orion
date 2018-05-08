@@ -43,7 +43,7 @@ type decoderInfo struct {
 	decoder     handlers.Decoder
 }
 
-//DefaultServerImpl provides a default implementation of orion.Server this can be embeded in custom orion.Server implementations
+//DefaultServerImpl provides a default implementation of orion.Server this can be embedded in custom orion.Server implementations
 type DefaultServerImpl struct {
 	config Config
 	mu     sync.Mutex
