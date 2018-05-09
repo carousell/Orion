@@ -53,6 +53,8 @@ type DefaultServerImpl struct {
 	services     map[string]*svcInfo
 	encoders     map[string]*encoderInfo
 	decoders     map[string]*decoderInfo
+	defDecoders  map[string]handlers.Decoder
+	defEncoders  map[string]handlers.Encoder
 	handlers     []*handlerInfo
 	initializers []Initializer
 
@@ -80,6 +82,14 @@ func (d *DefaultServerImpl) AddEncoder(serviceName, method string, httpMethod []
 	ei.httpMethod = httpMethod
 	ei.path = path
 	ei.encoder = encoder
+}
+
+//AddDefaultEncoder is the implementation of handlers.Encodable
+func (d *DefaultServerImpl) AddDefaultEncoder(serviceName string, encoder Encoder) {
+	if d.defEncoders == nil {
+		d.defEncoders = make(map[string]handlers.Encoder)
+	}
+	d.defEncoders[serviceName] = encoder
 }
 
 //AddHTTPHandler is the implementation of handlers.HTTPInterceptor
@@ -110,6 +120,14 @@ func (d *DefaultServerImpl) AddDecoder(serviceName, method string, decoder handl
 		method:      method,
 		decoder:     decoder,
 	}
+}
+
+//AddDefaultDecoder is the implementation of handlers.Decodable
+func (d *DefaultServerImpl) AddDefaultDecoder(serviceName string, decoder Decoder) {
+	if d.defDecoders == nil {
+		d.defDecoders = make(map[string]handlers.Decoder)
+	}
+	d.defDecoders[serviceName] = decoder
 }
 
 //GetOrionConfig returns current orion config
@@ -255,10 +273,13 @@ func (d *DefaultServerImpl) startHandler(h *handlerInfo, reload bool) {
 		h.handler.Stop(time.Second * 1)
 		h.listener = h.listener.GetListener()
 	}
+
+	//Add all services first
 	for _, info := range d.services {
 		h.handler.Add(info.sd, info.ss)
 	}
 
+	//Add all encoders
 	for _, ei := range d.encoders {
 		if e, ok := h.handler.(handlers.Encodeable); ok {
 			e.AddEncoder(ei.serviceName, ei.method, ei.httpMethod, ei.path, ei.encoder)
@@ -269,14 +290,31 @@ func (d *DefaultServerImpl) startHandler(h *handlerInfo, reload bool) {
 			}
 		}
 	}
+
+	//Add all default encoders
+	for svc, enc := range d.defEncoders {
+		if e, ok := h.handler.(handlers.Encodeable); ok {
+			e.AddDefaultEncoder(svc, enc)
+		}
+	}
+
+	//Add all decoders
 	for _, di := range d.decoders {
 		if e, ok := h.handler.(handlers.Decodable); ok {
 			e.AddDecoder(di.serviceName, di.method, di.decoder)
 		}
 	}
+
+	//Add all default decoders
+	for svc, dec := range d.defDecoders {
+		if e, ok := h.handler.(handlers.Decodable); ok {
+			e.AddDefaultDecoder(svc, dec)
+		}
+	}
+
 	d.wg.Add(1)
-	go func(s *DefaultServerImpl, h *handlerInfo) {
-		defer s.wg.Done()
+	go func(d *DefaultServerImpl, h *handlerInfo) {
+		defer d.wg.Done()
 		h.handler.Run(h.listener)
 	}(d, h)
 }
