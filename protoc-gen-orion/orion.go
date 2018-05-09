@@ -23,6 +23,7 @@ import (
 	"github.com/micro/protobuf/protoc-gen-go/generator"
 )
 
+// constants for Orion protoc generator
 const (
 	ORION   = "ORION"
 	URL     = "URL"
@@ -108,7 +109,18 @@ func Register{{.ServName}}OrionServer(srv orion.ServiceFactory, orionServer orio
 {{ range .Encoders }}
 	Register{{.SvcName}}{{.MethodName}}Encoder(orionServer, nil)
 {{- end }}
-}{{ end }}
+}
+
+// DefaultEncoder
+func Register{{.ServName}}DefaultEncoder(svr orion.Server, encoder orion.Encoder) {
+	orion.RegisterDefaultEncoder(svr, "{{.ServName}}", encoder)
+}
+
+// DefaultDecoder
+func Register{{.ServName}}DefaultDecoder(svr orion.Server, decoder orion.Decoder) {
+	orion.RegisterDefaultDecoder(svr, "{{.ServName}}", decoder)
+}
+{{ end }}
 `
 
 // Error reports a problem, including an error, and exits the program.
@@ -197,10 +209,6 @@ func generate(d *data, file *descriptor.FileDescriptorProto) {
 	for index, svc := range file.GetService() {
 
 		origServName := svc.GetName()
-		fullServName := origServName
-		if pkg := file.GetPackage(); pkg != "" {
-			fullServName = pkg + "." + fullServName
-		}
 		servName := generator.CamelCase(origServName) // use the same logic from go-grpc generator
 		serviceDescVar := "_" + servName + "_serviceDesc"
 

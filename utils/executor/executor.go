@@ -98,7 +98,7 @@ func (e *exe) Wait() error {
 	}
 }
 
-//NewExecutor builds and retuns a executor
+//NewExecutor builds and returns an executor
 func NewExecutor(options ...Option) Executor {
 	c := config{
 		concurrency: 5,

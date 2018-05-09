@@ -21,9 +21,9 @@ type Interceptor interface {
 
 //WhitelistedHeaders is the interface that needs to be implemented by clients that need request/response headers to be passed in through the context
 type WhitelistedHeaders interface {
-	//GetRequestHeaders retuns a list of all whitelisted request headers
+	//GetRequestHeaders returns a list of all whitelisted request headers
 	GetRequestHeaders() []string
-	//GetResponseHeaders retuns a list of all whitelisted response headers
+	//GetResponseHeaders returns a list of all whitelisted response headers
 	GetResponseHeaders() []string
 }
 
@@ -36,11 +36,13 @@ type Decoder func(ctx context.Context, w http.ResponseWriter, encodeError, endpo
 //Encodeable interface that is implemented by a handler that supports custom HTTP encoder
 type Encodeable interface {
 	AddEncoder(serviceName, method string, httpMethod []string, path string, encoder Encoder)
+	AddDefaultEncoder(serviceName string, encoder Encoder)
 }
 
 //Decodable interface that is implemented by a handler that supports custom HTTP decoder
 type Decodable interface {
 	AddDecoder(serviceName, method string, decoder Decoder)
+	AddDefaultDecoder(serviceName string, decoder Decoder)
 }
 
 //HTTPInterceptor allows intercepting an HTTP connection
@@ -48,7 +50,7 @@ type HTTPInterceptor interface {
 	AddHTTPHandler(serviceName, method string, path string, handler HTTPHandler)
 }
 
-// HTTPHandler is the funtion that handles HTTP request
+// HTTPHandler is the function that handles HTTP request
 type HTTPHandler func(http.ResponseWriter, *http.Request) bool
 
 //Handler implements a service handler that is used by orion server
