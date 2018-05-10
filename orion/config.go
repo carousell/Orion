@@ -27,7 +27,7 @@ type Config struct {
 	GRPCPort string
 	//PprofPort is the port to use for pprof
 	PProfport string
-	// HotReload when set reloads the service when it recieves SIGHUP
+	// HotReload when set reloads the service when it receives SIGHUP
 	HotReload bool
 	//EnableProtoURL adds gRPC generated urls in HTTP handler
 	EnableProtoURL bool

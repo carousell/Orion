@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 
 	proto "github.com/carousell/Orion/example/simple/simple_proto"
-	"github.com/gogo/protobuf/jsonpb"
 	"google.golang.org/grpc"
 )
 
@@ -44,7 +42,4 @@ func echoGRPC(c proto.SimpleServiceClient) {
 }
 
 func echoHTTP() {
-	url := "http://" + address + ":" + httpPort + "/simpleservice/echo"
-	data, err := jsonpb.Marshaler
-	http.Post(url, "application/json")
 }

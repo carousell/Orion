@@ -29,7 +29,7 @@ After you have generated the code from protoc (using grpc and orion plugin), you
 
 How do i use it
 
-Lets go throught the example defined at https://github.com/carousell/Orion/tree/master/example/simple , It covers the minimum required implementation for orion. It has the following structure
+Lets go through the example defined at https://github.com/carousell/Orion/tree/master/example/simple , It covers the minimum required implementation for orion. It has the following structure
 	.
 	├── cmd
 	│   ├── client
