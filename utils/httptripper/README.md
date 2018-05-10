@@ -6,40 +6,131 @@
 * [Index](#pkg-index)
 
 ## <a name="pkg-overview">Overview</a>
-Package httptripper provides an implementation of http.RoundTripper that wraps zipking span info in request headers
+Package httptripper provides an implementation of http.RoundTripper that provides retries, popluates opentracing span info and hystrix circuit breaker.
 
 ### Setup
-for most cases wrapping the default http RoundTripper works
+for most cases using the http.Client provided by the package is sufficient
 
-	tripper := httptripper.WrapTripper(http.DefaultTransport)
-	http.DefaultTransport = tripper
+	client := httptripper.NewHTTPClient(time.Millisecond * 500)
 
-doing this at the start of your program will make sure zipkin spans are appended for all outgoing http requests
+Note: If you are using a custom http.Client, then just wrap your custom http.Client using httptripper.WrapTripper
 
-Note: If you are using a custom tripper, then just wrap your custom tripper using httptripper.WrapTripper
+	tripper := httptripper.WrapTripper(client.Transport)
+	client.Transport = tripper
 
 ### How To Use
-Make sure you add context info in the http.Request
+Make sure you use httptripper.NewRequest to build http.Request, since http.NewRequest does not take context as parameter
 
-	httpReq, err := http.NewRequest("GET", url, nil)
-	httpReq = httpReq.WithContext(ctx)
+	httpReq, err := httptripper.NewRequest(ctx, "TracingName", "GET", url, nil)
 
 ## <a name="pkg-imports">Imported Packages</a>
 
+- [github.com/afex/hystrix-go/hystrix](https://godoc.org/github.com/afex/hystrix-go/hystrix)
 - [github.com/carousell/Orion/utils/spanutils](./../spanutils)
-- [github.com/opentracing/opentracing-go](https://godoc.org/github.com/opentracing/opentracing-go)
 
 ## <a name="pkg-index">Index</a>
+* [func GetRequestTraceName(req \*http.Request) string](#GetRequestTraceName)
+* [func NewHTTPClient(timeout time.Duration) \*http.Client](#NewHTTPClient)
+* [func NewRequest(ctx context.Context, traceName, method, url string, body io.Reader) (\*http.Request, error)](#NewRequest)
+* [func NewTripper() http.RoundTripper](#NewTripper)
+* [func SetRequestTraceName(req \*http.Request, traceName string) \*http.Request](#SetRequestTraceName)
 * [func WrapTripper(base http.RoundTripper) http.RoundTripper](#WrapTripper)
+* [type Retriable](#Retriable)
+  * [func DefaultRetry() Retriable](#DefaultRetry)
+  * [func NewRetry(options ...RetryOption) Retriable](#NewRetry)
+* [type RetryOption](#RetryOption)
+  * [func WithMaxRetry(max int) RetryOption](#WithMaxRetry)
+  * [func WithRetryAllMethods(retryAllMethods bool) RetryOption](#WithRetryAllMethods)
+  * [func WithRetryDelay(delay time.Duration) RetryOption](#WithRetryDelay)
+  * [func WithRetryMethods(methods ...string) RetryOption](#WithRetryMethods)
+* [type RetryOptions](#RetryOptions)
 
 #### <a name="pkg-files">Package files</a>
-[httptripper.go](./httptripper.go) 
+[httptripper.go](./httptripper.go) [retry.go](./retry.go) [types.go](./types.go) 
 
-## <a name="WrapTripper">func</a> [WrapTripper](./httptripper.go#L59)
+## <a name="GetRequestTraceName">func</a> [GetRequestTraceName](./httptripper.go#L153)
+``` go
+func GetRequestTraceName(req *http.Request) string
+```
+
+## <a name="NewHTTPClient">func</a> [NewHTTPClient](./httptripper.go#L128)
+``` go
+func NewHTTPClient(timeout time.Duration) *http.Client
+```
+
+## <a name="NewRequest">func</a> [NewRequest](./httptripper.go#L139)
+``` go
+func NewRequest(ctx context.Context, traceName, method, url string, body io.Reader) (*http.Request, error)
+```
+
+## <a name="NewTripper">func</a> [NewTripper](./httptripper.go#L120)
+``` go
+func NewTripper() http.RoundTripper
+```
+
+## <a name="SetRequestTraceName">func</a> [SetRequestTraceName](./httptripper.go#L147)
+``` go
+func SetRequestTraceName(req *http.Request, traceName string) *http.Request
+```
+
+## <a name="WrapTripper">func</a> [WrapTripper](./httptripper.go#L112)
 ``` go
 func WrapTripper(base http.RoundTripper) http.RoundTripper
 ```
 WrapTripper wraps the base tripper with zipkin info
+
+## <a name="Retriable">type</a> [Retriable](./types.go#L8-L11)
+``` go
+type Retriable interface {
+    ShouldRetry(retryConut int, req *http.Request, resp *http.Response, err error) bool
+    WaitDuration(retryConut int, req *http.Request, resp *http.Response, err error) time.Duration
+}
+```
+
+### <a name="DefaultRetry">func</a> [DefaultRetry](./retry.go#L44)
+``` go
+func DefaultRetry() Retriable
+```
+
+### <a name="NewRetry">func</a> [NewRetry](./retry.go#L34)
+``` go
+func NewRetry(options ...RetryOption) Retriable
+```
+
+## <a name="RetryOption">type</a> [RetryOption](./types.go#L20)
+``` go
+type RetryOption func(*RetryOptions)
+```
+
+### <a name="WithMaxRetry">func</a> [WithMaxRetry](./retry.go#L53)
+``` go
+func WithMaxRetry(max int) RetryOption
+```
+
+### <a name="WithRetryAllMethods">func</a> [WithRetryAllMethods](./retry.go#L76)
+``` go
+func WithRetryAllMethods(retryAllMethods bool) RetryOption
+```
+
+### <a name="WithRetryDelay">func</a> [WithRetryDelay](./retry.go#L59)
+``` go
+func WithRetryDelay(delay time.Duration) RetryOption
+```
+
+### <a name="WithRetryMethods">func</a> [WithRetryMethods](./retry.go#L65)
+``` go
+func WithRetryMethods(methods ...string) RetryOption
+```
+
+## <a name="RetryOptions">type</a> [RetryOptions](./types.go#L13-L18)
+``` go
+type RetryOptions struct {
+    MaxRetry        int
+    Delay           time.Duration
+    Methods         map[string]bool
+    RetryAllMethods bool
+}
+```
 
 - - -
 Generated by [godoc2ghmd](https://github.com/GandalfUK/godoc2ghmd)
