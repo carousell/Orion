@@ -442,6 +442,7 @@ func (h *httpHandler) AddDefaultDecoder(serviceName string, decoder Decoder) {
 }
 
 func (h *httpHandler) Run(httpListener net.Listener) error {
+	h.mu.Lock()
 	r := mux.NewRouter()
 	fmt.Println("Mapped URLs: ")
 	for url, info := range h.paths {
@@ -461,7 +462,9 @@ func (h *httpHandler) Run(httpListener net.Listener) error {
 		WriteTimeout: 10 * time.Second,
 		Handler:      r,
 	}
-	return h.svr.Serve(httpListener)
+	s := h.svr
+	h.mu.Unlock()
+	return s.Serve(httpListener)
 }
 
 func (h *httpHandler) Stop(timeout time.Duration) error {

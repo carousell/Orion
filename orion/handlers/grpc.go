@@ -43,9 +43,12 @@ func (g *grpcHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 }
 
 func (g *grpcHandler) Run(grpcListener net.Listener) error {
+	g.mu.Lock()
 	log.Println("GRPC", "server starting")
 	grpc_prometheus.Register(g.grpcServer)
-	return g.grpcServer.Serve(grpcListener)
+	s := g.grpcServer
+	g.mu.Unlock()
+	return s.Serve(grpcListener)
 }
 
 func (g *grpcHandler) Stop(timeout time.Duration) error {
