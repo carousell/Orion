@@ -68,7 +68,7 @@ var (
 ```
 ``` go
 var (
-    // DefaultHTTPResponseHeaders are reponse headers that are whitelisted by default
+    // DefaultHTTPResponseHeaders are response headers that are whitelisted by default
     DefaultHTTPResponseHeaders = []string{
         "Content-Type",
     }
@@ -81,7 +81,7 @@ func ContentTypeFromHeaders(ctx context.Context) string
 ```
 ContentTypeFromHeaders searches for a matching content type
 
-## <a name="DefaultEncoder">func</a> [DefaultEncoder](./http.go#L228)
+## <a name="DefaultEncoder">func</a> [DefaultEncoder](./http.go#L236)
 ``` go
 func DefaultEncoder(req *http.Request, r interface{}) error
 ```
@@ -89,14 +89,14 @@ DefaultEncoder encodes a HTTP request if none are registered. This encoder
 populates the proto message with URL route variables or fields from a JSON
 body if either are available.
 
-## <a name="GrpcErrorToHTTP">func</a> [GrpcErrorToHTTP](./http.go#L180)
+## <a name="GrpcErrorToHTTP">func</a> [GrpcErrorToHTTP](./http.go#L188)
 ``` go
 func GrpcErrorToHTTP(err error, defaultStatus int, defaultMessage string) (int, string)
 ```
 GrpcErrorToHTTP converts gRPC error code into HTTP response status code.
 See: <a href="https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto">https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto</a>
 
-## <a name="CommonConfig">type</a> [CommonConfig](./types.go#L62-L64)
+## <a name="CommonConfig">type</a> [CommonConfig](./types.go#L64-L66)
 ``` go
 type CommonConfig struct {
     NoDefaultInterceptors bool
@@ -104,10 +104,11 @@ type CommonConfig struct {
 ```
 CommonConfig is the config that is common across both http and grpc handlers
 
-## <a name="Decodable">type</a> [Decodable](./types.go#L42-L44)
+## <a name="Decodable">type</a> [Decodable](./types.go#L43-L46)
 ``` go
 type Decodable interface {
     AddDecoder(serviceName, method string, decoder Decoder)
+    AddDefaultDecoder(serviceName string, decoder Decoder)
 }
 ```
 Decodable interface that is implemented by a handler that supports custom HTTP decoder
@@ -118,10 +119,11 @@ type Decoder func(ctx context.Context, w http.ResponseWriter, encodeError, endpo
 ```
 Decoder is the function type needed for response decoders
 
-## <a name="Encodeable">type</a> [Encodeable](./types.go#L37-L39)
+## <a name="Encodeable">type</a> [Encodeable](./types.go#L37-L40)
 ``` go
 type Encodeable interface {
     AddEncoder(serviceName, method string, httpMethod []string, path string, encoder Encoder)
+    AddDefaultEncoder(serviceName string, encoder Encoder)
 }
 ```
 Encodeable interface that is implemented by a handler that supports custom HTTP encoder
@@ -146,11 +148,11 @@ type GRPCMethodHandler func(srv interface{}, ctx context.Context, dec func(inter
 ```
 GRPCMethodHandler is the method type as defined in grpc-go
 
-## <a name="HTTPHandler">type</a> [HTTPHandler](./types.go#L52)
+## <a name="HTTPHandler">type</a> [HTTPHandler](./types.go#L54)
 ``` go
 type HTTPHandler func(http.ResponseWriter, *http.Request) bool
 ```
-HTTPHandler is the funtion that handles HTTP request
+HTTPHandler is the function that handles HTTP request
 
 ## <a name="HTTPHandlerConfig">type</a> [HTTPHandlerConfig](./http.go#L40-L43)
 ``` go
@@ -161,7 +163,7 @@ type HTTPHandlerConfig struct {
 ```
 HTTPHandlerConfig is the configuration for HTTP Handler
 
-## <a name="HTTPInterceptor">type</a> [HTTPInterceptor](./types.go#L47-L49)
+## <a name="HTTPInterceptor">type</a> [HTTPInterceptor](./types.go#L49-L51)
 ``` go
 type HTTPInterceptor interface {
     AddHTTPHandler(serviceName, method string, path string, handler HTTPHandler)
@@ -169,7 +171,7 @@ type HTTPInterceptor interface {
 ```
 HTTPInterceptor allows intercepting an HTTP connection
 
-## <a name="Handler">type</a> [Handler](./types.go#L55-L59)
+## <a name="Handler">type</a> [Handler](./types.go#L57-L61)
 ``` go
 type Handler interface {
     Add(sd *grpc.ServiceDesc, ss interface{}) error
@@ -203,9 +205,9 @@ Interceptor interface when implemented by a service allows that service to provi
 ## <a name="WhitelistedHeaders">type</a> [WhitelistedHeaders](./types.go#L23-L28)
 ``` go
 type WhitelistedHeaders interface {
-    //GetRequestHeaders retuns a list of all whitelisted request headers
+    //GetRequestHeaders returns a list of all whitelisted request headers
     GetRequestHeaders() []string
-    //GetResponseHeaders retuns a list of all whitelisted response headers
+    //GetResponseHeaders returns a list of all whitelisted response headers
     GetResponseHeaders() []string
 }
 ```

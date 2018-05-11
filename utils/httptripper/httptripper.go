@@ -106,21 +106,21 @@ func (t *tripper) getRetrier() retry.Retriable {
 	if t.retrier != nil {
 		return t.retrier
 	}
-	return retry.DefaultRetry()
+	return retry.NewRetry()
 }
 
 //WrapTripper wraps the base tripper with zipkin info
 func WrapTripper(base http.RoundTripper) http.RoundTripper {
 	return &tripper{
 		transport:      base,
-		retrier:        retry.DefaultRetry(),
+		retrier:        retry.NewRetry(),
 		hystrixEnabled: false,
 	}
 }
 
 func NewTripper() http.RoundTripper {
 	return &tripper{
-		retrier:        retry.DefaultRetry(),
+		retrier:        retry.NewRetry(),
 		transport:      http.DefaultTransport,
 		hystrixEnabled: true,
 	}
