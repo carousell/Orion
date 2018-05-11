@@ -1,8 +1,10 @@
-package httptripper
+package retry
 
 import (
 	"net/http"
 	"time"
+
+	"github.com/carousell/Orion/utils/httptripper/strategy"
 )
 
 type Retriable interface {
@@ -12,9 +14,9 @@ type Retriable interface {
 
 type RetryOptions struct {
 	MaxRetry        int
-	Delay           time.Duration
 	Methods         map[string]bool
 	RetryAllMethods bool
+	Strategy        strategy.Strategy
 }
 
 type RetryOption func(*RetryOptions)

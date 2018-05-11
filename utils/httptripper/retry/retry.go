@@ -1,8 +1,20 @@
-package httptripper
+package retry
 
 import (
 	"net/http"
 	"time"
+
+	"github.com/carousell/Orion/utils/httptripper/strategy"
+)
+
+var (
+	defaultDelay   = time.Millisecond * 100
+	defaultOptions = []RetryOption{
+		WithMaxRetry(3),
+		WithRetryMethods(http.MethodGet, http.MethodOptions, http.MethodHead),
+		WithRetryAllMethods(false),
+		WithStrategy(strategy.DefaultStrategy(defaultDelay)),
+	}
 )
 
 type defaultRetry struct {
@@ -28,37 +40,30 @@ func (d *defaultRetry) ShouldRetry(retryConut int, req *http.Request, resp *http
 }
 
 func (d *defaultRetry) WaitDuration(retryConut int, req *http.Request, resp *http.Response, err error) time.Duration {
-	return d.option.Delay
+	if d.option.Strategy == nil {
+		return defaultDelay
+	}
+	return d.option.Strategy.WaitDuration(retryConut, d.option.MaxRetry, req, resp, err)
 }
 
 func NewRetry(options ...RetryOption) Retriable {
 	r := &defaultRetry{
 		option: &RetryOptions{},
 	}
+	// apply default
+	for _, opt := range defaultOptions {
+		opt(r.option)
+	}
+	// apply user provided
 	for _, opt := range options {
 		opt(r.option)
 	}
 	return r
 }
 
-func DefaultRetry() Retriable {
-	return NewRetry(
-		WithMaxRetry(3),
-		WithRetryDelay(time.Second),
-		WithRetryMethods(http.MethodGet, http.MethodOptions, http.MethodHead),
-		WithRetryAllMethods(false),
-	)
-}
-
 func WithMaxRetry(max int) RetryOption {
 	return func(ro *RetryOptions) {
 		ro.MaxRetry = max
-	}
-}
-
-func WithRetryDelay(delay time.Duration) RetryOption {
-	return func(ro *RetryOptions) {
-		ro.Delay = delay
 	}
 }
 
@@ -76,5 +81,11 @@ func WithRetryMethods(methods ...string) RetryOption {
 func WithRetryAllMethods(retryAllMethods bool) RetryOption {
 	return func(ro *RetryOptions) {
 		ro.RetryAllMethods = retryAllMethods
+	}
+}
+
+func WithStrategy(s strategy.Strategy) RetryOption {
+	return func(ro *RetryOptions) {
+		ro.Strategy = s
 	}
 }

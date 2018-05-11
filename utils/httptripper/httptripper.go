@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/afex/hystrix-go/hystrix"
+	"github.com/carousell/Orion/utils/httptripper/retry"
 	"github.com/carousell/Orion/utils/spanutils"
 )
 
@@ -34,7 +35,7 @@ const (
 
 type tripper struct {
 	transport      http.RoundTripper
-	retrier        Retriable
+	retrier        retry.Retriable
 	hystrixEnabled bool
 }
 
@@ -101,25 +102,25 @@ func (t *tripper) getTripper() http.RoundTripper {
 	return http.DefaultTransport
 }
 
-func (t *tripper) getRetrier() Retriable {
+func (t *tripper) getRetrier() retry.Retriable {
 	if t.retrier != nil {
 		return t.retrier
 	}
-	return DefaultRetry()
+	return retry.DefaultRetry()
 }
 
 //WrapTripper wraps the base tripper with zipkin info
 func WrapTripper(base http.RoundTripper) http.RoundTripper {
 	return &tripper{
 		transport:      base,
-		retrier:        DefaultRetry(),
+		retrier:        retry.DefaultRetry(),
 		hystrixEnabled: false,
 	}
 }
 
 func NewTripper() http.RoundTripper {
 	return &tripper{
-		retrier:        DefaultRetry(),
+		retrier:        retry.DefaultRetry(),
 		transport:      http.DefaultTransport,
 		hystrixEnabled: true,
 	}
