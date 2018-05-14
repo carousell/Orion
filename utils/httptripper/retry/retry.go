@@ -39,8 +39,6 @@ func (d *defaultRetry) ShouldRetry(attempt int, req *http.Request, resp *http.Re
 		if allowed, ok := d.option.Methods[req.Method]; ok {
 			return allowed
 		}
-		//check if its a network timeout
-		return d.isTimeout(err)
 	}
 	return false
 }
