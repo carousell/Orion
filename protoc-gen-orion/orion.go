@@ -270,7 +270,7 @@ func generate(d *data, file *descriptor.FileDescriptorProto) {
 }
 
 func parseComments(line string) *commentsInfo {
-	parts := strings.Split(line, DELIM)
+	parts := strings.SplitN(line, DELIM, 3)
 	if len(parts) > 1 {
 		if ORION == strings.ToUpper(strings.TrimSpace(parts[0])) {
 			switch strings.ToUpper(strings.TrimSpace(parts[1])) {
