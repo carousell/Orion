@@ -14,14 +14,14 @@ type defaultStrategy struct {
 	exponential bool
 }
 
-func (d *defaultStrategy) WaitDuration(retryCount int, maxRetry int, req *http.Request, resp *http.Response, err error) time.Duration {
+func (d *defaultStrategy) WaitDuration(attempt int, maxRetry int, req *http.Request, resp *http.Response, err error) time.Duration {
 	if !d.exponential {
 		return d.duration
 	}
-	if retryCount <= 0 {
-		retryCount = 1
+	if attempt <= 0 {
+		attempt = 1
 	}
-	factor := int(math.Pow(2, float64(retryCount))) - 1
+	factor := int(math.Pow(2, float64(attempt))) - 1
 	return time.Duration(factor) * d.duration
 }
 

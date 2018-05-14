@@ -24,14 +24,14 @@ type defaultRetry struct {
 	option *OptionsData
 }
 
-func (d *defaultRetry) ShouldRetry(retryConut int, req *http.Request, resp *http.Response, err error) bool {
+func (d *defaultRetry) ShouldRetry(attempt int, req *http.Request, resp *http.Response, err error) bool {
 	if resp != nil {
 		// dont retry for anything less than 5XX
 		if resp.StatusCode < 500 {
 			return false
 		}
 	}
-	if retryConut < d.option.MaxRetry && req != nil {
+	if attempt < d.option.MaxRetry && req != nil {
 		if d.option.RetryAllMethods {
 			return true
 		}
@@ -42,11 +42,11 @@ func (d *defaultRetry) ShouldRetry(retryConut int, req *http.Request, resp *http
 	return false
 }
 
-func (d *defaultRetry) WaitDuration(retryConut int, req *http.Request, resp *http.Response, err error) time.Duration {
+func (d *defaultRetry) WaitDuration(attempt int, req *http.Request, resp *http.Response, err error) time.Duration {
 	if d.option.Strategy == nil {
 		return defaultDelay
 	}
-	return d.option.Strategy.WaitDuration(retryConut, d.option.MaxRetry, req, resp, err)
+	return d.option.Strategy.WaitDuration(attempt, d.option.MaxRetry, req, resp, err)
 }
 
 //NewRetry creates a new retry strategy

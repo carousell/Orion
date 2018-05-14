@@ -70,9 +70,9 @@ OptionsData stores all options used across retry
 ``` go
 type Retriable interface {
     //ShouldRetry should return when the failure needs to be retried
-    ShouldRetry(retryConut int, req *http.Request, resp *http.Response, err error) bool
+    ShouldRetry(attempt int, req *http.Request, resp *http.Response, err error) bool
     //WaitDuration should return the duration to wait before making next call
-    WaitDuration(retryConut int, req *http.Request, resp *http.Response, err error) time.Duration
+    WaitDuration(attempt int, req *http.Request, resp *http.Response, err error) time.Duration
 }
 ```
 Retriable is the interface implemented by a retrier

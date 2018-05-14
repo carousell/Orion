@@ -19,6 +19,7 @@ package httptripper
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -29,28 +30,31 @@ import (
 	"github.com/carousell/Orion/utils/spanutils"
 )
 
-const (
-	traceID = "HTTPRequestTracingName"
+var (
+	defaultOptions = []Option{
+		WithBaseTripper(http.DefaultTransport),
+		WithHystrix(true),
+		WithRetrier(retry.NewRetry()),
+	}
 )
 
 type tripper struct {
-	transport      http.RoundTripper
-	retrier        retry.Retriable
-	hystrixEnabled bool
+	option *OptionsData
 }
 
 func (t *tripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	retry := 0
-	firstTry := true
+	if req == nil {
+		return nil, errors.New("Nil request received")
+	}
+	attempt := 0
 	var resp *http.Response
 	var err error
-	for firstTry || t.getRetrier().ShouldRetry(retry, req, resp, err) {
-		if !firstTry {
-			time.Sleep(t.getRetrier().WaitDuration(retry, req, resp, err))
+	for attempt == 0 || t.getRetrier(req).ShouldRetry(attempt, req, resp, err) {
+		if attempt != 0 {
+			time.Sleep(t.getRetrier(req).WaitDuration(attempt, req, resp, err))
 		}
-		resp, err = t.doRoundTrip(req, retry)
-		firstTry = false
-		retry++
+		resp, err = t.doRoundTrip(req, attempt)
+		attempt++
 	}
 	return resp, err
 }
@@ -60,7 +64,7 @@ func (t *tripper) doRoundTrip(req *http.Request, retryConut int) (*http.Response
 	if traceName == "" {
 		traceName = req.Host
 	}
-	if !t.hystrixEnabled {
+	if !t.option.HystrixEnabled {
 		// hystrix not enabled go ahead without it
 		return t.makeRoundTrip(traceName, req, retryConut)
 	}
@@ -96,45 +100,50 @@ func (t *tripper) makeRoundTrip(traceName string, req *http.Request, retryConut 
 }
 
 func (t *tripper) getTripper() http.RoundTripper {
-	if t.transport != nil {
-		return t.transport
+	if t.option.BaseTripper != nil {
+		return t.option.BaseTripper
 	}
 	return http.DefaultTransport
 }
 
-func (t *tripper) getRetrier() retry.Retriable {
-	if t.retrier != nil {
-		return t.retrier
+func (t *tripper) getRetrier(req *http.Request) retry.Retriable {
+	r := GetRequestRetrier(req)
+	if r != nil {
+		return r
+	}
+	if t.option.Retrier != nil {
+		return t.option.Retrier
 	}
 	return retry.NewRetry()
 }
 
 //WrapTripper wraps the base tripper with zipkin info
 func WrapTripper(base http.RoundTripper) http.RoundTripper {
-	return &tripper{
-		transport:      base,
-		retrier:        retry.NewRetry(),
-		hystrixEnabled: false,
-	}
+	return NewTripper(WithBaseTripper(base))
 }
 
 //NewTripper returns a default tripper wrapped around http.DefaultTransport
-func NewTripper() http.RoundTripper {
-	return &tripper{
-		retrier:        retry.NewRetry(),
-		transport:      http.DefaultTransport,
-		hystrixEnabled: true,
+func NewTripper(options ...Option) http.RoundTripper {
+	t := &tripper{
+		option: &OptionsData{},
 	}
+	for _, opt := range defaultOptions {
+		opt(t.option)
+	}
+	for _, opt := range options {
+		opt(t.option)
+	}
+	return t
 }
 
 //NewHTTPClient creates a new http.Client with default retry options and timeout
-func NewHTTPClient(timeout time.Duration) *http.Client {
+func NewHTTPClient(timeout time.Duration, options ...Option) *http.Client {
 	if timeout == 0 {
 		// never use a 0 timeout
 		timeout = time.Second
 	}
 	return &http.Client{
-		Transport: NewTripper(),
+		Transport: NewTripper(options...),
 		Timeout:   timeout,
 	}
 }
@@ -145,7 +154,16 @@ func NewRequest(ctx context.Context, traceName, method, url string, body io.Read
 	if err != nil {
 		return req, err
 	}
-	return SetRequestTraceName(req.WithContext(ctx), traceName), err
+	return SetRequestTraceName(req.WithContext(ctx), traceName), nil
+}
+
+//NewRequestWithRetrier extends http.NewRequest with context, trace name and retrier
+func NewRequestWithRetrier(ctx context.Context, traceName string, retrier retry.Retriable, method, url string, body io.Reader) (*http.Request, error) {
+	req, err := NewRequest(ctx, traceName, method, url, body)
+	if err != nil {
+		return req, err
+	}
+	return SetRequestRetrier(req, retrier), nil
 }
 
 //SetRequestTraceName stores a trace name in a HTTP request
@@ -164,4 +182,43 @@ func GetRequestTraceName(req *http.Request) string {
 		}
 	}
 	return ""
+}
+
+// SetRequestRetrier sets the retrier to be used with this request
+func SetRequestRetrier(req *http.Request, retrier retry.Retriable) *http.Request {
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, retrierKey, retrier)
+	return req.WithContext(ctx)
+}
+
+//GetRequestRetrier fetches retrier to be used with this request
+func GetRequestRetrier(req *http.Request) retry.Retriable {
+	ctx := req.Context()
+	if value := ctx.Value(retrierKey); value != nil {
+		if retrier, ok := value.(retry.Retriable); ok {
+			return retrier
+		}
+	}
+	return nil
+}
+
+//WithBaseTripper updates the tripper to use the provided http.RoundTripper
+func WithBaseTripper(base http.RoundTripper) Option {
+	return func(o *OptionsData) {
+		o.BaseTripper = base
+	}
+}
+
+//WithRetrier updates the tripper to use the provided retry.Retriable
+func WithRetrier(retrier retry.Retriable) Option {
+	return func(o *OptionsData) {
+		o.Retrier = retrier
+	}
+}
+
+//WithHystrix enables/disables use of hystrix
+func WithHystrix(enabled bool) Option {
+	return func(o *OptionsData) {
+		o.HystrixEnabled = enabled
+	}
 }

@@ -10,9 +10,9 @@ import (
 //Retriable is the interface implemented by a retrier
 type Retriable interface {
 	//ShouldRetry should return when the failure needs to be retried
-	ShouldRetry(retryConut int, req *http.Request, resp *http.Response, err error) bool
+	ShouldRetry(attempt int, req *http.Request, resp *http.Response, err error) bool
 	//WaitDuration should return the duration to wait before making next call
-	WaitDuration(retryConut int, req *http.Request, resp *http.Response, err error) time.Duration
+	WaitDuration(attempt int, req *http.Request, resp *http.Response, err error) time.Duration
 }
 
 //OptionsData stores all options used across retry
