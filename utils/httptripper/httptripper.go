@@ -50,6 +50,10 @@ func (t *tripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	var resp *http.Response
 	var err error
 	for attempt == 0 || t.getRetrier(req).ShouldRetry(attempt, req, resp, err) {
+		// close body of previous response on retry
+		if resp != nil {
+			go resp.Body.Close()
+		}
 		if attempt != 0 {
 			time.Sleep(t.getRetrier(req).WaitDuration(attempt, req, resp, err))
 		}
