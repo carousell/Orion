@@ -37,7 +37,7 @@ Executor is the interface for a basic executor pipeline
 ``` go
 func NewExecutor(options ...Option) Executor
 ```
-NewExecutor builds and retuns a executor
+NewExecutor builds and returns an executor
 
 ## <a name="Option">type</a> [Option](./types.go#L15)
 ``` go
