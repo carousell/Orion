@@ -50,7 +50,7 @@ func (t *tripper) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 		resp, err = t.doRoundTrip(req, retry)
 		firstTry = false
-		retry += 1
+		retry++
 	}
 	return resp, err
 }
@@ -118,6 +118,7 @@ func WrapTripper(base http.RoundTripper) http.RoundTripper {
 	}
 }
 
+//NewTripper returns a default tripper wrapped around http.DefaultTransport
 func NewTripper() http.RoundTripper {
 	return &tripper{
 		retrier:        retry.NewRetry(),
@@ -126,6 +127,7 @@ func NewTripper() http.RoundTripper {
 	}
 }
 
+//NewHTTPClient creates a new http.Client with default retry options and timeout
 func NewHTTPClient(timeout time.Duration) *http.Client {
 	if timeout == 0 {
 		// never use a 0 timeout
@@ -137,6 +139,7 @@ func NewHTTPClient(timeout time.Duration) *http.Client {
 	}
 }
 
+//NewRequest extends http.NewRequest with context and trace name
 func NewRequest(ctx context.Context, traceName, method, url string, body io.Reader) (*http.Request, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
@@ -145,12 +148,14 @@ func NewRequest(ctx context.Context, traceName, method, url string, body io.Read
 	return SetRequestTraceName(req.WithContext(ctx), traceName), err
 }
 
+//SetRequestTraceName stores a trace name in a HTTP request
 func SetRequestTraceName(req *http.Request, traceName string) *http.Request {
 	ctx := req.Context()
 	ctx = context.WithValue(ctx, traceID, traceName)
 	return req.WithContext(ctx)
 }
 
+//GetRequestTraceName fetches a trace name from HTTP request
 func GetRequestTraceName(req *http.Request) string {
 	ctx := req.Context()
 	if value := ctx.Value(traceID); value != nil {

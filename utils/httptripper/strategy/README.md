@@ -20,21 +20,22 @@ No packages beyond the Go standard library are imported.
 #### <a name="pkg-files">Package files</a>
 [strategy.go](./strategy.go) [types.go](./types.go) 
 
-## <a name="Strategy">type</a> [Strategy](./types.go#L9-L11)
+## <a name="Strategy">type</a> [Strategy](./types.go#L9-L12)
 ``` go
 type Strategy interface {
+    //WaitDuration takes retryCount, maxRetry and request/response paramaetrs as input and gives out a duration as response
     WaitDuration(retryCount, maxRetry int, req *http.Request, resp *http.Response, err error) time.Duration
 }
 ```
 Strategy is the interface requirement for any strategy implementation
 
-### <a name="DefaultStrategy">func</a> [DefaultStrategy](./strategy.go#L31)
+### <a name="DefaultStrategy">func</a> [DefaultStrategy](./strategy.go#L29)
 ``` go
 func DefaultStrategy(duration time.Duration) Strategy
 ```
 DefaultStrategy provides implementation for Fixed duration wait
 
-### <a name="ExponentialStrategy">func</a> [ExponentialStrategy](./strategy.go#L39)
+### <a name="ExponentialStrategy">func</a> [ExponentialStrategy](./strategy.go#L37)
 ``` go
 func ExponentialStrategy(duration time.Duration) Strategy
 ```

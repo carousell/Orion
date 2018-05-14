@@ -40,30 +40,35 @@ Make sure you use httptripper.NewRequest to build http.Request, since http.NewRe
 #### <a name="pkg-files">Package files</a>
 [httptripper.go](./httptripper.go) 
 
-## <a name="GetRequestTraceName">func</a> [GetRequestTraceName](./httptripper.go#L154)
+## <a name="GetRequestTraceName">func</a> [GetRequestTraceName](./httptripper.go#L159)
 ``` go
 func GetRequestTraceName(req *http.Request) string
 ```
+GetRequestTraceName fetches a trace name from HTTP request
 
-## <a name="NewHTTPClient">func</a> [NewHTTPClient](./httptripper.go#L129)
+## <a name="NewHTTPClient">func</a> [NewHTTPClient](./httptripper.go#L131)
 ``` go
 func NewHTTPClient(timeout time.Duration) *http.Client
 ```
+NewHTTPClient creates a new http.Client with default retry options and timeout
 
-## <a name="NewRequest">func</a> [NewRequest](./httptripper.go#L140)
+## <a name="NewRequest">func</a> [NewRequest](./httptripper.go#L143)
 ``` go
 func NewRequest(ctx context.Context, traceName, method, url string, body io.Reader) (*http.Request, error)
 ```
+NewRequest extends http.NewRequest with context and trace name
 
-## <a name="NewTripper">func</a> [NewTripper](./httptripper.go#L121)
+## <a name="NewTripper">func</a> [NewTripper](./httptripper.go#L122)
 ``` go
 func NewTripper() http.RoundTripper
 ```
+NewTripper returns a default tripper wrapped around http.DefaultTransport
 
-## <a name="SetRequestTraceName">func</a> [SetRequestTraceName](./httptripper.go#L148)
+## <a name="SetRequestTraceName">func</a> [SetRequestTraceName](./httptripper.go#L152)
 ``` go
 func SetRequestTraceName(req *http.Request, traceName string) *http.Request
 ```
+SetRequestTraceName stores a trace name in a HTTP request
 
 ## <a name="WrapTripper">func</a> [WrapTripper](./httptripper.go#L113)
 ``` go

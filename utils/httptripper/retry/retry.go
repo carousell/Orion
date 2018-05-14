@@ -1,3 +1,6 @@
+/*
+Package retry provides an implementation for retrying http requests with multiple wait strategies
+*/
 package retry
 
 import (
@@ -9,7 +12,7 @@ import (
 
 var (
 	defaultDelay   = time.Millisecond * 100
-	defaultOptions = []RetryOption{
+	defaultOptions = []Option{
 		WithMaxRetry(3),
 		WithRetryMethods(http.MethodGet, http.MethodOptions, http.MethodHead),
 		WithRetryAllMethods(false),
@@ -18,7 +21,7 @@ var (
 )
 
 type defaultRetry struct {
-	option *RetryOptions
+	option *OptionsData
 }
 
 func (d *defaultRetry) ShouldRetry(retryConut int, req *http.Request, resp *http.Response, err error) bool {
@@ -28,7 +31,7 @@ func (d *defaultRetry) ShouldRetry(retryConut int, req *http.Request, resp *http
 			return false
 		}
 	}
-	if retryConut < d.option.MaxRetry {
+	if retryConut < d.option.MaxRetry && req != nil {
 		if d.option.RetryAllMethods {
 			return true
 		}
@@ -46,9 +49,10 @@ func (d *defaultRetry) WaitDuration(retryConut int, req *http.Request, resp *htt
 	return d.option.Strategy.WaitDuration(retryConut, d.option.MaxRetry, req, resp, err)
 }
 
-func NewRetry(options ...RetryOption) Retriable {
+//NewRetry creates a new retry strategy
+func NewRetry(options ...Option) Retriable {
 	r := &defaultRetry{
-		option: &RetryOptions{},
+		option: &OptionsData{},
 	}
 	// apply default
 	for _, opt := range defaultOptions {
@@ -61,14 +65,16 @@ func NewRetry(options ...RetryOption) Retriable {
 	return r
 }
 
-func WithMaxRetry(max int) RetryOption {
-	return func(ro *RetryOptions) {
+//WithMaxRetry set the max number of times a request is tried
+func WithMaxRetry(max int) Option {
+	return func(ro *OptionsData) {
 		ro.MaxRetry = max
 	}
 }
 
-func WithRetryMethods(methods ...string) RetryOption {
-	return func(ro *RetryOptions) {
+//WithRetryMethods specifies the methods that can be retried
+func WithRetryMethods(methods ...string) Option {
+	return func(ro *OptionsData) {
 		if ro.Methods == nil {
 			ro.Methods = make(map[string]bool)
 		}
@@ -78,14 +84,16 @@ func WithRetryMethods(methods ...string) RetryOption {
 	}
 }
 
-func WithRetryAllMethods(retryAllMethods bool) RetryOption {
-	return func(ro *RetryOptions) {
+//WithRetryAllMethods sets retry on all HTTP methods, overrides WithRetryMethods
+func WithRetryAllMethods(retryAllMethods bool) Option {
+	return func(ro *OptionsData) {
 		ro.RetryAllMethods = retryAllMethods
 	}
 }
 
-func WithStrategy(s strategy.Strategy) RetryOption {
-	return func(ro *RetryOptions) {
+//WithStrategy defines the backoff strategy to be used
+func WithStrategy(s strategy.Strategy) Option {
+	return func(ro *OptionsData) {
 		ro.Strategy = s
 	}
 }
