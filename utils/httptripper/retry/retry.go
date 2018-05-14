@@ -4,6 +4,7 @@ Package retry provides an implementation for retrying http requests with multipl
 package retry
 
 import (
+	"net"
 	"net/http"
 	"time"
 
@@ -38,6 +39,19 @@ func (d *defaultRetry) ShouldRetry(attempt int, req *http.Request, resp *http.Re
 		if allowed, ok := d.option.Methods[req.Method]; ok {
 			return allowed
 		}
+		//check if its a network timeout
+		return d.isTimeout(err)
+	}
+	return false
+}
+
+func (d *defaultRetry) isTimeout(err error) bool {
+	if err == nil {
+		return false
+	}
+	if e, ok := err.(net.Error); ok {
+		//retry a temporary error or timeout
+		return e.Temporary() || e.Timeout()
 	}
 	return false
 }
