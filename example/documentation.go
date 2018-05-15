@@ -159,7 +159,7 @@ By default orion responds in "application/json" for HTTP calls, We can even ask 
 	Content-Type: application/octet-stream
 	Date: Thu, 01 Feb 2018 08:30:21 GMT
 	Content-Length: 13
-				// binary data omited
+				// binary data omitted
 	HELLO WORLD
 
 Orion also logs response time and errors for each API call

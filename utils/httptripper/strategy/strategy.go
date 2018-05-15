@@ -33,7 +33,7 @@ func DefaultStrategy(duration time.Duration) Strategy {
 	}
 }
 
-//ExponentialStrategy provided implementation for exponentialy (in powers of 2) growing wait duration
+//ExponentialStrategy provided implementation for exponentially (in powers of 2) growing wait duration
 func ExponentialStrategy(duration time.Duration) Strategy {
 	return &defaultStrategy{
 		duration:    duration,

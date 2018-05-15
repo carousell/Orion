@@ -4,9 +4,8 @@ Orion is a small lightweight framework written around grpc/protobuf with the aim
 
 It is derived from 'Framework' a small microservices framework written and used inside https://carousell.com, It comes with a number of sensible defaults such as zipkin tracing, hystrix, live reload of configuration, etc.
 
-## Project Status
-Orion is in use at production at Carousell and powers multiple services serving thousands to requests per seconds,
-that being said we do not gurantee all updates to be backward compatible at the moment breaking changes might happen.
+## Getting Started
+Follow the guide at https://github.com/carousell/Orion/blob/master/orion/README.md
 
 ## Setup Instructions
 Orion is written in golang, please follow instructions on [https://golang.org/doc/install](https://golang.org/doc/install) to install, or you can also run
@@ -80,8 +79,10 @@ install the protoc plugin for orion
 go get -u github.com/carousell/Orion/protoc-gen-orion
 ```
 
-## Getting Started
-Follow the guide at https://github.com/carousell/Orion/blob/master/orion/README.md
+## Project Status
+Orion is in use at production at Carousell and powers multiple services serving thousands to requests per seconds,
+that being said we do not gurantee all updates to be backward compatible at the moment breaking changes might happen.
+
 
 ## License
 This code is available under the following https://github.com/carousell/Orion/blob/master/LICENSE

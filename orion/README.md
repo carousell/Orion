@@ -200,7 +200,6 @@ var (
         NewRelicInitializer(),
         PrometheusInitializer(),
         PprofInitializer(),
-        HTTPZipkinInitializer(),
         ErrorLoggingInitializer(),
     }
 )
@@ -307,7 +306,7 @@ BuildDefaultConfig builds a default config object for Orion
 ``` go
 type Decoder = handlers.Decoder
 ```
-Decoder is the funtion type needed for request decoders
+Decoder is the function type needed for request decoders
 
 ## <a name="DefaultServerImpl">type</a> [DefaultServerImpl](./core.go#L47-L62)
 ``` go
@@ -431,43 +430,43 @@ type Initializer interface {
 ```
 Initializer is the interface needed to be implemented by custom initializers
 
-### <a name="ErrorLoggingInitializer">func</a> [ErrorLoggingInitializer](./initializer.go#L46)
+### <a name="ErrorLoggingInitializer">func</a> [ErrorLoggingInitializer](./initializer.go#L45)
 ``` go
 func ErrorLoggingInitializer() Initializer
 ```
 ErrorLoggingInitializer returns a Initializer implementation for error notifier
 
-### <a name="HTTPZipkinInitializer">func</a> [HTTPZipkinInitializer](./initializer.go#L71)
+### <a name="HTTPZipkinInitializer">func</a> [HTTPZipkinInitializer](./initializer.go#L70)
 ``` go
 func HTTPZipkinInitializer() Initializer
 ```
 HTTPZipkinInitializer returns an Initializer implementation for httptripper which appends zipkin trace info to all outgoing HTTP requests
 
-### <a name="HystrixInitializer">func</a> [HystrixInitializer](./initializer.go#L41)
+### <a name="HystrixInitializer">func</a> [HystrixInitializer](./initializer.go#L40)
 ``` go
 func HystrixInitializer() Initializer
 ```
 HystrixInitializer returns a Initializer implementation for Hystrix
 
-### <a name="NewRelicInitializer">func</a> [NewRelicInitializer](./initializer.go#L56)
+### <a name="NewRelicInitializer">func</a> [NewRelicInitializer](./initializer.go#L55)
 ``` go
 func NewRelicInitializer() Initializer
 ```
 NewRelicInitializer returns a Initializer implementation for NewRelic
 
-### <a name="PprofInitializer">func</a> [PprofInitializer](./initializer.go#L66)
+### <a name="PprofInitializer">func</a> [PprofInitializer](./initializer.go#L65)
 ``` go
 func PprofInitializer() Initializer
 ```
 PprofInitializer returns a Initializer implementation for Pprof
 
-### <a name="PrometheusInitializer">func</a> [PrometheusInitializer](./initializer.go#L61)
+### <a name="PrometheusInitializer">func</a> [PrometheusInitializer](./initializer.go#L60)
 ``` go
 func PrometheusInitializer() Initializer
 ```
 PrometheusInitializer returns a Initializer implementation for Prometheus
 
-### <a name="ZipkinInitializer">func</a> [ZipkinInitializer](./initializer.go#L51)
+### <a name="ZipkinInitializer">func</a> [ZipkinInitializer](./initializer.go#L50)
 ``` go
 func ZipkinInitializer() Initializer
 ```
@@ -525,7 +524,7 @@ GetDefaultServerWithConfig returns a default server object that uses provided co
 ## <a name="ServiceFactory">type</a> [ServiceFactory](./types.go#L49-L54)
 ``` go
 type ServiceFactory interface {
-    // NewService function recieves the server obejct for which service has to be initialized
+    // NewService function receives the server obejct for which service has to be initialized
     NewService(Server) interface{}
     //DisposeService function disposes the service object
     DisposeService(svc interface{})
