@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	defaultDelay   = time.Millisecond * 100
+	defaultDelay   = time.Millisecond * 30
 	defaultOptions = []Option{
 		WithMaxRetry(3),
 		WithRetryMethods(http.MethodGet, http.MethodOptions, http.MethodHead),
@@ -31,6 +31,10 @@ func (d *defaultRetry) ShouldRetry(attempt int, req *http.Request, resp *http.Re
 		if resp.StatusCode < 500 {
 			return false
 		}
+	}
+	if err != nil && !d.isTimeout(err) {
+		// do not retry non timeout errors
+		return false
 	}
 	if attempt < d.option.MaxRetry && req != nil {
 		if d.option.RetryAllMethods {
@@ -87,9 +91,7 @@ func WithMaxRetry(max int) Option {
 //WithRetryMethods specifies the methods that can be retried
 func WithRetryMethods(methods ...string) Option {
 	return func(ro *OptionsData) {
-		if ro.Methods == nil {
-			ro.Methods = make(map[string]bool)
-		}
+		ro.Methods = make(map[string]bool)
 		for _, method := range methods {
 			ro.Methods[method] = true
 		}
