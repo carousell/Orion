@@ -32,7 +32,6 @@ var (
 		NewRelicInitializer(),
 		PrometheusInitializer(),
 		PprofInitializer(),
-		HTTPZipkinInitializer(),
 		ErrorLoggingInitializer(),
 	}
 )
