@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/carousell/Orion/orion/handlers"
+	grpcHandler "github.com/carousell/Orion/orion/handlers/grpc"
+	"github.com/carousell/Orion/orion/handlers/http"
 	"github.com/carousell/Orion/utils/listenerutils"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -178,10 +180,10 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			log.Println("error", err)
 		}
 		log.Println("HTTPListnerPort", httpPort)
-		config := handlers.HTTPHandlerConfig{
+		config := http.HTTPHandlerConfig{
 			EnableProtoURL: d.config.EnableProtoURL,
 		}
-		handler := handlers.NewHTTPHandler(config)
+		handler := http.NewHTTPHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,
 			listener: httpListener,
@@ -194,7 +196,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			log.Println("error", err)
 		}
 		log.Println("gRPCListnerPort", grpcPort)
-		handler := handlers.NewGRPCHandler(handlers.GRPCConfig{})
+		handler := grpcHandler.NewGRPCHandler(grpcHandler.GRPCConfig{})
 		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,
 			listener: grpcListener,

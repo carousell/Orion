@@ -1,4 +1,4 @@
-package handlers
+package http
 
 import (
 	"context"
@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"runtime/debug"
 	"strings"
-	"sync"
 	"time"
 
+	"github.com/carousell/Orion/orion/handlers"
 	"github.com/carousell/Orion/orion/modifiers"
 	"github.com/carousell/Orion/utils"
 	"github.com/carousell/Orion/utils/errors/notifier"
@@ -25,102 +25,24 @@ import (
 	"github.com/mitchellh/mapstructure"
 	opentracing "github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
-
-var (
-	// DefaultHTTPResponseHeaders are response headers that are whitelisted by default
-	DefaultHTTPResponseHeaders = []string{
-		"Content-Type",
-	}
-)
-
-//HTTPHandlerConfig is the configuration for HTTP Handler
-type HTTPHandlerConfig struct {
-	CommonConfig
-	EnableProtoURL bool
-}
 
 //NewHTTPHandler creates a new HTTP handler
-func NewHTTPHandler(config HTTPHandlerConfig) Handler {
+func NewHTTPHandler(config HTTPHandlerConfig) handlers.Handler {
 	return &httpHandler{
 		config: config,
 	}
 }
 
-func cleanSvcName(serviceName string) string {
-	serviceName = strings.ToLower(serviceName)
-	parts := strings.Split(serviceName, ".")
-	if len(parts) > 1 {
-		serviceName = parts[1]
-	}
-	return serviceName
-}
-
-func generateURL(serviceName, method string) string {
-	serviceName = cleanSvcName(serviceName)
-	method = strings.ToLower(method)
-	return "/" + serviceName + "/" + method
-}
-
-func generateProtoURL(serviceName, method string) string {
-	return "/" + serviceName + "/" + method
-}
-
-type serviceInfo struct {
-	desc            *grpc.ServiceDesc
-	svc             interface{}
-	interceptors    grpc.UnaryServerInterceptor
-	requestHeaders  []string
-	responseHeaders []string
-}
-
-type pathInfo struct {
-	svc         *serviceInfo
-	method      GRPCMethodHandler
-	encoder     Encoder
-	decoder     Decoder
-	httpHandler HTTPHandler
-	httpMethod  []string
-	encoderPath string
-}
-
-type httpHandler struct {
-	mu          sync.Mutex
-	paths       map[string]*pathInfo
-	defEncoders map[string]Encoder
-	defDecoders map[string]Decoder
-	mar         jsonpb.Marshaler
-	svr         *http.Server
-	config      HTTPHandlerConfig
-}
-
-func writeResp(resp http.ResponseWriter, status int, data []byte) {
-	writeRespWithHeaders(resp, status, data, nil)
-}
-
-func writeRespWithHeaders(resp http.ResponseWriter, status int, data []byte, headers map[string][]string) {
-	if headers != nil {
-		for key, values := range headers {
-			for _, value := range values {
-				resp.Header().Add(key, value)
-			}
-		}
-	}
-	resp.WriteHeader(status)
-	resp.Write(data)
-}
-
-func (h *httpHandler) getHTTPHandler(url string) http.HandlerFunc {
+func (h *httpHandler) getHTTPHandler(serviceName, methodName string) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
-		h.ServeHTTP(resp, req, url)
+		h.httpHandler(resp, req, serviceName, methodName)
 	}
 }
 
-func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url string) {
+func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, service, method string) {
 	var err error
-	ctx := utils.StartNRTransaction(url, req.Context(), req, resp)
+	ctx := utils.StartNRTransaction(req.URL.String(), req.Context(), req, resp)
 	defer func(resp http.ResponseWriter, ctx context.Context, t time.Time) {
 		// panic handler
 		if r := recover(); r != nil {
@@ -135,7 +57,7 @@ func (h *httpHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request, url
 		}
 	}(resp, ctx, time.Now())
 	req = req.WithContext(ctx)
-	ctx, err = h.serveHTTP(resp, req, url)
+	ctx, err = h.serveHTTP(resp, req, service, method)
 	if modifiers.HasDontLogError(ctx) {
 		utils.FinishNRTransaction(req.Context(), nil)
 	} else {
@@ -183,53 +105,6 @@ func prepareContext(req *http.Request, info *pathInfo) context.Context {
 	return ctx
 }
 
-// GrpcErrorToHTTP converts gRPC error code into HTTP response status code.
-// See: https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
-func GrpcErrorToHTTP(err error, defaultStatus int, defaultMessage string) (int, string) {
-	code := defaultStatus
-	msg := defaultMessage
-	if s, ok := status.FromError(err); ok {
-		msg = s.Message()
-		switch s.Code() {
-		case codes.NotFound:
-			code = http.StatusNotFound
-		case codes.InvalidArgument:
-			code = http.StatusBadRequest
-		case codes.Unauthenticated:
-			code = http.StatusUnauthorized
-		case codes.PermissionDenied:
-			code = http.StatusForbidden
-		case codes.OK:
-			code = http.StatusOK
-		case codes.Canceled:
-			code = http.StatusRequestTimeout
-		case codes.Unknown:
-			code = http.StatusInternalServerError
-		case codes.DeadlineExceeded:
-			code = http.StatusGatewayTimeout
-		case codes.AlreadyExists:
-			code = http.StatusConflict
-		case codes.ResourceExhausted:
-			code = http.StatusTooManyRequests
-		case codes.FailedPrecondition:
-			code = http.StatusBadRequest
-		case codes.Aborted:
-			code = http.StatusConflict
-		case codes.OutOfRange:
-			code = http.StatusBadRequest
-		case codes.Unimplemented:
-			code = http.StatusNotImplemented
-		case codes.Internal:
-			code = http.StatusInternalServerError
-		case codes.Unavailable:
-			code = http.StatusServiceUnavailable
-		case codes.DataLoss:
-			code = http.StatusInternalServerError
-		}
-	}
-	return code, msg
-}
-
 // DefaultEncoder encodes a HTTP request if none are registered. This encoder
 // populates the proto message with URL route variables or fields from a JSON
 // body if either are available.
@@ -247,7 +122,8 @@ func DefaultEncoder(req *http.Request, r interface{}) error {
 	return err
 }
 
-func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url string) (context.Context, error) {
+func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, service, method string) (context.Context, error) {
+	url := ""
 	info, ok := h.paths[url]
 	if ok {
 		ctx := prepareContext(req, info)
@@ -358,8 +234,8 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 		svc:  ss,
 	}
 
-	svcInfo.interceptors = getInterceptors(ss, h.config.CommonConfig)
-	if headers, ok := ss.(WhitelistedHeaders); ok {
+	svcInfo.interceptors = handlers.GetInterceptors(ss, h.config.CommonConfig)
+	if headers, ok := ss.(handlers.WhitelistedHeaders); ok {
 		svcInfo.requestHeaders = headers.GetRequestHeaders()
 		svcInfo.responseHeaders = headers.GetResponseHeaders()
 	}
@@ -367,9 +243,11 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 	// TODO recover in case of error
 	for _, m := range sd.Methods {
 		info := &pathInfo{
-			method:     GRPCMethodHandler(m.Handler),
-			svc:        svcInfo,
-			httpMethod: []string{"POST"},
+			method:      handlers.GRPCMethodHandler(m.Handler),
+			svc:         svcInfo,
+			httpMethod:  []string{"POST"},
+			serviceName: sd.ServiceName,
+			methodName:  m.MethodName,
 		}
 		url := generateURL(sd.ServiceName, m.MethodName)
 		h.paths[url] = info
@@ -383,7 +261,7 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 	return nil
 }
 
-func (h *httpHandler) AddEncoder(serviceName, method string, httpMethod []string, path string, encoder Encoder) {
+func (h *httpHandler) AddEncoder(serviceName, method string, httpMethod []string, path string, encoder handlers.Encoder) {
 	if h.paths != nil {
 		url := generateURL(serviceName, method)
 		if info, ok := h.paths[url]; ok {
@@ -401,16 +279,16 @@ func (h *httpHandler) AddEncoder(serviceName, method string, httpMethod []string
 	}
 }
 
-func (h *httpHandler) AddDefaultEncoder(serviceName string, encoder Encoder) {
+func (h *httpHandler) AddDefaultEncoder(serviceName string, encoder handlers.Encoder) {
 	if h.defEncoders == nil {
-		h.defEncoders = make(map[string]Encoder)
+		h.defEncoders = make(map[string]handlers.Encoder)
 	}
 	if encoder != nil {
 		h.defEncoders[cleanSvcName(serviceName)] = encoder
 	}
 }
 
-func (h *httpHandler) AddHTTPHandler(serviceName string, method string, path string, handler HTTPHandler) {
+func (h *httpHandler) AddHTTPHandler(serviceName string, method string, path string, handler handlers.HTTPHandler) {
 	if h.paths != nil {
 		url := generateURL(serviceName, method)
 		if info, ok := h.paths[url]; ok {
@@ -421,7 +299,7 @@ func (h *httpHandler) AddHTTPHandler(serviceName string, method string, path str
 	}
 }
 
-func (h *httpHandler) AddDecoder(serviceName, method string, decoder Decoder) {
+func (h *httpHandler) AddDecoder(serviceName, method string, decoder handlers.Decoder) {
 	if h.paths != nil {
 		url := generateURL(serviceName, method)
 		if info, ok := h.paths[url]; ok {
@@ -432,9 +310,9 @@ func (h *httpHandler) AddDecoder(serviceName, method string, decoder Decoder) {
 	}
 }
 
-func (h *httpHandler) AddDefaultDecoder(serviceName string, decoder Decoder) {
+func (h *httpHandler) AddDefaultDecoder(serviceName string, decoder handlers.Decoder) {
 	if h.defDecoders == nil {
-		h.defDecoders = make(map[string]Decoder)
+		h.defDecoders = make(map[string]handlers.Decoder)
 	}
 	if decoder != nil {
 		h.defDecoders[cleanSvcName(serviceName)] = decoder
@@ -449,10 +327,11 @@ func (h *httpHandler) Run(httpListener net.Listener) error {
 			continue
 		}
 		routeURL := url
-		r.Methods(info.httpMethod...).Path(url).Handler(h.getHTTPHandler(url))
+		handler := h.getHTTPHandler(info.serviceName, info.methodName)
+		r.Methods(info.httpMethod...).Path(url).Handler(handler)
 		if !strings.HasSuffix(url, "/") {
 			routeURL = url + "/"
-			r.Methods(info.httpMethod...).Path(url + "/").Handler(h.getHTTPHandler(url))
+			r.Methods(info.httpMethod...).Path(url + "/").Handler(handler)
 		}
 		fmt.Println("\t", info.httpMethod, routeURL)
 	}
