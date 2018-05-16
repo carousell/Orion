@@ -34,13 +34,13 @@ func NewHTTPHandler(config HTTPHandlerConfig) handlers.Handler {
 	}
 }
 
-func (h *httpHandler) getHTTPHandler(serviceName, methodName string) http.HandlerFunc {
+func (h *httpHandler) getHTTPHandler(url string) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
-		h.httpHandler(resp, req, serviceName, methodName)
+		h.httpHandler(resp, req, url)
 	}
 }
 
-func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, service, method string) {
+func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, url string) {
 	var err error
 	ctx := utils.StartNRTransaction(req.URL.String(), req.Context(), req, resp)
 	defer func(resp http.ResponseWriter, ctx context.Context, t time.Time) {
@@ -57,7 +57,7 @@ func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, s
 		}
 	}(resp, ctx, time.Now())
 	req = req.WithContext(ctx)
-	ctx, err = h.serveHTTP(resp, req, service, method)
+	ctx, err = h.serveHTTP(resp, req, url)
 	if modifiers.HasDontLogError(ctx) {
 		utils.FinishNRTransaction(req.Context(), nil)
 	} else {
@@ -122,8 +122,7 @@ func DefaultEncoder(req *http.Request, r interface{}) error {
 	return err
 }
 
-func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, service, method string) (context.Context, error) {
-	url := ""
+func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, url string) (context.Context, error) {
 	info, ok := h.paths[url]
 	if ok {
 		ctx := prepareContext(req, info)
@@ -327,11 +326,10 @@ func (h *httpHandler) Run(httpListener net.Listener) error {
 			continue
 		}
 		routeURL := url
-		handler := h.getHTTPHandler(info.serviceName, info.methodName)
-		r.Methods(info.httpMethod...).Path(url).Handler(handler)
+		r.Methods(info.httpMethod...).Path(url).Handler(h.getHTTPHandler(url))
 		if !strings.HasSuffix(url, "/") {
 			routeURL = url + "/"
-			r.Methods(info.httpMethod...).Path(url + "/").Handler(handler)
+			r.Methods(info.httpMethod...).Path(url + "/").Handler(h.getHTTPHandler(url))
 		}
 		fmt.Println("\t", info.httpMethod, routeURL)
 	}
