@@ -1,22 +1,24 @@
-package handlers
+package grpc
 
 import (
+	"context"
 	"log"
 	"net"
 	"sync"
 	"time"
 
+	"github.com/carousell/Orion/orion/handlers"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
 )
 
 // GRPCConfig is the configuration for GRPC Handler
 type GRPCConfig struct {
-	CommonConfig
+	handlers.CommonConfig
 }
 
 //NewGRPCHandler creates a new GRPC handler
-func NewGRPCHandler(config GRPCConfig) Handler {
+func NewGRPCHandler(config GRPCConfig) handlers.Handler {
 	return &grpcHandler{config: config}
 }
 
@@ -59,4 +61,13 @@ func (g *grpcHandler) Stop(timeout time.Duration) error {
 	s.Stop()
 	log.Println("GRPC", "stopped server")
 	return nil
+}
+
+// grpcInterceptor acts as default interceptor for gprc and applies service specific interceptors based on implementation
+func grpcInterceptor(config handlers.CommonConfig) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		// fetch interceptors from the service implementation and apply
+		interceptor := handlers.GetInterceptors(info.Server, config)
+		return interceptor(ctx, req, info, handler)
+	}
 }

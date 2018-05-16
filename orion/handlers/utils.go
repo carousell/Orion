@@ -2,12 +2,9 @@ package handlers
 
 import (
 	"context"
-	"log"
-	"strings"
 
 	"github.com/carousell/Orion/interceptors"
 	"github.com/carousell/Orion/orion/modifiers"
-	"github.com/carousell/Orion/utils/headers"
 	"github.com/carousell/Orion/utils/options"
 	"google.golang.org/grpc"
 )
@@ -50,7 +47,8 @@ func chainUnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnarySer
 	}
 }
 
-func getInterceptors(svc interface{}, config CommonConfig) grpc.UnaryServerInterceptor {
+//GetInterceptors fetches interceptors from a given GRPC service
+func GetInterceptors(svc interface{}, config CommonConfig) grpc.UnaryServerInterceptor {
 
 	opts := []grpc.UnaryServerInterceptor{optionsInterceptor}
 
@@ -76,52 +74,4 @@ func optionsInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 		options.AddToOptions(ctx, modifiers.RequestGRPC, true)
 	}
 	return handler(ctx, req)
-}
-
-// grpcInterceptor acts as default interceptor for gprc and applies service specific interceptors based on implementation
-func grpcInterceptor(config CommonConfig) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		// fetch interceptors from the service implementation and apply
-		interceptor := getInterceptors(info.Server, config)
-		return interceptor(ctx, req, info, handler)
-	}
-}
-
-func processWhitelist(data map[string][]string, allowedKeys []string) map[string][]string {
-	whitelistedMap := make(map[string][]string)
-	whitelistedKeys := make(map[string]bool)
-
-	for _, k := range allowedKeys {
-		whitelistedKeys[strings.ToLower(k)] = true
-	}
-
-	for k, v := range data {
-		if _, found := whitelistedKeys[strings.ToLower(k)]; found {
-			whitelistedMap[k] = v
-		} else {
-			log.Println("warning", "rejected headers not in whitelist", k, v)
-		}
-	}
-
-	return whitelistedMap
-}
-
-//ContentTypeFromHeaders searches for a matching content type
-func ContentTypeFromHeaders(ctx context.Context) string {
-	hdrs := headers.RequestHeadersFromContext(ctx)
-	if values, found := hdrs["Accept"]; found {
-		for _, v := range values {
-			if t, ok := ContentTypeMap[v]; ok {
-				return t
-			}
-		}
-	}
-	if values, found := hdrs["Content-Type"]; found {
-		for _, v := range values {
-			if t, ok := ContentTypeMap[v]; ok {
-				return t
-			}
-		}
-	}
-	return ""
 }
