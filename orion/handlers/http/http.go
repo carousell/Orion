@@ -30,7 +30,8 @@ import (
 //NewHTTPHandler creates a new HTTP handler
 func NewHTTPHandler(config HTTPHandlerConfig) handlers.Handler {
 	return &httpHandler{
-		config: config,
+		config:  config,
+		mapping: newPaths(),
 	}
 }
 
@@ -66,7 +67,7 @@ func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, s
 	}
 }
 
-func prepareContext(req *http.Request, info *pathInfo) context.Context {
+func prepareContext(req *http.Request, info *methodInfo) context.Context {
 	ctx := req.Context()
 	//initialize headers
 	ctx = headers.AddToRequestHeaders(ctx, "", "")
@@ -122,9 +123,8 @@ func DefaultEncoder(req *http.Request, r interface{}) error {
 	return err
 }
 
-func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, service, method string) (context.Context, error) {
-	url := ""
-	info, ok := h.paths[url]
+func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, serviceName, methodName string) (context.Context, error) {
+	info, ok := h.mapping.Get(serviceName, methodName)
 	if ok {
 		ctx := prepareContext(req, info)
 
@@ -182,8 +182,8 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, ser
 		}
 		return ctx, h.serializeOut(ctx, resp, protoResponse.(proto.Message), responseHeaders)
 	}
-	writeResp(resp, http.StatusNotFound, []byte("Not Found: "+url))
-	return req.Context(), fmt.Errorf("Not Found: " + url)
+	writeResp(resp, http.StatusNotFound, []byte("Not Found: "+req.URL.String()))
+	return req.Context(), fmt.Errorf("Not Found: " + req.URL.String())
 }
 
 func (h *httpHandler) serialize(ctx context.Context, msg proto.Message) ([]byte, string, error) {
@@ -225,10 +225,6 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	if h.paths == nil {
-		h.paths = make(map[string]*pathInfo)
-	}
-
 	svcInfo := &serviceInfo{
 		desc: sd,
 		svc:  ss,
@@ -242,39 +238,38 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 
 	// TODO recover in case of error
 	for _, m := range sd.Methods {
-		info := &pathInfo{
+		info := &methodInfo{
 			method:      handlers.GRPCMethodHandler(m.Handler),
 			svc:         svcInfo,
 			httpMethod:  []string{"POST"},
 			serviceName: sd.ServiceName,
 			methodName:  m.MethodName,
+			urls:        make([]string, 0),
 		}
-		url := generateURL(sd.ServiceName, m.MethodName)
-		h.paths[url] = info
-
+		info.urls = append(info.urls, generateURL(sd.ServiceName, m.MethodName))
 		if h.config.EnableProtoURL {
 			// add proto urls if enabled
-			protoURL := generateProtoURL(sd.ServiceName, m.MethodName)
-			h.paths[protoURL] = info
+			info.urls = append(info.urls, generateProtoURL(sd.ServiceName, m.MethodName))
 		}
+		h.mapping.Add(info.serviceName, info.methodName, info)
 	}
 	return nil
 }
 
 func (h *httpHandler) AddEncoder(serviceName, method string, httpMethod []string, path string, encoder handlers.Encoder) {
-	if h.paths != nil {
-		url := generateURL(serviceName, method)
-		if info, ok := h.paths[url]; ok {
+	if h.mapping != nil {
+		if info, ok := h.mapping.Get(serviceName, method); ok {
 			info.encoder = encoder
 			info.httpMethod = httpMethod
+			url := generateURL(serviceName, method)
 			if strings.TrimSpace(path) != "" {
 				info.encoderPath = path
-				h.paths[path] = info
+				info.urls = append(info.urls, url)
 			} else {
 				info.encoderPath = url
 			}
 		} else {
-			fmt.Println("url not found", url, h.paths)
+			fmt.Println("Service and Method NOT found!", serviceName, method, h.mapping)
 		}
 	}
 }
@@ -289,23 +284,21 @@ func (h *httpHandler) AddDefaultEncoder(serviceName string, encoder handlers.Enc
 }
 
 func (h *httpHandler) AddHTTPHandler(serviceName string, method string, path string, handler handlers.HTTPHandler) {
-	if h.paths != nil {
-		url := generateURL(serviceName, method)
-		if info, ok := h.paths[url]; ok {
+	if h.mapping != nil {
+		if info, ok := h.mapping.Get(serviceName, method); ok {
 			info.httpHandler = handler
 		} else {
-			fmt.Println("url not found", url, h.paths)
+			fmt.Println("Service and Method NOT found!", serviceName, method, h.mapping)
 		}
 	}
 }
 
 func (h *httpHandler) AddDecoder(serviceName, method string, decoder handlers.Decoder) {
-	if h.paths != nil {
-		url := generateURL(serviceName, method)
-		if info, ok := h.paths[url]; ok {
+	if h.mapping != nil {
+		if info, ok := h.mapping.Get(serviceName, method); ok {
 			info.decoder = decoder
 		} else {
-			fmt.Println("url not found", url, h.paths)
+			fmt.Println("Service and Method NOT found!", serviceName, method, h.mapping)
 		}
 	}
 }
@@ -322,18 +315,23 @@ func (h *httpHandler) AddDefaultDecoder(serviceName string, decoder handlers.Dec
 func (h *httpHandler) Run(httpListener net.Listener) error {
 	r := mux.NewRouter()
 	fmt.Println("Mapped URLs: ")
-	for url, info := range h.paths {
-		if strings.TrimSpace(info.encoderPath) != "" && info.encoderPath != url {
-			continue
+	allPaths := h.mapping.GetAllPathInfo()
+	for i := range allPaths {
+		info := allPaths[i]
+		for _, url := range info.urls {
+			if strings.TrimSpace(info.encoderPath) != "" && info.encoderPath != url {
+				// only add the encoder url if encoder is defined, skip others
+				continue
+			}
+			routeURL := url
+			handler := h.getHTTPHandler(info.serviceName, info.methodName)
+			r.Methods(info.httpMethod...).Path(url).Handler(handler)
+			if !strings.HasSuffix(url, "/") {
+				routeURL = url + "/"
+				r.Methods(info.httpMethod...).Path(url + "/").Handler(handler)
+			}
+			fmt.Println("\t", info.httpMethod, routeURL)
 		}
-		routeURL := url
-		handler := h.getHTTPHandler(info.serviceName, info.methodName)
-		r.Methods(info.httpMethod...).Path(url).Handler(handler)
-		if !strings.HasSuffix(url, "/") {
-			routeURL = url + "/"
-			r.Methods(info.httpMethod...).Path(url + "/").Handler(handler)
-		}
-		fmt.Println("\t", info.httpMethod, routeURL)
 	}
 	h.svr = &http.Server{
 		ReadTimeout:  5 * time.Second,

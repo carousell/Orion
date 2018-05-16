@@ -43,7 +43,7 @@ type serviceInfo struct {
 	responseHeaders []string
 }
 
-type pathInfo struct {
+type methodInfo struct {
 	svc         *serviceInfo
 	method      handlers.GRPCMethodHandler
 	encoder     handlers.Encoder
@@ -53,18 +53,15 @@ type pathInfo struct {
 	encoderPath string
 	serviceName string
 	methodName  string
+	urls        []string
 }
 
 type httpHandler struct {
 	mu          sync.Mutex
-	paths       map[string]*pathInfo
+	mapping     *methodInfoMapping
 	defEncoders map[string]handlers.Encoder
 	defDecoders map[string]handlers.Decoder
 	mar         jsonpb.Marshaler
 	svr         *http.Server
 	config      HTTPHandlerConfig
-}
-
-type pathMapping struct {
-	mapping map[string]*pathInfo
 }
