@@ -330,7 +330,7 @@ func (h *httpHandler) Run(httpListener net.Listener) error {
 				routeURL = url + "/"
 				r.Methods(info.httpMethod...).Path(url + "/").Handler(handler)
 			}
-			fmt.Println("\t", info.httpMethod, routeURL)
+			fmt.Println("\t", info.httpMethod, routeURL, "mapped to", info.serviceName, info.methodName)
 		}
 	}
 	h.svr = &http.Server{
