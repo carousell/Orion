@@ -264,7 +264,7 @@ func (h *httpHandler) AddEncoder(serviceName, method string, httpMethod []string
 			url := generateURL(serviceName, method)
 			if strings.TrimSpace(path) != "" {
 				info.encoderPath = path
-				info.urls = append(info.urls, url)
+				info.urls = append(info.urls, path)
 			} else {
 				info.encoderPath = url
 			}
