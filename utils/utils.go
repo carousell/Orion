@@ -74,3 +74,12 @@ func FinishNRTransaction(ctx context.Context, err error) {
 		t.End()
 	}
 }
+
+//IgnoreNRTransaction ignores this NR trasaction and prevents it from being reported
+func IgnoreNRTransaction(ctx context.Context) error {
+	t := GetNewRelicTransactionFromContext(ctx)
+	if t != nil {
+		return t.Ignore()
+	}
+	return nil
+}

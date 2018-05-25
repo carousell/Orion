@@ -106,6 +106,18 @@ func prepareContext(req *http.Request, info *methodInfo) context.Context {
 	return ctx
 }
 
+func processOptions(ctx context.Context, req *http.Request, info *methodInfo) context.Context {
+	if info.options != nil {
+		for _, opt := range info.options {
+			switch strings.ToUpper(opt) {
+			case IGNORE_NR:
+				utils.IgnoreNRTransaction(ctx)
+			}
+		}
+	}
+	return ctx
+}
+
 // DefaultEncoder encodes a HTTP request if none are registered. This encoder
 // populates the proto message with URL route variables or fields from a JSON
 // body if either are available.
@@ -127,7 +139,7 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, ser
 	info, ok := h.mapping.Get(serviceName, methodName)
 	if ok {
 		ctx := prepareContext(req, info)
-
+		ctx = processOptions(ctx, req, info)
 		// httpHandler allows handling entire http request
 		if info.httpHandler != nil {
 			req = req.WithContext(ctx)
@@ -310,6 +322,16 @@ func (h *httpHandler) AddDefaultDecoder(serviceName string, decoder handlers.Dec
 	if decoder != nil {
 		h.defDecoders[cleanSvcName(serviceName)] = decoder
 	}
+}
+
+func (h *httpHandler) AddOption(serviceName, method, option string) {
+	if info, ok := h.mapping.Get(serviceName, method); ok {
+		if info.options == nil {
+			info.options = make([]string, 0)
+		}
+		info.options = append(info.options, option)
+	}
+
 }
 
 func (h *httpHandler) Run(httpListener net.Listener) error {

@@ -10,3 +10,7 @@ install:
 
 script:
   - make ci
+
+matrix:
+  allow_failures:
+    - go: master

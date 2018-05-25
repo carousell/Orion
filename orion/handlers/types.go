@@ -44,6 +44,10 @@ type Decodable interface {
 	AddDefaultDecoder(serviceName string, decoder Decoder)
 }
 
+type Optionable interface {
+	AddOption(ServiceName, method, option string)
+}
+
 //HTTPInterceptor allows intercepting an HTTP connection
 type HTTPInterceptor interface {
 	AddHTTPHandler(serviceName, method string, path string, handler HTTPHandler)
@@ -62,4 +66,5 @@ type Handler interface {
 //CommonConfig is the config that is common across both http and grpc handlers
 type CommonConfig struct {
 	NoDefaultInterceptors bool
+	NRIgnoreURLs          []string
 }
