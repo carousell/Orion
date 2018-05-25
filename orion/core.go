@@ -14,6 +14,7 @@ import (
 	"github.com/carousell/Orion/orion/handlers"
 	grpcHandler "github.com/carousell/Orion/orion/handlers/grpc"
 	"github.com/carousell/Orion/orion/handlers/http"
+	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/listenerutils"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -45,6 +46,12 @@ type decoderInfo struct {
 	decoder     handlers.Decoder
 }
 
+type optionInfo struct {
+	serviceName string
+	method      string
+	option      string
+}
+
 //DefaultServerImpl provides a default implementation of orion.Server this can be embedded in custom orion.Server implementations
 type DefaultServerImpl struct {
 	config Config
@@ -57,6 +64,7 @@ type DefaultServerImpl struct {
 	decoders     map[string]*decoderInfo
 	defDecoders  map[string]handlers.Decoder
 	defEncoders  map[string]handlers.Encoder
+	options      map[string]*optionInfo
 	handlers     []*handlerInfo
 	initializers []Initializer
 
@@ -130,6 +138,17 @@ func (d *DefaultServerImpl) AddDefaultDecoder(serviceName string, decoder Decode
 		d.defDecoders = make(map[string]handlers.Decoder)
 	}
 	d.defDecoders[serviceName] = decoder
+}
+
+func (d *DefaultServerImpl) AddOption(serviceName, method, option string) {
+	if d.options == nil {
+		d.options = make(map[string]*optionInfo)
+	}
+	d.options[serviceName+":"+method] = &optionInfo{
+		serviceName: serviceName,
+		method:      method,
+		option:      option,
+	}
 }
 
 //GetOrionConfig returns current orion config
@@ -219,6 +238,7 @@ func (d *DefaultServerImpl) signalWatcher() {
 			// relaod config
 			err := readConfig(d.config.OrionServerName)
 			if err != nil {
+				notifier.NotifyWithLevel(err, "critical", "Error parsing config not reloading services")
 				log.Println("Error", err, "msg", "not reloading services")
 				continue
 			}
@@ -282,8 +302,8 @@ func (d *DefaultServerImpl) startHandler(h *handlerInfo, reload bool) {
 	}
 
 	//Add all encoders
-	for _, ei := range d.encoders {
-		if e, ok := h.handler.(handlers.Encodeable); ok {
+	if e, ok := h.handler.(handlers.Encodeable); ok {
+		for _, ei := range d.encoders {
 			e.AddEncoder(ei.serviceName, ei.method, ei.httpMethod, ei.path, ei.encoder)
 			if ei.handler != nil {
 				if i, ok := h.handler.(handlers.HTTPInterceptor); ok {
@@ -293,23 +313,30 @@ func (d *DefaultServerImpl) startHandler(h *handlerInfo, reload bool) {
 		}
 	}
 
+	//Add all options
+	if e, ok := h.handler.(handlers.Optionable); ok {
+		for _, oi := range d.options {
+			e.AddOption(oi.serviceName, oi.method, oi.option)
+		}
+	}
+
 	//Add all default encoders
-	for svc, enc := range d.defEncoders {
-		if e, ok := h.handler.(handlers.Encodeable); ok {
+	if e, ok := h.handler.(handlers.Encodeable); ok {
+		for svc, enc := range d.defEncoders {
 			e.AddDefaultEncoder(svc, enc)
 		}
 	}
 
 	//Add all decoders
-	for _, di := range d.decoders {
-		if e, ok := h.handler.(handlers.Decodable); ok {
+	if e, ok := h.handler.(handlers.Decodable); ok {
+		for _, di := range d.decoders {
 			e.AddDecoder(di.serviceName, di.method, di.decoder)
 		}
 	}
 
 	//Add all default decoders
-	for svc, dec := range d.defDecoders {
-		if e, ok := h.handler.(handlers.Decodable); ok {
+	if e, ok := h.handler.(handlers.Decodable); ok {
+		for svc, dec := range d.defDecoders {
 			e.AddDefaultDecoder(svc, dec)
 		}
 	}

@@ -29,6 +29,10 @@ var (
 	}
 )
 
+const (
+	IGNORE_NR = "IGNORE_NR"
+)
+
 //HTTPHandlerConfig is the configuration for HTTP Handler
 type HTTPHandlerConfig struct {
 	handlers.CommonConfig
@@ -54,6 +58,7 @@ type methodInfo struct {
 	serviceName string
 	methodName  string
 	urls        []string
+	options     []string
 }
 
 type httpHandler struct {
