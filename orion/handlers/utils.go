@@ -52,10 +52,7 @@ func GetInterceptors(svc interface{}, config CommonConfig) grpc.UnaryServerInter
 
 	opts := []grpc.UnaryServerInterceptor{optionsInterceptor}
 
-	if config.NoDefaultInterceptors {
-		// only add logging interceptor
-		opts = append(opts, interceptors.ResponseTimeLoggingInterceptor())
-	} else {
+	if !config.NoDefaultInterceptors {
 		// Add default interceptors
 		opts = append(opts, interceptors.DefaultInterceptors()...)
 	}
