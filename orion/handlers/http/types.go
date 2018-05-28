@@ -30,11 +30,12 @@ var (
 )
 
 const (
-	IGNORE_NR = "IGNORE_NR"
+	//IgnoreNR is the option flag to ignore newrelic for this method
+	IgnoreNR = "IGNORE_NR"
 )
 
-//HTTPHandlerConfig is the configuration for HTTP Handler
-type HTTPHandlerConfig struct {
+//HandlerConfig is the configuration for HTTP Handler
+type HandlerConfig struct {
 	handlers.CommonConfig
 	EnableProtoURL bool
 }
@@ -68,5 +69,5 @@ type httpHandler struct {
 	defDecoders map[string]handlers.Decoder
 	mar         jsonpb.Marshaler
 	svr         *http.Server
-	config      HTTPHandlerConfig
+	config      HandlerConfig
 }

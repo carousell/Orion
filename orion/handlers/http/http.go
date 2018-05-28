@@ -28,10 +28,10 @@ import (
 )
 
 //NewHTTPHandler creates a new HTTP handler
-func NewHTTPHandler(config HTTPHandlerConfig) handlers.Handler {
+func NewHTTPHandler(config HandlerConfig) handlers.Handler {
 	return &httpHandler{
 		config:  config,
-		mapping: newPaths(),
+		mapping: newMethodInfoMapping(),
 	}
 }
 
@@ -50,7 +50,12 @@ func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, s
 			writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
 			log.Println("panic", r, "path", req.URL.String(), "method", req.Method, "took", time.Since(t))
 			log.Print(string(debug.Stack()))
-			err := fmt.Errorf("panic: %s", r)
+			var err error
+			if e, ok := r.(error); ok {
+				err = e
+			} else {
+				err = fmt.Errorf("panic: %s", r)
+			}
 			utils.FinishNRTransaction(ctx, err)
 			notifier.NotifyWithLevel(err, "critical", req.URL.String(), ctx)
 		} else {
@@ -110,7 +115,7 @@ func processOptions(ctx context.Context, req *http.Request, info *methodInfo) co
 	if info.options != nil {
 		for _, opt := range info.options {
 			switch strings.ToUpper(opt) {
-			case IGNORE_NR:
+			case IgnoreNR:
 				utils.IgnoreNRTransaction(ctx)
 			}
 		}
@@ -337,7 +342,7 @@ func (h *httpHandler) AddOption(serviceName, method, option string) {
 func (h *httpHandler) Run(httpListener net.Listener) error {
 	r := mux.NewRouter()
 	fmt.Println("Mapped URLs: ")
-	allPaths := h.mapping.GetAllPathInfo()
+	allPaths := h.mapping.GetAllMethodInfoByOrder()
 	for i := range allPaths {
 		info := allPaths[i]
 		for _, url := range info.urls {

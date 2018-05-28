@@ -199,7 +199,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			log.Println("error", err)
 		}
 		log.Println("HTTPListnerPort", httpPort)
-		config := http.HTTPHandlerConfig{
+		config := http.HandlerConfig{
 			EnableProtoURL: d.config.EnableProtoURL,
 		}
 		handler := http.NewHTTPHandler(config)
