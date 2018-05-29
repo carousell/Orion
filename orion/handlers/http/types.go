@@ -43,7 +43,6 @@ type HandlerConfig struct {
 type serviceInfo struct {
 	desc            *grpc.ServiceDesc
 	svc             interface{}
-	interceptors    grpc.UnaryServerInterceptor
 	requestHeaders  []string
 	responseHeaders []string
 }

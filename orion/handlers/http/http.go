@@ -169,7 +169,8 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, ser
 		}
 
 		// make service call
-		protoResponse, err := info.method(info.svc.svc, ctx, dec, info.svc.interceptors)
+		interceptors := handlers.GetInterceptors(info.svc.svc, h.config.CommonConfig)
+		protoResponse, err := info.method(info.svc.svc, ctx, dec, interceptors)
 
 		//apply decoder if any
 		if info.decoder != nil {
@@ -247,7 +248,6 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 		svc:  ss,
 	}
 
-	svcInfo.interceptors = handlers.GetInterceptors(ss, h.config.CommonConfig)
 	if headers, ok := ss.(handlers.WhitelistedHeaders); ok {
 		svcInfo.requestHeaders = headers.GetRequestHeaders()
 		svcInfo.responseHeaders = headers.GetResponseHeaders()
