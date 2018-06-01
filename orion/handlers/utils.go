@@ -92,10 +92,8 @@ func getMiddleware(svc interface{}, middleware string) (grpc.UnaryServerIntercep
 			}
 		}
 		return nil, errors.New("middleware should be defined as 'func (" + r.String() + ") " + middleware + "() grpc.UnaryServerInterceptor'")
-	} else {
-		return nil, errors.New("could not find middleware " + middleware)
 	}
-	return nil, nil
+	return nil, errors.New("could not find middleware " + middleware)
 }
 
 func GetMethodInterceptors(svc interface{}, config CommonConfig, middlewares []string) []grpc.UnaryServerInterceptor {
