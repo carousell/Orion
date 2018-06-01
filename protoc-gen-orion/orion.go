@@ -343,7 +343,7 @@ func parseMiddlewares(parts []string) *commentsInfo {
 	if len(parts) > 2 {
 		return &commentsInfo{
 			Middleware: true,
-			Value:      strings.ToUpper(parts[2]),
+			Value:      parts[2],
 		}
 	}
 	return nil

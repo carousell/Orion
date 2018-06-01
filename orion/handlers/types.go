@@ -63,8 +63,12 @@ type Handler interface {
 	Stop(timeout time.Duration) error
 }
 
+//Middlewareable implemets support for method specific middleware
+type Middlewareable interface {
+	AddMiddleware(serviceName, method string, middleware ...string)
+}
+
 //CommonConfig is the config that is common across both http and grpc handlers
 type CommonConfig struct {
 	NoDefaultInterceptors bool
-	NRIgnoreURLs          []string
 }

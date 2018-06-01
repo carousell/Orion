@@ -53,10 +53,6 @@ type ServiceFactory interface {
 	DisposeService(svc interface{})
 }
 
-type Middlewareable interface {
-	AddMiddleware(serviceName, method string, middleware ...string)
-}
-
 //Encoder is the function type needed for request encoders
 type Encoder = handlers.Encoder
 

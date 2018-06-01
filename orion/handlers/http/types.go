@@ -64,6 +64,7 @@ type methodInfo struct {
 type httpHandler struct {
 	mu          sync.Mutex
 	mapping     *methodInfoMapping
+	middlewares *handlers.MiddlewareMapping
 	defEncoders map[string]handlers.Encoder
 	defDecoders map[string]handlers.Decoder
 	mar         jsonpb.Marshaler
