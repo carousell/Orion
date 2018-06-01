@@ -86,7 +86,7 @@ func (d *DefaultServerImpl) AddMiddleware(serviceName string, method string, mid
 		key := getSvcKey(serviceName, method)
 		if info, ok := d.middlewares[key]; ok {
 			if info.middlewares != nil {
-				middlewares = append(info.middlewares, middlewares...)
+				info.middlewares = append(info.middlewares, middlewares...)
 			} else {
 				info.middlewares = middlewares
 			}
