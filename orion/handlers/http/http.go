@@ -30,8 +30,9 @@ import (
 //NewHTTPHandler creates a new HTTP handler
 func NewHTTPHandler(config HandlerConfig) handlers.Handler {
 	return &httpHandler{
-		config:  config,
-		mapping: newMethodInfoMapping(),
+		config:      config,
+		mapping:     newMethodInfoMapping(),
+		middlewares: handlers.NewMiddlewareMapping(),
 	}
 }
 
@@ -168,8 +169,16 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, ser
 			return encErr
 		}
 
+		// fetch all method middlewares
+		middlewares := make([]string, 0)
+		if h.middlewares != nil {
+			middlewares = append(middlewares, h.middlewares.GetMiddlewares(info.serviceName, info.methodName)...)
+		}
+		// fetch all interceptors
+		interceptors := handlers.GetInterceptorsWithMethodMiddlewares(info.svc.svc, h.config.CommonConfig, middlewares)
+
 		// make service call
-		protoResponse, err := info.method(info.svc.svc, ctx, dec, info.svc.interceptors)
+		protoResponse, err := info.method(info.svc.svc, ctx, dec, interceptors)
 
 		//apply decoder if any
 		if info.decoder != nil {
@@ -247,7 +256,6 @@ func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
 		svc:  ss,
 	}
 
-	svcInfo.interceptors = handlers.GetInterceptors(ss, h.config.CommonConfig)
 	if headers, ok := ss.(handlers.WhitelistedHeaders); ok {
 		svcInfo.requestHeaders = headers.GetRequestHeaders()
 		svcInfo.responseHeaders = headers.GetResponseHeaders()
@@ -337,6 +345,13 @@ func (h *httpHandler) AddOption(serviceName, method, option string) {
 		info.options = append(info.options, option)
 	}
 
+}
+
+func (h *httpHandler) AddMiddleware(serviceName string, method string, middlewares ...string) {
+	if h.middlewares == nil {
+		h.middlewares = handlers.NewMiddlewareMapping()
+	}
+	h.middlewares.AddMiddleware(serviceName, method, middlewares...)
 }
 
 func (h *httpHandler) Run(httpListener net.Listener) error {

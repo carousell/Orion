@@ -43,7 +43,6 @@ type HandlerConfig struct {
 type serviceInfo struct {
 	desc            *grpc.ServiceDesc
 	svc             interface{}
-	interceptors    grpc.UnaryServerInterceptor
 	requestHeaders  []string
 	responseHeaders []string
 }
@@ -65,6 +64,7 @@ type methodInfo struct {
 type httpHandler struct {
 	mu          sync.Mutex
 	mapping     *methodInfoMapping
+	middlewares *handlers.MiddlewareMapping
 	defEncoders map[string]handlers.Encoder
 	defDecoders map[string]handlers.Decoder
 	mar         jsonpb.Marshaler
