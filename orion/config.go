@@ -66,8 +66,10 @@ type ZipkinConfig struct {
 
 //NewRelicConfig is the configuration for newrelic
 type NewRelicConfig struct {
-	APIKey      string
-	ServiceName string
+	APIKey            string
+	ServiceName       string
+	IncludeAttributes []string
+	ExcludeAttributes []string
 }
 
 //BuildDefaultConfig builds a default config object for Orion
@@ -112,8 +114,10 @@ func BuildDefaultZipkinConfig() ZipkinConfig {
 //BuildDefaultNewRelicConfig builds a default config for newrelic
 func BuildDefaultNewRelicConfig() NewRelicConfig {
 	return NewRelicConfig{
-		ServiceName: viper.GetString("orion.NewRelicServiceName"),
-		APIKey:      viper.GetString("orion.NewRelicApiKey"),
+		ServiceName:       viper.GetString("orion.NewRelicServiceName"),
+		APIKey:            viper.GetString("orion.NewRelicApiKey"),
+		ExcludeAttributes: viper.GetStringSlice("orion.NewRelicExclude"),
+		IncludeAttributes: viper.GetStringSlice("orion.NewRelicInclude"),
 	}
 }
 
