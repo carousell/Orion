@@ -32,10 +32,12 @@ func (d *defaultRetry) ShouldRetry(attempt int, req *http.Request, resp *http.Re
 			return false
 		}
 	}
-	if err != nil && !d.isTimeout(err) {
-		// do not retry non timeout errors
-		return false
-	}
+	/*
+		if err != nil && !d.isTimeout(err) {
+			// do not retry non timeout errors
+			return false
+		}
+	*/
 	if attempt < d.option.MaxRetry && req != nil {
 		if d.option.RetryAllMethods {
 			return true
