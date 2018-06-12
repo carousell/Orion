@@ -81,8 +81,7 @@ go get -u github.com/carousell/Orion/protoc-gen-orion
 
 ## Project Status
 Orion is in use at production at Carousell and powers multiple services serving thousands to requests per seconds,
-that being said we do not gurantee all updates to be backward compatible at the moment breaking changes might happen.
-
+we ensure all updates are backward compatible unless it involves a major bug or security issue.
 
 ## License
 This code is available under the following https://github.com/carousell/Orion/blob/master/LICENSE

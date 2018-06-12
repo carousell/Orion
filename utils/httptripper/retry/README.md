@@ -31,25 +31,25 @@ type Option func(*OptionsData)
 ```
 Option is the interface for defining Options
 
-### <a name="WithMaxRetry">func</a> [WithMaxRetry](./retry.go#L85)
+### <a name="WithMaxRetry">func</a> [WithMaxRetry](./retry.go#L87)
 ``` go
 func WithMaxRetry(max int) Option
 ```
 WithMaxRetry set the max number of times a request is tried
 
-### <a name="WithRetryAllMethods">func</a> [WithRetryAllMethods](./retry.go#L102)
+### <a name="WithRetryAllMethods">func</a> [WithRetryAllMethods](./retry.go#L104)
 ``` go
 func WithRetryAllMethods(retryAllMethods bool) Option
 ```
 WithRetryAllMethods sets retry on all HTTP methods, overrides WithRetryMethods
 
-### <a name="WithRetryMethods">func</a> [WithRetryMethods](./retry.go#L92)
+### <a name="WithRetryMethods">func</a> [WithRetryMethods](./retry.go#L94)
 ``` go
 func WithRetryMethods(methods ...string) Option
 ```
 WithRetryMethods specifies the methods that can be retried
 
-### <a name="WithStrategy">func</a> [WithStrategy](./retry.go#L109)
+### <a name="WithStrategy">func</a> [WithStrategy](./retry.go#L111)
 ``` go
 func WithStrategy(s strategy.Strategy) Option
 ```
@@ -77,7 +77,7 @@ type Retriable interface {
 ```
 Retriable is the interface implemented by a retrier
 
-### <a name="NewRetry">func</a> [NewRetry](./retry.go#L69)
+### <a name="NewRetry">func</a> [NewRetry](./retry.go#L71)
 ``` go
 func NewRetry(options ...Option) Retriable
 ```
