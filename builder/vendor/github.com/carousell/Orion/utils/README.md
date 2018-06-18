@@ -16,6 +16,7 @@
 * [func FinishNRTransaction(ctx context.Context, err error)](#FinishNRTransaction)
 * [func GetHostname() string](#GetHostname)
 * [func GetNewRelicTransactionFromContext(ctx context.Context) newrelic.Transaction](#GetNewRelicTransactionFromContext)
+* [func IgnoreNRTransaction(ctx context.Context) error](#IgnoreNRTransaction)
 * [func StartNRTransaction(path string, ctx context.Context, req \*http.Request, w http.ResponseWriter) context.Context](#StartNRTransaction)
 * [func StoreNewRelicTransactionToContext(ctx context.Context, t newrelic.Transaction) context.Context](#StoreNewRelicTransactionToContext)
 
@@ -47,6 +48,12 @@ GetHostname fetches the hostname of the system
 func GetNewRelicTransactionFromContext(ctx context.Context) newrelic.Transaction
 ```
 GetNewRelicTransactionFromContext fetches the new relic transaction that is stored in the context
+
+## <a name="IgnoreNRTransaction">func</a> [IgnoreNRTransaction](./utils.go#L79)
+``` go
+func IgnoreNRTransaction(ctx context.Context) error
+```
+IgnoreNRTransaction ignores this NR trasaction and prevents it from being reported
 
 ## <a name="StartNRTransaction">func</a> [StartNRTransaction](./utils.go#L50)
 ``` go

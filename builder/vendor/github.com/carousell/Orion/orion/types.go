@@ -47,7 +47,7 @@ type Initializer interface {
 
 // ServiceFactory is the interface that need to be implemented by client that provides with a new service object
 type ServiceFactory interface {
-	// NewService function recieves the server obejct for which service has to be initialized
+	// NewService function receives the server obejct for which service has to be initialized
 	NewService(Server) interface{}
 	//DisposeService function disposes the service object
 	DisposeService(svc interface{})
@@ -56,7 +56,7 @@ type ServiceFactory interface {
 //Encoder is the function type needed for request encoders
 type Encoder = handlers.Encoder
 
-//Decoder is the funtion type needed for request decoders
+//Decoder is the function type needed for request decoders
 type Decoder = handlers.Decoder
 
 //HTTPHandler is the http interceptor

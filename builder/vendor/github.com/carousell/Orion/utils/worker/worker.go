@@ -34,6 +34,13 @@ func WithRetry(n int) ScheduleOption {
 	}
 }
 
+//WithQueueName sets the destination queue for this task
+func WithQueueName(queueName string) ScheduleOption {
+	return func(c *ScheduleConfig) {
+		c.queueName = queueName
+	}
+}
+
 func (w *worker) Schedule(ctx context.Context, name string, payload string, options ...ScheduleOption) error {
 	span, ctx := spanutils.NewInternalSpan(ctx, name+"Scheduled")
 	defer span.End()
@@ -61,6 +68,7 @@ func (w *worker) scheduleRemote(ctx context.Context, name string, payload string
 		},
 	}
 	signature.RetryCount = c.retries
+	signature.RoutingKey = c.queueName
 	_, err := w.server.SendTask(signature)
 	if err != nil {
 		return err

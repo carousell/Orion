@@ -23,6 +23,7 @@
 * [type RabbitMQConfig](#RabbitMQConfig)
 * [type ScheduleConfig](#ScheduleConfig)
 * [type ScheduleOption](#ScheduleOption)
+  * [func WithQueueName(queueName string) ScheduleOption](#WithQueueName)
   * [func WithRetry(n int) ScheduleOption](#WithRetry)
 * [type Work](#Work)
 * [type Worker](#Worker)
@@ -53,7 +54,7 @@ type RabbitMQConfig struct {
 ```
 RabbitMQConfig is the config used for scheduling tasks through rabbitmq
 
-## <a name="ScheduleConfig">type</a> [ScheduleConfig](./types.go#L38-L40)
+## <a name="ScheduleConfig">type</a> [ScheduleConfig](./types.go#L38-L41)
 ``` go
 type ScheduleConfig struct {
     // contains filtered or unexported fields
@@ -61,11 +62,17 @@ type ScheduleConfig struct {
 ```
 ScheduleConfig is the config used when scheduling a task
 
-## <a name="ScheduleOption">type</a> [ScheduleOption](./types.go#L43)
+## <a name="ScheduleOption">type</a> [ScheduleOption](./types.go#L44)
 ``` go
 type ScheduleOption func(*ScheduleConfig)
 ```
 ScheduleOption represents different options available for Schedule
+
+### <a name="WithQueueName">func</a> [WithQueueName](./worker.go#L38)
+``` go
+func WithQueueName(queueName string) ScheduleOption
+```
+WithQueueName sets the destination queue for this task
 
 ### <a name="WithRetry">func</a> [WithRetry](./worker.go#L31)
 ``` go

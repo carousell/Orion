@@ -32,7 +32,6 @@ var (
 		NewRelicInitializer(),
 		PrometheusInitializer(),
 		PprofInitializer(),
-		HTTPZipkinInitializer(),
 		ErrorLoggingInitializer(),
 	}
 )
@@ -120,12 +119,21 @@ func (n *newRelicInitializer) Init(svr Server) error {
 	if strings.TrimSpace(apiKey) == "" {
 		return errors.New("empty token")
 	}
-	serviceName := svr.GetOrionConfig().NewRelicConfig.ServiceName
+	config := svr.GetOrionConfig().NewRelicConfig
+	serviceName := config.ServiceName
 	if strings.TrimSpace(serviceName) == "" {
 		serviceName = svr.GetOrionConfig().OrionServerName
 	}
-	config := newrelic.NewConfig(serviceName, apiKey)
-	app, err := newrelic.NewApplication(config)
+	nrConfig := newrelic.NewConfig(serviceName, apiKey)
+	if config.ExcludeAttributes != nil && len(config.ExcludeAttributes) > 0 {
+		nrConfig.Attributes.Enabled = true
+		nrConfig.Attributes.Exclude = config.ExcludeAttributes
+	}
+	if config.IncludeAttributes != nil && len(config.IncludeAttributes) > 0 {
+		nrConfig.Attributes.Enabled = true
+		nrConfig.Attributes.Include = config.IncludeAttributes
+	}
+	app, err := newrelic.NewApplication(nrConfig)
 	if err != nil {
 		log.Println("nr-error", err)
 		return err

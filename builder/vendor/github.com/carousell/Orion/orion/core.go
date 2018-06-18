@@ -12,6 +12,9 @@ import (
 	"time"
 
 	"github.com/carousell/Orion/orion/handlers"
+	grpcHandler "github.com/carousell/Orion/orion/handlers/grpc"
+	"github.com/carousell/Orion/orion/handlers/http"
+	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/listenerutils"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -43,7 +46,19 @@ type decoderInfo struct {
 	decoder     handlers.Decoder
 }
 
-//DefaultServerImpl provides a default implementation of orion.Server this can be embeded in custom orion.Server implementations
+type optionInfo struct {
+	serviceName string
+	method      string
+	option      string
+}
+
+type middlewareInfo struct {
+	serviceName string
+	method      string
+	middlewares []string
+}
+
+//DefaultServerImpl provides a default implementation of orion.Server this can be embedded in custom orion.Server implementations
 type DefaultServerImpl struct {
 	config Config
 	mu     sync.Mutex
@@ -53,10 +68,36 @@ type DefaultServerImpl struct {
 	services     map[string]*svcInfo
 	encoders     map[string]*encoderInfo
 	decoders     map[string]*decoderInfo
+	defDecoders  map[string]handlers.Decoder
+	defEncoders  map[string]handlers.Encoder
+	options      map[string]*optionInfo
+	middlewares  map[string]*middlewareInfo
 	handlers     []*handlerInfo
 	initializers []Initializer
 
 	dataBag map[string]interface{}
+}
+
+func (d *DefaultServerImpl) AddMiddleware(serviceName string, method string, middlewares ...string) {
+	if d.middlewares == nil {
+		d.middlewares = make(map[string]*middlewareInfo)
+	}
+	if len(middlewares) > 0 {
+		key := getSvcKey(serviceName, method)
+		if info, ok := d.middlewares[key]; ok {
+			if info.middlewares != nil {
+				info.middlewares = append(info.middlewares, middlewares...)
+			} else {
+				info.middlewares = middlewares
+			}
+		} else {
+			mi := new(middlewareInfo)
+			mi.serviceName = serviceName
+			mi.method = method
+			mi.middlewares = middlewares
+			d.middlewares[key] = mi
+		}
+	}
 }
 
 func getSvcKey(serviceName, method string) string {
@@ -80,6 +121,14 @@ func (d *DefaultServerImpl) AddEncoder(serviceName, method string, httpMethod []
 	ei.httpMethod = httpMethod
 	ei.path = path
 	ei.encoder = encoder
+}
+
+//AddDefaultEncoder is the implementation of handlers.Encodable
+func (d *DefaultServerImpl) AddDefaultEncoder(serviceName string, encoder Encoder) {
+	if d.defEncoders == nil {
+		d.defEncoders = make(map[string]handlers.Encoder)
+	}
+	d.defEncoders[serviceName] = encoder
 }
 
 //AddHTTPHandler is the implementation of handlers.HTTPInterceptor
@@ -109,6 +158,25 @@ func (d *DefaultServerImpl) AddDecoder(serviceName, method string, decoder handl
 		serviceName: serviceName,
 		method:      method,
 		decoder:     decoder,
+	}
+}
+
+//AddDefaultDecoder is the implementation of handlers.Decodable
+func (d *DefaultServerImpl) AddDefaultDecoder(serviceName string, decoder Decoder) {
+	if d.defDecoders == nil {
+		d.defDecoders = make(map[string]handlers.Decoder)
+	}
+	d.defDecoders[serviceName] = decoder
+}
+
+func (d *DefaultServerImpl) AddOption(serviceName, method, option string) {
+	if d.options == nil {
+		d.options = make(map[string]*optionInfo)
+	}
+	d.options[serviceName+":"+method] = &optionInfo{
+		serviceName: serviceName,
+		method:      method,
+		option:      option,
 	}
 }
 
@@ -160,10 +228,10 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			log.Println("error", err)
 		}
 		log.Println("HTTPListnerPort", httpPort)
-		config := handlers.HTTPHandlerConfig{
+		config := http.HandlerConfig{
 			EnableProtoURL: d.config.EnableProtoURL,
 		}
-		handler := handlers.NewHTTPHandler(config)
+		handler := http.NewHTTPHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,
 			listener: httpListener,
@@ -176,7 +244,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			log.Println("error", err)
 		}
 		log.Println("gRPCListnerPort", grpcPort)
-		handler := handlers.NewGRPCHandler(handlers.GRPCConfig{})
+		handler := grpcHandler.NewGRPCHandler(grpcHandler.GRPCConfig{})
 		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,
 			listener: grpcListener,
@@ -199,6 +267,7 @@ func (d *DefaultServerImpl) signalWatcher() {
 			// relaod config
 			err := readConfig(d.config.OrionServerName)
 			if err != nil {
+				notifier.NotifyWithLevel(err, "critical", "Error parsing config not reloading services")
 				log.Println("Error", err, "msg", "not reloading services")
 				continue
 			}
@@ -255,12 +324,15 @@ func (d *DefaultServerImpl) startHandler(h *handlerInfo, reload bool) {
 		h.handler.Stop(time.Second * 1)
 		h.listener = h.listener.GetListener()
 	}
+
+	//Add all services first
 	for _, info := range d.services {
 		h.handler.Add(info.sd, info.ss)
 	}
 
-	for _, ei := range d.encoders {
-		if e, ok := h.handler.(handlers.Encodeable); ok {
+	//Add all encoders
+	if e, ok := h.handler.(handlers.Encodeable); ok {
+		for _, ei := range d.encoders {
 			e.AddEncoder(ei.serviceName, ei.method, ei.httpMethod, ei.path, ei.encoder)
 			if ei.handler != nil {
 				if i, ok := h.handler.(handlers.HTTPInterceptor); ok {
@@ -269,14 +341,45 @@ func (d *DefaultServerImpl) startHandler(h *handlerInfo, reload bool) {
 			}
 		}
 	}
-	for _, di := range d.decoders {
-		if e, ok := h.handler.(handlers.Decodable); ok {
+
+	//Add all options
+	if e, ok := h.handler.(handlers.Optionable); ok {
+		for _, oi := range d.options {
+			e.AddOption(oi.serviceName, oi.method, oi.option)
+		}
+	}
+
+	//Add all default encoders
+	if e, ok := h.handler.(handlers.Encodeable); ok {
+		for svc, enc := range d.defEncoders {
+			e.AddDefaultEncoder(svc, enc)
+		}
+	}
+
+	//Add all decoders
+	if e, ok := h.handler.(handlers.Decodable); ok {
+		for _, di := range d.decoders {
 			e.AddDecoder(di.serviceName, di.method, di.decoder)
 		}
 	}
+
+	//Add all default decoders
+	if e, ok := h.handler.(handlers.Decodable); ok {
+		for svc, dec := range d.defDecoders {
+			e.AddDefaultDecoder(svc, dec)
+		}
+	}
+
+	// Add all middlewares
+	if e, ok := h.handler.(handlers.Middlewareable); ok {
+		for _, mi := range d.middlewares {
+			e.AddMiddleware(mi.serviceName, mi.method, mi.middlewares...)
+		}
+	}
+
 	d.wg.Add(1)
-	go func(s *DefaultServerImpl, h *handlerInfo) {
-		defer s.wg.Done()
+	go func(d *DefaultServerImpl, h *handlerInfo) {
+		defer d.wg.Done()
 		h.handler.Run(h.listener)
 	}(d, h)
 }
@@ -360,5 +463,7 @@ func GetDefaultServer(name string) Server {
 
 //GetDefaultServerWithConfig returns a default server object that uses provided configuration
 func GetDefaultServerWithConfig(config Config) Server {
-	return &DefaultServerImpl{config: config}
+	return &DefaultServerImpl{
+		config: config,
+	}
 }

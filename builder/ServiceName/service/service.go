@@ -44,7 +44,7 @@ func GetService(config Config) proto.ServiceNameServer {
 	s.debug = config.Debug
 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(interceptors.DefaultClientInterceptors(address)...)))
 	if err != nil {
-		log.Fatalln("did not connect: %v", err)
+		log.Fatalln("did not connect: ", err)
 	}
 	s.client = proto.NewServiceNameClient(conn)
 	wConfig := worker.Config{}

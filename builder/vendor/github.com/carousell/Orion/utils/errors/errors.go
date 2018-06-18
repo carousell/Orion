@@ -26,7 +26,7 @@ type ErrorExt interface {
 	Cause() error
 }
 
-//NotifyExt is the interface defination for notifier related options
+//NotifyExt is the interface definition for notifier related options
 type NotifyExt interface {
 	ShouldNotify() bool
 	Notified(status bool)
@@ -156,8 +156,9 @@ func WrapWithSkip(err error, msg string, skip int) ErrorExt {
 	}
 
 	c := &customError{
-		Msg:   msg + err.Error(),
-		cause: err,
+		Msg:          msg + err.Error(),
+		cause:        err,
+		shouldNotify: true,
 	}
 	c.generateStack(skip + 1)
 	return c
