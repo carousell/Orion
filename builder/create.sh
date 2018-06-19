@@ -71,7 +71,6 @@ sed -i "" "s/service_name/$svc_name/g" run.sh
 
 echo "compiling code for $SVC"
 make build
-exit 1
 git add .
 git commit -m "$SVC created from https://github.com/carousell/Orion"
 echo ""

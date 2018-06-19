@@ -136,9 +136,17 @@ func encoder(req *http.Request, reqObject interface{}) error {
 	}
 	return fmt.Errorf("Error: invalid url")
 }
-
-func decoder(w http.ResponseWriter, decoderError, endpointError error, respObject interface{}) {
+func decoder(_ context.Context, w http.ResponseWriter, decoderError, endpointError error, respObject interface{}) {
 	log.Println("serviceReponse", respObject)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Noo Hello world"))
+}
+
+func optionsHandler(w http.ResponseWriter, req *http.Request) bool {
+	if strings.ToLower(req.Method) == "options" {
+		// do something like CORS handling
+		w.Header().Set("Test-Header", "testing some data")
+		return true
+	}
+	return false
 }
