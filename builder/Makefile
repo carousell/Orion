@@ -49,6 +49,9 @@ run:
 proto:
 	cd ServiceName/ServiceName_proto/; bash generate.sh
 
+runclient:
+	cd ServiceName/cmd/client; go build .; ./client
+
 dockerclean:
 	echo "remove exited containers"
 	docker ps --filter status=dead --filter status=exited -aq | xargs  docker rm -v
