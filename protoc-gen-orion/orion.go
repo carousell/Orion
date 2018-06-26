@@ -221,7 +221,7 @@ func generateFile(d *data) *plugin.CodeGeneratorResponse_File {
 func populate(file *descriptor.FileDescriptorProto) *data {
 	d := new(data)
 	d.FileName = *file.Name
-	d.PackageName = file.GetPackage()
+	d.PackageName = strings.Replace(file.GetPackage(), ".", "_", 10)
 
 	d.Services = make([]*service, 0)
 	generate(d, file)
