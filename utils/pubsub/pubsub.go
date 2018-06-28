@@ -30,6 +30,7 @@ type pubSubService struct {
 	Config       PubSubConfig
 }
 
+//NewPubSubService build and returns an pubsub service handler
 func NewPubSubService(config PubSubConfig) PubSubService {
 	MessageQueue := new(messageQueue.PubSubQueue)
 	if config.Enabled {
@@ -43,11 +44,14 @@ func NewPubSubService(config PubSubConfig) PubSubService {
 	}
 }
 
+//Close closes any active connection to Pubsub endpoint
 func (g *pubSubService) Close() {
 	if g.Config.Enabled {
 		g.MessageQueue.Close()
 	}
 }
+
+//PublishMessage publishes a single message to give topic, set waitSync param to true to wait for publish ack
 func (g *pubSubService) PublishMessage(ctx context.Context, topic string, data []byte, waitSync bool) *goPubSub.PublishResult {
 	var result *goPubSub.PublishResult
 	hystrix.Do("PubSubPublish", func() error {
@@ -65,6 +69,8 @@ func (g *pubSubService) PublishMessage(ctx context.Context, topic string, data [
 	}, nil)
 	return result
 }
+
+//BulkPublishMessages publishes a multiple message to give topic, with "BulkPublishConcurrency" no of routines
 func (g *pubSubService) BulkPublishMessages(ctx context.Context, topic string, data [][]byte) {
 	e := executor.NewExecutor(executor.WithFailOnError(false), executor.WithConcurrency(g.Config.BulkPublishConcurrency))
 	for _, v := range data {
