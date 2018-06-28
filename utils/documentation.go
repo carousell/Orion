@@ -11,3 +11,4 @@ package utils
 //go:generate godoc2ghmd -ex -file=spanutils/README.md github.com/carousell/Orion/utils/spanutils
 //go:generate godoc2ghmd -ex -file=worker/README.md github.com/carousell/Orion/utils/worker
 //go:generate godoc2ghmd -ex -file=options/README.md github.com/carousell/Orion/utils/options
+//go:generate godoc2ghmd -ex -file=pubsub/README.md github.com/carousell/Orion/utils/pubsub
