@@ -20,7 +20,7 @@ type PubSubConfig struct {
 }
 
 type PubSubService interface {
-	PublishMessage(ctx context.Context, topic string, data []byte, waitSync bool) *goPubSub.PublishResult
+	PublishMessage(ctx context.Context, topic string, data []byte, waitSync bool) (*goPubSub.PublishResult, error)
 	BulkPublishMessages(ctx context.Context, topic string, data [][]byte)
 	Close()
 }
@@ -50,9 +50,9 @@ func (g *pubSubService) Close() {
 }
 
 //PublishMessage publishes a single message to give topic, set waitSync param to true to wait for publish ack
-func (g *pubSubService) PublishMessage(ctx context.Context, topic string, data []byte, waitSync bool) *goPubSub.PublishResult {
+func (g *pubSubService) PublishMessage(ctx context.Context, topic string, data []byte, waitSync bool) (*goPubSub.PublishResult, error) {
 	var result *goPubSub.PublishResult
-	hystrix.Do("PubSubPublish", func() error {
+	er := hystrix.Do("PubSubPublish", func() error {
 		span, _ := spanutils.NewExternalSpan(ctx, "PubSubPublish", topic)
 		// zipkin span
 		defer span.Finish()
@@ -61,11 +61,20 @@ func (g *pubSubService) PublishMessage(ctx context.Context, topic string, data [
 		pubsubData.Timestamp = time.Now().UnixNano() / 1000000
 		result = g.MessageQueue.Publish(topic, pubsubData)
 		if waitSync {
-			result.Get(ctx)
+			_, err := g.MessageQueue.GetResult(ctx, result)
+			if err != nil {
+				return err
+			}
 		}
 		return nil
 	}, nil)
-	return result
+	if er != nil {
+		return result, er
+	}
+	if !waitSync {
+		return result, nil
+	}
+	return nil, nil
 }
 
 //BulkPublishMessages publishes a multiple message to give topic, with "BulkPublishConcurrency" no of routines
@@ -74,7 +83,7 @@ func (g *pubSubService) BulkPublishMessages(ctx context.Context, topic string, d
 	for _, v := range data {
 		singleMsg := v
 		e.Add(func() error {
-			_ = g.PublishMessage(ctx, topic, singleMsg, true)
+			g.PublishMessage(ctx, topic, singleMsg, true)
 			return nil
 		})
 	}

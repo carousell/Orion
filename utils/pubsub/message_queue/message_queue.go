@@ -15,6 +15,7 @@ type MessageQueue interface {
 	Init(pubSubKey string, gProject string) error
 	Close() error
 	Publish(string, *PubSubData) *goPubSub.PublishResult
+	GetResult(ctx context.Context, result *goPubSub.PublishResult) (string, error)
 }
 
 type PubSubData struct {
@@ -95,4 +96,8 @@ func (pubsubqueue *PubSubQueue) Publish(topicName string, pubSubData *PubSubData
 	}
 	publishResult := topic.Publish(pubsubqueue.ctx, &goPubSub.Message{Data: pubSubData.Data, Attributes: attributes})
 	return publishResult
+}
+
+func (pubsubqueue *PubSubQueue) GetResult(ctx context.Context, result *goPubSub.PublishResult) (string, error) {
+	return result.Get(ctx)
 }

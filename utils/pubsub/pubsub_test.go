@@ -16,6 +16,8 @@ func TestPublishMessageSync(t *testing.T) {
 	// defer leaktest.Check(t)()
 	pubsubTopic := "test_topic"
 	pubsubMsg := "test data"
+	serverID := "some serverId"
+	ctx := context.Background()
 
 	testConf := PubSubConfig{}
 	mockMessageQueue := &mockMessageQueue.MessageQueue{}
@@ -28,10 +30,12 @@ func TestPublishMessageSync(t *testing.T) {
 		return pubsubMsg == string(pubsubData.Data)
 	})).Return(result)
 
+	mockMessageQueue.On("GetResult", ctx, result).Return(serverID, nil)
 	p := NewPubSubService(testConf)
 	data := []byte(pubsubMsg)
-	ctx := context.Background()
-	_ = p.PublishMessage(ctx, pubsubTopic, data, true)
+	response, err := p.PublishMessage(ctx, pubsubTopic, data, true)
+	assert.Nil(t, response)
+	assert.Nil(t, err)
 	p.Close()
 
 	call := mockMessageQueue.Mock.ExpectedCalls[0]
