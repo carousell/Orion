@@ -31,6 +31,14 @@ type PubSubQueue struct {
 	topics       *cache.Cache
 }
 
+func NewMessageQueue(enabled bool, serviceAccountKey string, project string) MessageQueue {
+	MessageQueue := new(PubSubQueue)
+	if enabled {
+		MessageQueue.Init(serviceAccountKey, project)
+	}
+	return MessageQueue
+}
+
 func (pubsubqueue *PubSubQueue) Init(pubSubKey string, gProject string) error {
 	var err error
 	pubsubqueue.pubSubKey = pubSubKey

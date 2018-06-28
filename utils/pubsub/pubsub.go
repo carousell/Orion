@@ -30,16 +30,14 @@ type pubSubService struct {
 	Config       PubSubConfig
 }
 
+var newMessageQueueFn = messageQueue.NewMessageQueue
+
 //NewPubSubService build and returns an pubsub service handler
 func NewPubSubService(config PubSubConfig) PubSubService {
-	MessageQueue := new(messageQueue.PubSubQueue)
-	if config.Enabled {
-		MessageQueue.Init(config.Key, config.Project)
-	}
 	hysConfig := hystrix.CommandConfig{Timeout: config.Timeout}
 	hystrix.ConfigureCommand("PubSubPublish", hysConfig)
 	return &pubSubService{
-		MessageQueue: MessageQueue,
+		MessageQueue: newMessageQueueFn(config.Enabled, config.Key, config.Project),
 		Config:       config,
 	}
 }
