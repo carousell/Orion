@@ -8,7 +8,7 @@ import (
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/carousell/Orion/utils/executor"
 	messageQueue "github.com/carousell/Orion/utils/pubsub/message_queue"
-	"github.com/carousell/go-utils/utils/spanutils"
+	"github.com/carousell/Orion/utils/spanutils"
 )
 
 type PubSubConfig struct {
