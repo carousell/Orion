@@ -21,7 +21,7 @@ type PubSubConfig struct {
 
 type PubSubService interface {
 	PublishMessage(ctx context.Context, topic string, data []byte, waitSync bool) (*goPubSub.PublishResult, error)
-	BulkPublishMessages(ctx context.Context, topic string, data [][]byte)
+	BulkPublishMessages(ctx context.Context, topic string, data [][]byte, waitSync bool)
 	Close()
 }
 
@@ -31,6 +31,7 @@ type pubSubService struct {
 }
 
 var newMessageQueueFn = messageQueue.NewMessageQueue
+var newExecutorFn = executor.NewExecutor
 
 //NewPubSubService build and returns an pubsub service handler
 func NewPubSubService(config PubSubConfig) PubSubService {
@@ -78,13 +79,13 @@ func (g *pubSubService) PublishMessage(ctx context.Context, topic string, data [
 }
 
 //BulkPublishMessages publishes a multiple message to give topic, with "BulkPublishConcurrency" no of routines
-func (g *pubSubService) BulkPublishMessages(ctx context.Context, topic string, data [][]byte) {
-	e := executor.NewExecutor(executor.WithFailOnError(false), executor.WithConcurrency(g.Config.BulkPublishConcurrency))
+func (g *pubSubService) BulkPublishMessages(ctx context.Context, topic string, data [][]byte, waitSync bool) {
+	e := newExecutorFn(executor.WithFailOnError(false), executor.WithConcurrency(g.Config.BulkPublishConcurrency))
 	for _, v := range data {
 		singleMsg := v
 		e.Add(func() error {
-			g.PublishMessage(ctx, topic, singleMsg, true)
-			return nil
+			_, err := g.PublishMessage(ctx, topic, singleMsg, waitSync)
+			return err
 		})
 	}
 	e.Wait()
