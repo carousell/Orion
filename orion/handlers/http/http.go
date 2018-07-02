@@ -44,7 +44,7 @@ func (h *httpHandler) getHTTPHandler(serviceName, methodName string) http.Handle
 
 func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, service, method string) {
 	var err error
-	ctx := utils.StartNRTransaction(req.URL.String(), req.Context(), req, resp)
+	ctx := utils.StartNRTransaction(req.URL.Path, req.Context(), req, resp)
 	defer func(resp http.ResponseWriter, ctx context.Context, t time.Time) {
 		// panic handler
 		if r := recover(); r != nil {
