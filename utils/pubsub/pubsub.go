@@ -54,7 +54,7 @@ func (g *pubSubService) Close() {
 func (g *pubSubService) PublishMessage(ctx context.Context, topic string, data []byte, waitSync bool) (*goPubSub.PublishResult, error) {
 	var result *goPubSub.PublishResult
 	er := hystrix.Do("PubSubPublish", func() error {
-		span, _ := spanutils.NewExternalSpan(ctx, "PubSubPublish", topic)
+		span, _ := spanutils.NewExternalSpan(ctx, "PubSubPublish", "/"+topic)
 		// zipkin span
 		defer span.Finish()
 		pubsubData := new(messageQueue.PubSubData)
