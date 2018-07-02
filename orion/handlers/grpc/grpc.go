@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"sync"
@@ -83,7 +82,6 @@ func (g *grpcHandler) grpcInterceptor() grpc.UnaryServerInterceptor {
 		if g.middlewares != nil {
 			middlewares = append(middlewares, g.middlewares.GetMiddlewaresFromUrl(info.FullMethod)...)
 		}
-		fmt.Println("GRPC middlewares", middlewares)
 		// fetch interceptors from the service implementation and apply
 		interceptor := handlers.GetInterceptorsWithMethodMiddlewares(info.Server, g.config.CommonConfig, middlewares)
 		return interceptor(ctx, req, info, handler)
