@@ -2,6 +2,7 @@ package pubsub
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -45,6 +46,30 @@ func TestPublishMessageSync(t *testing.T) {
 
 	call := mockMessageQueue.Mock.ExpectedCalls[0]
 	assert.Equal(t, "Publish", call.Method)
+}
+
+func TestPublishMessageSyncWithRetries(t *testing.T) {
+	ctx := context.Background()
+	mockMessageQueue, result := setupMessageQueueMockCall(3)
+	mockMessageQueue.
+		On("GetResult", ctx, result).Return(serverID, errors.New("Timeout")).
+		Return(serverID, errors.New("Timeout")).
+		Return(serverID, nil).
+		Times(3)
+
+	p := NewPubSubService(PubSubConfig{Retries: 3})
+	data := []byte(pubsubMsg)
+	response, err := p.PublishMessage(ctx, pubsubTopic, data, true)
+	assert.Nil(t, response)
+	assert.Nil(t, err)
+	p.Close()
+
+	call := mockMessageQueue.Mock.ExpectedCalls[0]
+	assert.Equal(t, "Publish", call.Method)
+	getResultCall := mockMessageQueue.Mock.ExpectedCalls[1]
+	assert.Equal(t, "GetResult", getResultCall.Method)
+	assert.Equal(t, serverID, getResultCall.ReturnArguments[0])
+	assert.Equal(t, nil, getResultCall.ReturnArguments[1])
 }
 
 func TestPublishMessageAsync(t *testing.T) {

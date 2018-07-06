@@ -2,6 +2,7 @@ package pubsub
 
 import (
 	"context"
+	"log"
 	"time"
 
 	goPubSub "cloud.google.com/go/pubsub"
@@ -17,6 +18,7 @@ type PubSubConfig struct {
 	Enabled                bool
 	Timeout                int
 	BulkPublishConcurrency int
+	Retries                int
 }
 
 type PubSubService interface {
@@ -50,27 +52,41 @@ func (g *pubSubService) Close() {
 	}
 }
 
+//Defaults to 1 retry
+func (g *pubSubService) GetRetries() int {
+	if g.Config.Retries < 1 {
+		return 1
+	}
+	return g.Config.Retries
+}
+
 //PublishMessage publishes a single message to give topic, set waitSync param to true to wait for publish ack
 func (g *pubSubService) PublishMessage(ctx context.Context, topic string, data []byte, waitSync bool) (*goPubSub.PublishResult, error) {
 	var result *goPubSub.PublishResult
-	er := hystrix.Do("PubSubPublish", func() error {
-		span, _ := spanutils.NewExternalSpan(ctx, "PubSubPublish", "/"+topic)
-		// zipkin span
-		defer span.Finish()
-		pubsubData := new(messageQueue.PubSubData)
-		pubsubData.Data = data
-		pubsubData.Timestamp = time.Now().UnixNano() / 1000000
-		result = g.MessageQueue.Publish(topic, pubsubData)
-		if waitSync {
-			_, err := g.MessageQueue.GetResult(ctx, result)
-			if err != nil {
-				return err
+	retries := g.GetRetries()
+	for retries >= 0 {
+		retries--
+		er := hystrix.Do("PubSubPublish", func() error {
+			span, _ := spanutils.NewExternalSpan(ctx, "PubSubPublish", "/"+topic)
+			// zipkin span
+			defer span.Finish()
+			pubsubData := new(messageQueue.PubSubData)
+			pubsubData.Data = data
+			pubsubData.Timestamp = time.Now().UnixNano() / 1000000
+			result = g.MessageQueue.Publish(topic, pubsubData)
+			if waitSync {
+				_, err := g.MessageQueue.GetResult(ctx, result)
+				if err != nil {
+					return err
+				}
 			}
+			return nil
+		}, nil)
+		if er != nil {
+			log.Println("Error:", er.Error())
+		} else {
+			break
 		}
-		return nil
-	}, nil)
-	if er != nil {
-		return result, er
 	}
 	if !waitSync {
 		return result, nil
