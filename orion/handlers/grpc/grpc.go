@@ -2,12 +2,12 @@ package grpc
 
 import (
 	"context"
-	"log"
 	"net"
 	"sync"
 	"time"
 
 	"github.com/carousell/Orion/orion/handlers"
+	"github.com/carousell/Orion/utils/log"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
 )
@@ -56,7 +56,7 @@ func (g *grpcHandler) AddMiddleware(serviceName string, method string, middlewar
 }
 
 func (g *grpcHandler) Run(grpcListener net.Listener) error {
-	log.Println("GRPC", "server starting")
+	log.Info(context.Background(), "GRPC", "server starting")
 	grpc_prometheus.Register(g.grpcServer)
 	return g.grpcServer.Serve(grpcListener)
 }
@@ -64,13 +64,13 @@ func (g *grpcHandler) Run(grpcListener net.Listener) error {
 func (g *grpcHandler) Stop(timeout time.Duration) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	log.Println("GRPC", "stopping server")
+	log.Info(context.Background(), "GRPC", "stopping server")
 	s := g.grpcServer
 	g.grpcServer = nil
 	s.GracefulStop()
 	time.Sleep(timeout)
 	s.Stop()
-	log.Println("GRPC", "stopped server")
+	log.Info(context.Background(), "GRPC", "stopped server")
 	return nil
 }
 

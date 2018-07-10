@@ -29,8 +29,8 @@ func AddToOptions(ctx context.Context, key string, value interface{}) context.Co
 	h := FromContext(ctx)
 	if h == nil {
 		ctx = context.WithValue(ctx, optionsKey, make(Options))
+		h = FromContext(ctx)
 	}
-	h = FromContext(ctx)
 	if h != nil && key != "" {
 		h.Add(key, value)
 	}

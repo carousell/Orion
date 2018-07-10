@@ -8,20 +8,20 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
-
-	"github.com/RichardKnop/machinery/v1/backends"
+	"github.com/RichardKnop/machinery/v1/backends/amqp"
 	"github.com/RichardKnop/machinery/v1/log"
 	"github.com/RichardKnop/machinery/v1/retry"
 	"github.com/RichardKnop/machinery/v1/tasks"
 	"github.com/RichardKnop/machinery/v1/tracing"
+	"github.com/opentracing/opentracing-go"
 )
 
 // Worker represents a single worker process
 type Worker struct {
-	server      *Server
-	ConsumerTag string
-	Concurrency int
+	server       *Server
+	ConsumerTag  string
+	Concurrency  int
+	errorHandler func(err error)
 }
 
 // Launch starts a new worker process. The worker subscribes
@@ -39,7 +39,7 @@ func (worker *Worker) LaunchAsync(errorsChan chan<- error) {
 	cnf := worker.server.GetConfig()
 	broker := worker.server.GetBroker()
 
-	// Log some useful information about woorker configuration
+	// Log some useful information about worker configuration
 	log.INFO.Printf("Launching a worker with the following settings:")
 	log.INFO.Printf("- Broker: %s", cnf.Broker)
 	log.INFO.Printf("- DefaultQueue: %s", cnf.DefaultQueue)
@@ -58,7 +58,11 @@ func (worker *Worker) LaunchAsync(errorsChan chan<- error) {
 			retry, err := broker.StartConsuming(worker.ConsumerTag, worker.Concurrency, worker)
 
 			if retry {
-				log.WARNING.Printf("Broker failed with error: %s", err)
+				if worker.errorHandler != nil {
+					worker.errorHandler(err)
+				} else {
+					log.WARNING.Printf("Broker failed with error: %s", err)
+				}
 			} else {
 				errorsChan <- err // stop the goroutine
 				return
@@ -319,7 +323,11 @@ func (worker *Worker) taskFailed(signature *tasks.Signature, taskErr error) erro
 		return fmt.Errorf("Set state failure error: %s", err)
 	}
 
-	log.ERROR.Printf("Failed processing %s. Error = %v", signature.UUID, taskErr)
+	if worker.errorHandler != nil {
+		worker.errorHandler(taskErr)
+	} else {
+		log.ERROR.Printf("Failed processing %s. Error = %v", signature.UUID, taskErr)
+	}
 
 	// Trigger error callbacks
 	for _, errorTask := range signature.OnError {
@@ -337,6 +345,12 @@ func (worker *Worker) taskFailed(signature *tasks.Signature, taskErr error) erro
 
 // Returns true if the worker uses AMQP backend
 func (worker *Worker) hasAMQPBackend() bool {
-	_, ok := worker.server.GetBackend().(*backends.AMQPBackend)
+	_, ok := worker.server.GetBackend().(*amqp.Backend)
 	return ok
+}
+
+// SetErrorHandler sets a custom error handler for task errors
+// A default behavior is just to log the error after all the retry attempts fail
+func (worker *Worker) SetErrorHandler(handler func(err error)) {
+	worker.errorHandler = handler
 }

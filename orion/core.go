@@ -1,9 +1,9 @@
 package orion
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"reflect"
@@ -16,6 +16,7 @@ import (
 	"github.com/carousell/Orion/orion/handlers/http"
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/listenerutils"
+	"github.com/carousell/Orion/utils/log"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 )
@@ -225,9 +226,9 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		httpPort := d.config.HTTPPort
 		httpListener, err := listenerutils.NewListener("tcp", ":"+httpPort)
 		if err != nil {
-			log.Println("error", err)
+			log.Error(context.Background(), "httpListener", "could not create listener", "error", err)
 		}
-		log.Println("HTTPListnerPort", httpPort)
+		log.Info(context.Background(), "HTTPListnerPort", httpPort)
 		config := http.HandlerConfig{
 			EnableProtoURL: d.config.EnableProtoURL,
 		}
@@ -241,9 +242,9 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		grpcPort := d.config.GRPCPort
 		grpcListener, err := listenerutils.NewListener("tcp", ":"+grpcPort)
 		if err != nil {
-			log.Println("error", err)
+			log.Info(context.Background(), "grpcListener", "could not create listener", "error", err)
 		}
-		log.Println("gRPCListnerPort", grpcPort)
+		log.Info(context.Background(), "gRPCListnerPort", grpcPort)
 		handler := grpcHandler.NewGRPCHandler(grpcHandler.GRPCConfig{})
 		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,
@@ -263,12 +264,12 @@ func (d *DefaultServerImpl) signalWatcher() {
 	signal.Notify(c, syscall.SIGHUP)
 	for sig := range c {
 		if sig == syscall.SIGHUP { // only reload config for sighup
-			log.Println("signal", "config reloaded on "+sig.String())
+			log.Info(context.Background(), "signal", "config reloaded on "+sig.String())
 			// relaod config
 			err := readConfig(d.config.OrionServerName)
 			if err != nil {
 				notifier.NotifyWithLevel(err, "critical", "Error parsing config not reloading services")
-				log.Println("Error", err, "msg", "not reloading services")
+				log.Error(context.Background(), "Error", err, "msg", "not reloading services")
 				continue
 			}
 
@@ -299,7 +300,7 @@ func (d *DefaultServerImpl) signalWatcher() {
 			}
 			break
 		}
-		log.Println("signal", "all actions complete")
+		log.Info(context.Background(), "signal", "all actions complete")
 	}
 }
 
