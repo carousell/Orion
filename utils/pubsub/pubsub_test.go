@@ -2,6 +2,7 @@ package pubsub
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -118,4 +119,41 @@ func TestBulkPublishMessageSync(t *testing.T) {
 
 	call := mockMessageQueue.Mock.ExpectedCalls[0]
 	assert.Equal(t, "Publish", call.Method)
+}
+
+type mockMessageQueueForRetry struct {
+	tries int
+}
+
+func (_m *mockMessageQueueForRetry) Close() error {
+	return nil
+}
+func (_m *mockMessageQueueForRetry) GetResult(ctx context.Context, result *goPubSub.PublishResult) (string, error) {
+	_m.tries++
+	return "", errors.New("Timeout")
+}
+func (_m *mockMessageQueueForRetry) Init(pubSubKey string, gProject string) error {
+	_m.tries = 0
+	return nil
+}
+func (_m *mockMessageQueueForRetry) Publish(_a0 string, _a1 *message_queue.PubSubData) *goPubSub.PublishResult {
+	return nil
+}
+
+func TestPublishMessageSyncWithRetries(t *testing.T) {
+	ctx := context.Background()
+	mockMessageQueue := &mockMessageQueueForRetry{}
+	newMessageQueueFn = func(enabled bool, serviceAccountKey string, project string) message_queue.MessageQueue {
+		return mockMessageQueue
+	}
+
+	p := NewPubSubService(PubSubConfig{Retries: 2})
+	data := []byte(pubsubMsg)
+	response, err := p.PublishMessage(ctx, pubsubTopic, data, true)
+	assert.Nil(t, response)
+	assert.Nil(t, err)
+	p.Close()
+
+	// 1 + 2 reties
+	assert.Equal(t, 3, mockMessageQueue.tries)
 }
