@@ -13,7 +13,7 @@
 - [github.com/afex/hystrix-go/hystrix](https://godoc.org/github.com/afex/hystrix-go/hystrix)
 - [github.com/carousell/Orion/utils/executor](./../executor)
 - [github.com/carousell/Orion/utils/pubsub/message_queue](./message_queue)
-- [github.com/carousell/go-utils/utils/spanutils](./../../../go-utils/utils/spanutils)
+- [github.com/carousell/Orion/utils/spanutils](./../spanutils)
 
 ## <a name="pkg-index">Index</a>
 * [type PubSubConfig](#PubSubConfig)
@@ -37,13 +37,13 @@ type PubSubConfig struct {
 ## <a name="PubSubService">type</a> [PubSubService](./pubsub.go#L22-L26)
 ``` go
 type PubSubService interface {
-    PublishMessage(ctx context.Context, topic string, data []byte, waitSync bool) *goPubSub.PublishResult
-    BulkPublishMessages(ctx context.Context, topic string, data [][]byte)
+    PublishMessage(ctx context.Context, topic string, data []byte, waitSync bool) (*goPubSub.PublishResult, error)
+    BulkPublishMessages(ctx context.Context, topic string, data [][]byte, waitSync bool)
     Close()
 }
 ```
 
-### <a name="NewPubSubService">func</a> [NewPubSubService](./pubsub.go#L34)
+### <a name="NewPubSubService">func</a> [NewPubSubService](./pubsub.go#L37)
 ``` go
 func NewPubSubService(config PubSubConfig) PubSubService
 ```

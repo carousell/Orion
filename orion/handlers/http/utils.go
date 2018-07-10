@@ -2,11 +2,11 @@ package http
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"strings"
 
 	"github.com/carousell/Orion/utils/headers"
+	"github.com/carousell/Orion/utils/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -78,7 +78,7 @@ func GrpcErrorToHTTP(err error, defaultStatus int, defaultMessage string) (int, 
 	return code, msg
 }
 
-func processWhitelist(data map[string][]string, allowedKeys []string) map[string][]string {
+func processWhitelist(ctx context.Context, data map[string][]string, allowedKeys []string) map[string][]string {
 	whitelistedMap := make(map[string][]string)
 	whitelistedKeys := make(map[string]bool)
 
@@ -90,7 +90,7 @@ func processWhitelist(data map[string][]string, allowedKeys []string) map[string
 		if _, found := whitelistedKeys[strings.ToLower(k)]; found {
 			whitelistedMap[k] = v
 		} else {
-			log.Println("warning", "rejected headers not in whitelist", k, v)
+			log.Warn(ctx, "error", "rejected headers not in whitelist", k, v)
 		}
 	}
 

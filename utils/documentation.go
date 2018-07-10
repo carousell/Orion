@@ -12,3 +12,5 @@ package utils
 //go:generate godoc2ghmd -ex -file=worker/README.md github.com/carousell/Orion/utils/worker
 //go:generate godoc2ghmd -ex -file=options/README.md github.com/carousell/Orion/utils/options
 //go:generate godoc2ghmd -ex -file=pubsub/README.md github.com/carousell/Orion/utils/pubsub
+//go:generate godoc2ghmd -ex -file=log/README.md github.com/carousell/Orion/utils/log
+//go:generate godoc2ghmd -ex -file=log/loggers/README.md github.com/carousell/Orion/utils/log/loggers

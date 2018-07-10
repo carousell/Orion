@@ -13,6 +13,8 @@
 - [github.com/carousell/Orion/orion/modifiers](./../modifiers)
 - [github.com/carousell/Orion/utils/errors](./../../utils/errors)
 - [github.com/carousell/Orion/utils/errors/notifier](./../../utils/errors/notifier)
+- [github.com/carousell/Orion/utils/log](./../../utils/log)
+- [github.com/carousell/Orion/utils/log/loggers](./../../utils/log/loggers)
 - [github.com/carousell/Orion/utils/options](./../../utils/options)
 - [google.golang.org/grpc](https://godoc.org/google.golang.org/grpc)
 
@@ -42,18 +44,18 @@
 #### <a name="pkg-files">Package files</a>
 [middleware.go](./middleware.go) [types.go](./types.go) [utils.go](./utils.go) 
 
-## <a name="GetInterceptors">func</a> [GetInterceptors](./utils.go#L55)
+## <a name="GetInterceptors">func</a> [GetInterceptors](./utils.go#L56)
 ``` go
 func GetInterceptors(svc interface{}, config CommonConfig) grpc.UnaryServerInterceptor
 ```
 GetInterceptors fetches interceptors from a given GRPC service
 
-## <a name="GetInterceptorsWithMethodMiddlewares">func</a> [GetInterceptorsWithMethodMiddlewares](./utils.go#L59)
+## <a name="GetInterceptorsWithMethodMiddlewares">func</a> [GetInterceptorsWithMethodMiddlewares](./utils.go#L60)
 ``` go
 func GetInterceptorsWithMethodMiddlewares(svc interface{}, config CommonConfig, middlewares []string) grpc.UnaryServerInterceptor
 ```
 
-## <a name="GetMethodInterceptors">func</a> [GetMethodInterceptors](./utils.go#L99)
+## <a name="GetMethodInterceptors">func</a> [GetMethodInterceptors](./utils.go#L100)
 ``` go
 func GetMethodInterceptors(svc interface{}, config CommonConfig, middlewares []string) []grpc.UnaryServerInterceptor
 ```
@@ -135,29 +137,29 @@ type Interceptor interface {
 ```
 Interceptor interface when implemented by a service allows that service to provide custom interceptors
 
-## <a name="MiddlewareMapping">type</a> [MiddlewareMapping](./middleware.go#L13-L15)
+## <a name="MiddlewareMapping">type</a> [MiddlewareMapping](./middleware.go#L12-L14)
 ``` go
 type MiddlewareMapping struct {
     // contains filtered or unexported fields
 }
 ```
 
-### <a name="NewMiddlewareMapping">func</a> [NewMiddlewareMapping](./middleware.go#L9)
+### <a name="NewMiddlewareMapping">func</a> [NewMiddlewareMapping](./middleware.go#L8)
 ``` go
 func NewMiddlewareMapping() *MiddlewareMapping
 ```
 
-### <a name="MiddlewareMapping.AddMiddleware">func</a> (\*MiddlewareMapping) [AddMiddleware](./middleware.go#L47)
+### <a name="MiddlewareMapping.AddMiddleware">func</a> (\*MiddlewareMapping) [AddMiddleware](./middleware.go#L45)
 ``` go
 func (m *MiddlewareMapping) AddMiddleware(service, method string, middlewares ...string)
 ```
 
-### <a name="MiddlewareMapping.GetMiddlewares">func</a> (\*MiddlewareMapping) [GetMiddlewares](./middleware.go#L34)
+### <a name="MiddlewareMapping.GetMiddlewares">func</a> (\*MiddlewareMapping) [GetMiddlewares](./middleware.go#L33)
 ``` go
 func (m *MiddlewareMapping) GetMiddlewares(service, method string) []string
 ```
 
-### <a name="MiddlewareMapping.GetMiddlewaresFromUrl">func</a> (\*MiddlewareMapping) [GetMiddlewaresFromUrl](./middleware.go#L29)
+### <a name="MiddlewareMapping.GetMiddlewaresFromUrl">func</a> (\*MiddlewareMapping) [GetMiddlewaresFromUrl](./middleware.go#L28)
 ``` go
 func (m *MiddlewareMapping) GetMiddlewaresFromUrl(url string) []string
 ```

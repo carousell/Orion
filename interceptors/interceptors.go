@@ -3,7 +3,6 @@ package interceptors
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -11,6 +10,8 @@ import (
 	"github.com/carousell/Orion/orion/modifiers"
 	"github.com/carousell/Orion/utils"
 	"github.com/carousell/Orion/utils/errors/notifier"
+	"github.com/carousell/Orion/utils/log"
+	"github.com/carousell/Orion/utils/log/loggers"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
@@ -69,7 +70,7 @@ func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 		// dont log for HTTP request, let HTTP Handler manage it
 		if !modifiers.IsHTTPRequest(ctx) {
 			defer func(begin time.Time) {
-				log.Println("method", info.FullMethod, "error", err, "took", time.Since(begin))
+				log.Info(ctx, "method", info.FullMethod, "error", err, "took", time.Since(begin))
 			}(time.Now())
 		}
 		resp, err = handler(ctx, req)
@@ -104,7 +105,9 @@ func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 
 		t := grpc_ctxtags.Extract(ctx)
 		if t != nil {
-			t.Set("trace", notifier.GetTraceId(ctx))
+			traceId := notifier.GetTraceId(ctx)
+			t.Set("trace", traceId)
+			ctx = loggers.AddToLogContext(ctx, "trace", traceId)
 		}
 		// dont log Error for HTTP request, let HTTP Handler manage it
 		if modifiers.IsHTTPRequest(ctx) {

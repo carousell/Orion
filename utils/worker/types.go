@@ -46,6 +46,10 @@ type ScheduleOption func(*ScheduleConfig)
 type fakeBackend struct {
 }
 
+func (f *fakeBackend) IsAMQP() bool {
+	return true
+}
+
 func (f *fakeBackend) InitGroup(groupUUID string, taskUUIDs []string) error {
 	return nil
 }

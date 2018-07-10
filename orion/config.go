@@ -1,11 +1,12 @@
 package orion
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/afex/hystrix-go/hystrix"
+	"github.com/carousell/Orion/utils/log"
 	"github.com/spf13/viper"
 )
 
@@ -149,15 +150,16 @@ func setup(name string) {
 }
 
 func readConfig(name string) error {
-	log.Println("msg", "Reading config")
+	ctx := context.Background()
+	log.Info(ctx, "config", "Reading config")
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {
 		// do nothing and default everything
-		log.Println("Config", "config could not be read "+err.Error())
+		log.Warn(ctx, "config", "config could not be read "+err.Error())
 		return fmt.Errorf("Config config could not be read %s", err.Error())
 	}
 	data, _ := json.MarshalIndent(viper.AllSettings(), "", "  ")
-	log.Println("Config", string(data))
+	log.Info(ctx, "Config", string(data))
 	return nil
 }
 

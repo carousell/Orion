@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"context"
-	"log"
 	"reflect"
 
 	"github.com/carousell/Orion/interceptors"
 	"github.com/carousell/Orion/orion/modifiers"
 	"github.com/carousell/Orion/utils/errors"
 	"github.com/carousell/Orion/utils/errors/notifier"
+	"github.com/carousell/Orion/utils/log"
+	"github.com/carousell/Orion/utils/log/loggers"
 	"github.com/carousell/Orion/utils/options"
 	"google.golang.org/grpc"
 )
@@ -101,7 +102,7 @@ func GetMethodInterceptors(svc interface{}, config CommonConfig, middlewares []s
 	for _, middleware := range middlewares {
 		interceptor, err := getMiddleware(svc, middleware)
 		if err != nil {
-			log.Println(err)
+			log.Error(context.Background(), "error", err, "middleware", "could not fetch middleware")
 			notifier.NotifyWithLevel(err, "critical")
 		} else {
 			if interceptor != nil {
@@ -114,6 +115,7 @@ func GetMethodInterceptors(svc interface{}, config CommonConfig, middlewares []s
 
 func optionsInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	ctx = options.AddToOptions(ctx, "", "")
+	ctx = loggers.AddToLogContext(ctx, "grpcMethod", info.FullMethod)
 	if !modifiers.IsHTTPRequest(ctx) {
 		options.AddToOptions(ctx, modifiers.RequestGRPC, true)
 	}

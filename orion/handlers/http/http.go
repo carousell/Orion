@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"runtime/debug"
@@ -17,6 +16,8 @@ import (
 	"github.com/carousell/Orion/utils"
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/headers"
+	"github.com/carousell/Orion/utils/log"
+	"github.com/carousell/Orion/utils/log/loggers"
 	"github.com/carousell/Orion/utils/options"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -43,14 +44,15 @@ func (h *httpHandler) getHTTPHandler(serviceName, methodName string) http.Handle
 }
 
 func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, service, method string) {
-	var err error
 	ctx := utils.StartNRTransaction(req.URL.Path, req.Context(), req, resp)
+	ctx = loggers.AddToLogContext(ctx, "request", "http")
+	var err error
 	defer func(resp http.ResponseWriter, ctx context.Context, t time.Time) {
 		// panic handler
 		if r := recover(); r != nil {
 			writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
-			log.Println("panic", r, "path", req.URL.String(), "method", req.Method, "took", time.Since(t))
-			log.Print(string(debug.Stack()))
+			log.Error(ctx, "panic", r, "path", req.URL.String(), "method", req.Method, "took", time.Since(t))
+			log.Error(ctx, string(debug.Stack()))
 			var err error
 			if e, ok := r.(error); ok {
 				err = e
@@ -60,7 +62,7 @@ func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, s
 			utils.FinishNRTransaction(ctx, err)
 			notifier.NotifyWithLevel(err, "critical", req.URL.String(), ctx)
 		} else {
-			log.Println("path", req.URL.String(), "method", req.Method, "error", err, "took", time.Since(t))
+			log.Info(ctx, "path", req.URL.String(), "method", req.Method, "error", err, "took", time.Since(t))
 		}
 	}(resp, ctx, time.Now())
 	req = req.WithContext(ctx)
@@ -196,7 +198,7 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, ser
 		}
 
 		hdr := headers.ResponseHeadersFromContext(ctx)
-		responseHeaders := processWhitelist(hdr, append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
+		responseHeaders := processWhitelist(ctx, hdr, append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
 		if err != nil {
 			if encErr != nil {
 				writeRespWithHeaders(resp, http.StatusBadRequest, []byte("Bad Request!"), responseHeaders)
@@ -294,7 +296,8 @@ func (h *httpHandler) AddEncoder(serviceName, method string, httpMethod []string
 				info.encoderPath = url
 			}
 		} else {
-			fmt.Println("Service and Method NOT found!", serviceName, method, h.mapping)
+			log.Warn(context.Background(), "error", "Service and Method NOT found!", "service", serviceName,
+				"method", method, "mapping", h.mapping)
 		}
 	}
 }
@@ -313,7 +316,8 @@ func (h *httpHandler) AddHTTPHandler(serviceName string, method string, path str
 		if info, ok := h.mapping.Get(serviceName, method); ok {
 			info.httpHandler = handler
 		} else {
-			fmt.Println("Service and Method NOT found!", serviceName, method, h.mapping)
+			log.Warn(context.Background(), "error", "Service and Method NOT found!", "service", serviceName,
+				"method", method, "mapping", h.mapping)
 		}
 	}
 }
@@ -323,7 +327,8 @@ func (h *httpHandler) AddDecoder(serviceName, method string, decoder handlers.De
 		if info, ok := h.mapping.Get(serviceName, method); ok {
 			info.decoder = decoder
 		} else {
-			fmt.Println("Service and Method NOT found!", serviceName, method, h.mapping)
+			log.Warn(context.Background(), "error", "Service and Method NOT found!", "service", serviceName,
+				"method", method, "mapping", h.mapping)
 		}
 	}
 }
@@ -375,6 +380,7 @@ func (h *httpHandler) Run(httpListener net.Listener) error {
 			fmt.Println("\t", info.httpMethod, routeURL, "mapped to", info.serviceName, info.methodName)
 		}
 	}
+	r.NotFoundHandler = &notFoundHandler{}
 	h.svr = &http.Server{
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,

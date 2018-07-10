@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 )
@@ -37,7 +36,6 @@ func (m *MiddlewareMapping) GetMiddlewares(service, method string) []string {
 }
 
 func (m *MiddlewareMapping) getMiddleware(key string) []string {
-	fmt.Println("fetching middlewares", key)
 	if result, ok := m.mapping.Load(key); ok {
 		return result.([]string)
 	}
@@ -50,7 +48,6 @@ func (m *MiddlewareMapping) AddMiddleware(service, method string, middlewares ..
 }
 
 func (m *MiddlewareMapping) addMiddleware(key string, middlewares ...string) {
-	fmt.Println("adding middlewares", key, middlewares)
 	list := make([]string, 0)
 	if result, ok := m.mapping.Load(key); ok {
 		list = append(list, result.([]string)...)
