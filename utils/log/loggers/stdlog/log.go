@@ -25,7 +25,8 @@ func (l *logger) Log(ctx context.Context, level loggers.Level, args ...interface
 	}
 }
 
-func NewLogger() loggers.BaseLogger {
+//NewLogger returns a BaseLogger impl for golang "log" package
+func NewLogger(options ...loggers.Option) loggers.BaseLogger {
 	return &logger{
 		level: loggers.InfoLevel,
 	}

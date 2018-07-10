@@ -51,7 +51,7 @@ func (l *logger) Log(ctx context.Context, level loggers.Level, args ...interface
 	}
 }
 
-//NewLogger creates a new logger
+//NewLogger creates a new logger with a provided BaseLogger
 func NewLogger(log loggers.BaseLogger) Logger {
 	l := new(logger)
 	l.log = log

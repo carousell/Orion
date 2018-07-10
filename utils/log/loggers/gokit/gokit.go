@@ -16,6 +16,7 @@ type logger struct {
 
 func (l *logger) Log(ctx context.Context, level loggers.Level, args ...interface{}) {
 	lgr := log.With(l.logger, "level", level.String())
+	lgr = log.With(lgr, "ts", log.DefaultTimestampUTC)
 
 	// fetch fields from context and add them to logrus fields
 	ctxFields := loggers.FromContext(ctx)
@@ -40,6 +41,7 @@ func (l *logger) GetLevel() loggers.Level {
 	return l.level
 }
 
+//NewLogger returns a base logger impl for go-kit log
 func NewLogger(options ...loggers.Option) loggers.BaseLogger {
 	// default options
 	opt := loggers.Options{

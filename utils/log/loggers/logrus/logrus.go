@@ -73,6 +73,7 @@ func (l *logger) GetLevel() loggers.Level {
 	}
 }
 
+//NewLogger returns a BaseLogger impl for logrus
 func NewLogger(options ...loggers.Option) loggers.BaseLogger {
 	// default options
 	opt := loggers.Options{

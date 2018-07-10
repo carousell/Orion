@@ -42,7 +42,7 @@ func ParseLevel(lvl string) (Level, error) {
 	return l, fmt.Errorf("not a valid log Level: %q", lvl)
 }
 
-// A constant exposing all logging levels
+//AllLevels A constant exposing all logging levels
 var AllLevels = []Level{
 	ErrorLevel,
 	WarnLevel,
@@ -65,18 +65,22 @@ const (
 	DebugLevel
 )
 
+//BaseLogger is the implementation that needs to be implemented by client loggers
 type BaseLogger interface {
 	Log(ctx context.Context, level Level, args ...interface{})
 	SetLevel(level Level)
 	GetLevel() Level
 }
 
+//Options contain all common options for BaseLoggers
 type Options struct {
 	ReplaceStdLogger bool
 }
 
+//Option defines an option for BaseLogger
 type Option func(*Options)
 
+//WithReplaceStdLogger enables/disables replacing std logger
 func WithReplaceStdLogger(replaceStdLogger bool) Option {
 	return func(o *Options) {
 		o.ReplaceStdLogger = replaceStdLogger

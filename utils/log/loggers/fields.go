@@ -10,6 +10,7 @@ var (
 	contextKey logsContext = "LogsContextKey"
 )
 
+//LogFields contains all fields that have to be added to logs
 type LogFields map[string]interface{}
 
 // Add or modify log fields
@@ -24,7 +25,7 @@ func (o LogFields) Del(key string) {
 	delete(o, key)
 }
 
-//AddToOptions adds log fields to context
+//AddToLogContext adds log fields to context
 func AddToLogContext(ctx context.Context, key string, value interface{}) context.Context {
 	data := FromContext(ctx)
 	if data == nil {
