@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 
 	bugsnag "github.com/bugsnag/bugsnag-go"
@@ -77,7 +78,7 @@ func parseRawData(rawData ...interface{}) map[string]interface{} {
 		if _, ok := data.(context.Context); ok {
 			continue
 		}
-		m[reflect.TypeOf(data).String()] = data
+		m[reflect.TypeOf(data).String()+strconv.Itoa(pos)] = data
 	}
 	return m
 }
