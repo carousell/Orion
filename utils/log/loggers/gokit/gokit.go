@@ -10,13 +10,13 @@ import (
 )
 
 type logger struct {
-	logger log.Logger
-	level  loggers.Level
+	logger   log.Logger
+	level    loggers.Level
+	levelKey string
 }
 
 func (l *logger) Log(ctx context.Context, level loggers.Level, args ...interface{}) {
-	lgr := log.With(l.logger, "level", level.String())
-	lgr = log.With(lgr, "time", log.DefaultTimestamp)
+	lgr := log.With(l.logger, l.levelKey, level.String())
 
 	// fetch fields from context and add them to logrus fields
 	ctxFields := loggers.FromContext(ctx)
@@ -61,7 +61,10 @@ func NewLogger(options ...loggers.Option) loggers.BaseLogger {
 		l.logger = log.NewLogfmtLogger(writer)
 	}
 
+	l.logger = log.With(l.logger, opt.TimestampFieldName, log.DefaultTimestamp)
+
 	l.level = opt.Level
+	l.levelKey = opt.LevelFieldName
 
 	if opt.ReplaceStdLogger {
 		stdlog.SetOutput(log.NewStdlibAdapter(l.logger))
