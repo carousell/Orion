@@ -16,7 +16,7 @@ type logger struct {
 
 func (l *logger) Log(ctx context.Context, level loggers.Level, args ...interface{}) {
 	lgr := log.With(l.logger, "level", level.String())
-	lgr = log.With(lgr, "ts", log.DefaultTimestampUTC)
+	lgr = log.With(lgr, "time", log.DefaultTimestamp)
 
 	// fetch fields from context and add them to logrus fields
 	ctxFields := loggers.FromContext(ctx)
@@ -44,17 +44,25 @@ func (l *logger) GetLevel() loggers.Level {
 //NewLogger returns a base logger impl for go-kit log
 func NewLogger(options ...loggers.Option) loggers.BaseLogger {
 	// default options
-	opt := loggers.Options{
-		ReplaceStdLogger: false,
-	}
+	opt := loggers.GetDefaultOptions()
+
 	// read options
 	for _, f := range options {
 		f(&opt)
 	}
 
 	l := logger{}
-	l.logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout))
-	l.level = loggers.InfoLevel
+	writer := log.NewSyncWriter(os.Stdout)
+
+	// check for json or logfmt
+	if opt.JSONLogs {
+		l.logger = log.NewJSONLogger(writer)
+	} else {
+		l.logger = log.NewLogfmtLogger(writer)
+	}
+
+	l.level = opt.Level
+
 	if opt.ReplaceStdLogger {
 		stdlog.SetOutput(log.NewStdlibAdapter(l.logger))
 	}

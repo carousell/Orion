@@ -75,7 +75,21 @@ type BaseLogger interface {
 //Options contain all common options for BaseLoggers
 type Options struct {
 	ReplaceStdLogger bool
+	JSONLogs         bool
+	Level            Level
 }
+
+func GetDefaultOptions() Options {
+	return DefaulOptions
+}
+
+var (
+	DefaulOptions = Options{
+		ReplaceStdLogger: false,
+		JSONLogs:         true,
+		Level:            InfoLevel,
+	}
+)
 
 //Option defines an option for BaseLogger
 type Option func(*Options)
@@ -84,5 +98,12 @@ type Option func(*Options)
 func WithReplaceStdLogger(replaceStdLogger bool) Option {
 	return func(o *Options) {
 		o.ReplaceStdLogger = replaceStdLogger
+	}
+}
+
+//WithReplaceStdLogger enables/disables replacing std logger
+func WithJSONLogs(json bool) Option {
+	return func(o *Options) {
+		o.JSONLogs = true
 	}
 }
