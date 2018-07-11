@@ -76,9 +76,7 @@ func (l *logger) GetLevel() loggers.Level {
 //NewLogger returns a BaseLogger impl for logrus
 func NewLogger(options ...loggers.Option) loggers.BaseLogger {
 	// default options
-	opt := loggers.Options{
-		ReplaceStdLogger: false,
-	}
+	opt := loggers.GetDefaultOptions()
 	// read options
 	for _, f := range options {
 		f(&opt)
@@ -86,10 +84,19 @@ func NewLogger(options ...loggers.Option) loggers.BaseLogger {
 
 	l := logger{}
 	l.logger = log.New()
-	l.logger.Formatter = &log.TextFormatter{
-		FullTimestamp: true,
-	}
 	l.logger.Out = os.Stdout
+
+	l.logger.SetLevel(toLogrusLogLevel(opt.Level))
+
+	//check JSON logs
+	if opt.JSONLogs {
+		l.logger.Formatter = &log.JSONFormatter{}
+	} else {
+		l.logger.Formatter = &log.TextFormatter{
+			FullTimestamp: true,
+		}
+	}
+
 	if opt.ReplaceStdLogger {
 		stdlog.SetOutput(l.logger.Writer())
 	}
