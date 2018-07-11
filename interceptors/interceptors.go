@@ -9,6 +9,7 @@ import (
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/carousell/Orion/orion/modifiers"
 	"github.com/carousell/Orion/utils"
+	"github.com/carousell/Orion/utils/errors"
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/log"
 	"github.com/carousell/Orion/utils/log/loggers"
@@ -159,7 +160,14 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 		}
 		newCtx, cancel := context.WithCancel(ctx)
 		defer cancel()
-		return hystrix.Do(options.hystrixName, func() error {
+		return hystrix.Do(options.hystrixName, func() (err error) {
+			defer func() {
+				if r := recover(); r != nil {
+					err = errors.Wrap(fmt.Errorf("Panic inside hystrix Method: %s, req: %v, reply: %v", method, req, reply), "Hystrix")
+					log.Error(ctx, "panic", r, "method", method, "req", req, "reply", reply)
+				}
+			}()
+			defer notifier.NotifyOnPanic()
 			return invoker(newCtx, method, req, reply, cc, opts...)
 		}, nil)
 	}
