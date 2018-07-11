@@ -88,9 +88,15 @@ func NewLogger(options ...loggers.Option) loggers.BaseLogger {
 
 	l.logger.SetLevel(toLogrusLogLevel(opt.Level))
 
+	fieldMap := log.FieldMap{
+		log.FieldKeyTime:  opt.TimestampFieldName,
+		log.FieldKeyLevel: opt.LevelFieldName,
+	}
 	//check JSON logs
 	if opt.JSONLogs {
-		l.logger.Formatter = &log.JSONFormatter{}
+		l.logger.Formatter = &log.JSONFormatter{
+			FieldMap: fieldMap,
+		}
 	} else {
 		l.logger.Formatter = &log.TextFormatter{
 			FullTimestamp: true,

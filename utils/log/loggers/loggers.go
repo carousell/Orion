@@ -74,9 +74,11 @@ type BaseLogger interface {
 
 //Options contain all common options for BaseLoggers
 type Options struct {
-	ReplaceStdLogger bool
-	JSONLogs         bool
-	Level            Level
+	ReplaceStdLogger   bool
+	JSONLogs           bool
+	Level              Level
+	TimestampFieldName string
+	LevelFieldName     string
 }
 
 func GetDefaultOptions() Options {
@@ -85,9 +87,11 @@ func GetDefaultOptions() Options {
 
 var (
 	DefaulOptions = Options{
-		ReplaceStdLogger: false,
-		JSONLogs:         true,
-		Level:            InfoLevel,
+		ReplaceStdLogger:   false,
+		JSONLogs:           true,
+		Level:              InfoLevel,
+		TimestampFieldName: "@timestamp",
+		LevelFieldName:     "level",
 	}
 )
 
@@ -104,6 +108,24 @@ func WithReplaceStdLogger(replaceStdLogger bool) Option {
 //WithReplaceStdLogger enables/disables replacing std logger
 func WithJSONLogs(json bool) Option {
 	return func(o *Options) {
-		o.JSONLogs = true
+		o.JSONLogs = json
+	}
+}
+
+//WithTimestampFieldName sets the name of the time stamp field in logs
+func WithTimestampFieldName(name string) Option {
+	return func(o *Options) {
+		if name != "" {
+			o.TimestampFieldName = name
+		}
+	}
+}
+
+//WithLevelFieldName sets the name of the level field in logs
+func WithLevelFieldName(name string) Option {
+	return func(o *Options) {
+		if name != "" {
+			o.LevelFieldName = name
+		}
 	}
 }
