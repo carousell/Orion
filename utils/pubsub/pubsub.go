@@ -24,12 +24,20 @@ type PubSubConfig struct {
 type PubSubService interface {
 	PublishMessage(ctx context.Context, topic string, data []byte, waitSync bool) (*goPubSub.PublishResult, error)
 	BulkPublishMessages(ctx context.Context, topic string, data [][]byte, waitSync bool)
+
+	SubscribeMessages(ctx context.Context, subscribe string, retryOnError bool) (SubscriberData, error)
+
 	Close()
 }
 
 type pubSubService struct {
 	MessageQueue messageQueue.MessageQueue
 	Config       PubSubConfig
+}
+
+type SubscriberData struct {
+	Data  chan goPubSub.Message
+	Error chan error
 }
 
 var newMessageQueueFn = messageQueue.NewMessageQueue
@@ -105,4 +113,20 @@ func (g *pubSubService) BulkPublishMessages(ctx context.Context, topic string, d
 		})
 	}
 	e.Wait()
+}
+
+//SubscribeMessages Subscirbes to pubsub and returns the received messages through the channel
+func (g *pubSubService) SubscribeMessages(ctx context.Context, subscribe string, retryOnError bool) (SubscriberData, error) {
+	subscriberData := SubscriberData{}
+	subscriberData.Data, subscriberData.Error = g.MessageQueue.SubscribeMessages(ctx, subscribe)
+	if retryOnError {
+		go func() {
+			for err := range subscriberData.Error {
+				if err != nil {
+					subscriberData.Data, subscriberData.Error = g.MessageQueue.SubscribeMessages(ctx, subscribe)
+				}
+			}
+		}()
+	}
+	return subscriberData, nil
 }
