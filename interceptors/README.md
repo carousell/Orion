@@ -15,6 +15,7 @@
 - [github.com/carousell/Orion/utils/errors/notifier](./../utils/errors/notifier)
 - [github.com/carousell/Orion/utils/log](./../utils/log)
 - [github.com/carousell/Orion/utils/log/loggers](./../utils/log/loggers)
+- [github.com/grpc-ecosystem/go-grpc-middleware](https://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware)
 - [github.com/grpc-ecosystem/go-grpc-middleware/tags](https://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware/tags)
 - [github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing](https://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing)
 - [github.com/grpc-ecosystem/go-grpc-prometheus](https://godoc.org/github.com/grpc-ecosystem/go-grpc-prometheus)
@@ -24,6 +25,7 @@
 ## <a name="pkg-index">Index</a>
 * [Variables](#pkg-variables)
 * [func DebugLoggingInterceptor() grpc.UnaryServerInterceptor](#DebugLoggingInterceptor)
+* [func DefaultClientInterceptor(address string) grpc.UnaryClientInterceptor](#DefaultClientInterceptor)
 * [func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor](#DefaultClientInterceptors)
 * [func DefaultInterceptors() []grpc.UnaryServerInterceptor](#DefaultInterceptors)
 * [func GRPCClientInterceptor() grpc.UnaryClientInterceptor](#GRPCClientInterceptor)
@@ -32,9 +34,10 @@
 * [func NewRelicInterceptor() grpc.UnaryServerInterceptor](#NewRelicInterceptor)
 * [func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor](#ResponseTimeLoggingInterceptor)
 * [func ServerErrorInterceptor() grpc.UnaryServerInterceptor](#ServerErrorInterceptor)
+* [func WithHystrixName(name string) clientOption](#WithHystrixName)
 
 #### <a name="pkg-files">Package files</a>
-[documentations.go](./documentations.go) [interceptors.go](./interceptors.go) 
+[documentations.go](./documentations.go) [interceptors.go](./interceptors.go) [options.go](./options.go) 
 
 ## <a name="pkg-variables">Variables</a>
 ``` go
@@ -44,59 +47,70 @@ var (
 )
 ```
 
-## <a name="DebugLoggingInterceptor">func</a> [DebugLoggingInterceptor](./interceptors.go#L58)
+## <a name="DebugLoggingInterceptor">func</a> [DebugLoggingInterceptor](./interceptors.go#L63)
 ``` go
 func DebugLoggingInterceptor() grpc.UnaryServerInterceptor
 ```
 DebugLoggingInterceptor is the interceptor that logs all request/response from a handler
 
-## <a name="DefaultClientInterceptors">func</a> [DefaultClientInterceptors](./interceptors.go#L49)
+## <a name="DefaultClientInterceptor">func</a> [DefaultClientInterceptor](./interceptors.go#L58)
+``` go
+func DefaultClientInterceptor(address string) grpc.UnaryClientInterceptor
+```
+
+## <a name="DefaultClientInterceptors">func</a> [DefaultClientInterceptors](./interceptors.go#L50)
 ``` go
 func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor
 ```
 DefaultClientInterceptors are the set of default interceptors that should be applied to all client calls
 
-## <a name="DefaultInterceptors">func</a> [DefaultInterceptors](./interceptors.go#L37)
+## <a name="DefaultInterceptors">func</a> [DefaultInterceptors](./interceptors.go#L38)
 ``` go
 func DefaultInterceptors() []grpc.UnaryServerInterceptor
 ```
 DefaultInterceptors are the set of default interceptors that are applied to all Orion methods
 
-## <a name="GRPCClientInterceptor">func</a> [GRPCClientInterceptor](./interceptors.go#L138)
+## <a name="GRPCClientInterceptor">func</a> [GRPCClientInterceptor](./interceptors.go#L143)
 ``` go
 func GRPCClientInterceptor() grpc.UnaryClientInterceptor
 ```
 GRPCClientInterceptor is the interceptor that intercepts all cleint requests and adds tracing info to them
 
-## <a name="HystrixClientInterceptor">func</a> [HystrixClientInterceptor](./interceptors.go#L143)
+## <a name="HystrixClientInterceptor">func</a> [HystrixClientInterceptor](./interceptors.go#L148)
 ``` go
 func HystrixClientInterceptor() grpc.UnaryClientInterceptor
 ```
 HystrixClientInterceptor is the interceptor that intercepts all cleint requests and adds hystrix info to them
 
-## <a name="NewRelicClientInterceptor">func</a> [NewRelicClientInterceptor](./interceptors.go#L125)
+## <a name="NewRelicClientInterceptor">func</a> [NewRelicClientInterceptor](./interceptors.go#L130)
 ``` go
 func NewRelicClientInterceptor(address string) grpc.UnaryClientInterceptor
 ```
 NewRelicClientInterceptor intercepts all client actions and reports them to newrelic
 
-## <a name="NewRelicInterceptor">func</a> [NewRelicInterceptor](./interceptors.go#L82)
+## <a name="NewRelicInterceptor">func</a> [NewRelicInterceptor](./interceptors.go#L87)
 ``` go
 func NewRelicInterceptor() grpc.UnaryServerInterceptor
 ```
 NewRelicInterceptor intercepts all server actions and reports them to newrelic
 
-## <a name="ResponseTimeLoggingInterceptor">func</a> [ResponseTimeLoggingInterceptor](./interceptors.go#L68)
+## <a name="ResponseTimeLoggingInterceptor">func</a> [ResponseTimeLoggingInterceptor](./interceptors.go#L73)
 ``` go
 func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor
 ```
 ResponseTimeLoggingInterceptor logs response time for each request on server
 
-## <a name="ServerErrorInterceptor">func</a> [ServerErrorInterceptor](./interceptors.go#L101)
+## <a name="ServerErrorInterceptor">func</a> [ServerErrorInterceptor](./interceptors.go#L106)
 ``` go
 func ServerErrorInterceptor() grpc.UnaryServerInterceptor
 ```
 ServerErrorInterceptor intercepts all server actions and reports them to error notifier
+
+## <a name="WithHystrixName">func</a> [WithHystrixName](./options.go#L24)
+``` go
+func WithHystrixName(name string) clientOption
+```
+WithHystrixName changes the hystrix name to be used in the client interceptors
 
 - - -
 Generated by [godoc2ghmd](https://github.com/GandalfUK/godoc2ghmd)

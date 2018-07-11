@@ -12,6 +12,7 @@ import (
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/log"
 	"github.com/carousell/Orion/utils/log/loggers"
+	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
@@ -52,6 +53,10 @@ func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 		NewRelicClientInterceptor(address),
 		HystrixClientInterceptor(),
 	}
+}
+
+func DefaultClientInterceptor(address string) grpc.UnaryClientInterceptor {
+	return grpc_middleware.ChainUnaryClient(DefaultClientInterceptors(address)...)
 }
 
 //DebugLoggingInterceptor is the interceptor that logs all request/response from a handler
@@ -142,9 +147,19 @@ func GRPCClientInterceptor() grpc.UnaryClientInterceptor {
 //HystrixClientInterceptor is the interceptor that intercepts all cleint requests and adds hystrix info to them
 func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		options := clientOptions{
+			hystrixName: method,
+		}
+		for _, opt := range opts {
+			if opt != nil {
+				if o, ok := opt.(clientOption); ok {
+					o.process(&options)
+				}
+			}
+		}
 		newCtx, cancel := context.WithCancel(ctx)
 		defer cancel()
-		return hystrix.Do(method, func() error {
+		return hystrix.Do(options.hystrixName, func() error {
 			return invoker(newCtx, method, req, reply, cc, opts...)
 		}, nil)
 	}

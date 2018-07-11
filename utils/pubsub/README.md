@@ -23,7 +23,7 @@
 #### <a name="pkg-files">Package files</a>
 [pubsub.go](./pubsub.go) 
 
-## <a name="PubSubConfig">type</a> [PubSubConfig](./pubsub.go#L14-L20)
+## <a name="PubSubConfig">type</a> [PubSubConfig](./pubsub.go#L15-L22)
 ``` go
 type PubSubConfig struct {
     Key                    string
@@ -31,10 +31,11 @@ type PubSubConfig struct {
     Enabled                bool
     Timeout                int
     BulkPublishConcurrency int
+    Retries                int
 }
 ```
 
-## <a name="PubSubService">type</a> [PubSubService](./pubsub.go#L22-L26)
+## <a name="PubSubService">type</a> [PubSubService](./pubsub.go#L24-L28)
 ``` go
 type PubSubService interface {
     PublishMessage(ctx context.Context, topic string, data []byte, waitSync bool) (*goPubSub.PublishResult, error)
@@ -43,7 +44,7 @@ type PubSubService interface {
 }
 ```
 
-### <a name="NewPubSubService">func</a> [NewPubSubService](./pubsub.go#L37)
+### <a name="NewPubSubService">func</a> [NewPubSubService](./pubsub.go#L39)
 ``` go
 func NewPubSubService(config PubSubConfig) PubSubService
 ```
