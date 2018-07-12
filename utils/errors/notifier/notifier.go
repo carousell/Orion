@@ -2,7 +2,6 @@ package notifier
 
 import (
 	"context"
-	"log"
 	"os"
 	"reflect"
 	"strconv"
@@ -10,6 +9,7 @@ import (
 
 	bugsnag "github.com/bugsnag/bugsnag-go"
 	"github.com/carousell/Orion/utils/errors"
+	"github.com/carousell/Orion/utils/log"
 	"github.com/carousell/Orion/utils/options"
 	stdopentracing "github.com/opentracing/opentracing-go"
 	"github.com/pborman/uuid"
@@ -128,6 +128,7 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		}
 	}
 	var traceID string
+	ctx := context.Background()
 	for _, d := range list {
 		if c, ok := d.(context.Context); ok {
 			if span := stdopentracing.SpanFromContext(c); span != nil {
@@ -136,6 +137,7 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 			if strings.TrimSpace(traceID) == "" {
 				traceID = GetTraceId(c)
 			}
+			ctx = c
 			break
 		}
 	}
@@ -177,10 +179,10 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		if e, ok := err.(errors.ErrorExt); ok {
 			// rollbar needs different format for stackframe
 			rollbar.ErrorWithStack(level, e, convToRollbar(e.StackFrame()), fields...)
-			log.Println(level, e, e.StackFrame())
+			log.Error(ctx, "error", e, "stack", e.StackFrame())
 		} else {
 			e := errors.WrapWithSkip(err, "", skip)
-			log.Println(level, e, e.StackFrame())
+			log.Error(ctx, "error", e, "stack", e.StackFrame())
 			rollbar.ErrorWithStack(level, e, convToRollbar(e.StackFrame()), fields...)
 		}
 	}
