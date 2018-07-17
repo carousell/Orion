@@ -25,7 +25,7 @@ type PubSubService interface {
 	PublishMessage(ctx context.Context, topic string, data []byte, waitSync bool) (*goPubSub.PublishResult, error)
 	BulkPublishMessages(ctx context.Context, topic string, data [][]byte, waitSync bool)
 
-	SubscribeMessages(ctx context.Context, subscribe string, retryOnError bool) (SubscriberData, error)
+	SubscribeMessages(ctx context.Context, subscribe string, retryOnError bool) SubscriberData
 
 	Close()
 }
@@ -116,7 +116,7 @@ func (g *pubSubService) BulkPublishMessages(ctx context.Context, topic string, d
 }
 
 //SubscribeMessages Subscirbes to pubsub and returns the received messages through the channel
-func (g *pubSubService) SubscribeMessages(ctx context.Context, subscribe string, retryOnError bool) (SubscriberData, error) {
+func (g *pubSubService) SubscribeMessages(ctx context.Context, subscribe string, retryOnError bool) SubscriberData {
 	subscriberData := SubscriberData{}
 	subscriberData.Data, subscriberData.Error = g.MessageQueue.SubscribeMessages(ctx, subscribe)
 	if retryOnError {
@@ -128,5 +128,5 @@ func (g *pubSubService) SubscribeMessages(ctx context.Context, subscribe string,
 			}
 		}()
 	}
-	return subscriberData, nil
+	return subscriberData
 }
