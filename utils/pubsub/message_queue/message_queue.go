@@ -11,19 +11,23 @@ import (
 	"google.golang.org/api/option"
 )
 
+//MessageQueue Intergace to the wrappers around Google pubsub lib calls
 type MessageQueue interface {
 	Init(pubSubKey string, gProject string) error
 	Close() error
 	Publish(string, *PubSubData) *goPubSub.PublishResult
 	GetResult(ctx context.Context, result *goPubSub.PublishResult) (string, error)
+	SubscribeMessages(ctx context.Context, subscriptionId string, autoAck bool) (chan goPubSub.Message, chan error)
 }
 
+//PubSubData represents msg format to be used for writing messages to pubsub
 type PubSubData struct {
 	Id        string
 	Timestamp int64
 	Data      []byte
 }
 
+//PubSubQueue Required configs for interacting with pubsub
 type PubSubQueue struct {
 	pubSubKey    string
 	gProject     string
@@ -32,6 +36,7 @@ type PubSubQueue struct {
 	topics       *cache.Cache
 }
 
+//NewMessageQueue create a new object to MessageQueue interface
 func NewMessageQueue(enabled bool, serviceAccountKey string, project string) MessageQueue {
 	MessageQueue := new(PubSubQueue)
 	if enabled {
@@ -40,6 +45,7 @@ func NewMessageQueue(enabled bool, serviceAccountKey string, project string) Mes
 	return MessageQueue
 }
 
+//Init Initiales connection to Google Pubsub
 func (pubsubqueue *PubSubQueue) Init(pubSubKey string, gProject string) error {
 	var err error
 	pubsubqueue.pubSubKey = pubSubKey
@@ -53,6 +59,7 @@ func (pubsubqueue *PubSubQueue) Init(pubSubKey string, gProject string) error {
 	return nil
 }
 
+//Close Closes all topic connections to pubsub
 func (pubsubqueue *PubSubQueue) Close() error {
 	for _, item := range pubsubqueue.topics.Items() {
 		if topic, ok := item.Object.(*goPubSub.Topic); ok {
@@ -79,6 +86,7 @@ func (pubsubqueue *PubSubQueue) configurePubsub() (context.Context, *goPubSub.Cl
 	return ctx, ps, nil
 }
 
+//Publish publishes the given message to the topic
 func (pubsubqueue *PubSubQueue) Publish(topicName string, pubSubData *PubSubData) *goPubSub.PublishResult {
 	var topic *goPubSub.Topic
 	if t, ok := pubsubqueue.topics.Get(topicName); ok {
@@ -98,6 +106,28 @@ func (pubsubqueue *PubSubQueue) Publish(topicName string, pubSubData *PubSubData
 	return publishResult
 }
 
+//GetResult gets results of the publish call, can be used to make publish a sync call
 func (pubsubqueue *PubSubQueue) GetResult(ctx context.Context, result *goPubSub.PublishResult) (string, error) {
 	return result.Get(ctx)
+}
+
+//SubscribeMessages Initales a async subscriber call and returns channel to where the data will be sent
+func (pubsubqueue *PubSubQueue) SubscribeMessages(ctx context.Context, subscriptionId string, autoAck bool) (chan goPubSub.Message, chan error) {
+	dataCn := make(chan goPubSub.Message)
+	errors := make(chan error)
+	subscription := pubsubqueue.PubsubClient.Subscription(subscriptionId)
+	go func(outputCh chan goPubSub.Message) {
+		cctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		err := subscription.Receive(cctx, func(ctx context.Context, msg *goPubSub.Message) {
+			outputCh <- *msg
+			if autoAck {
+				msg.Ack()
+			}
+		})
+		if err != nil {
+			errors <- err
+		}
+	}(dataCn)
+	return dataCn, errors
 }
