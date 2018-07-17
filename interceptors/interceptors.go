@@ -65,7 +65,7 @@ func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		fmt.Println(info, "requst", req)
 		resp, err := handler(ctx, req)
-		fmt.Println(info, "response", resp, err)
+		fmt.Println(info, "response", resp, "err", err)
 		return resp, err
 	}
 }

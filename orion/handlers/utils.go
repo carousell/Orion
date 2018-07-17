@@ -117,6 +117,7 @@ func optionsInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 	ctx = options.AddToOptions(ctx, "", "")
 	ctx = loggers.AddToLogContext(ctx, "grpcMethod", info.FullMethod)
 	if !modifiers.IsHTTPRequest(ctx) {
+		loggers.AddToLogContext(ctx, "transport", "gRPC")
 		options.AddToOptions(ctx, modifiers.RequestGRPC, true)
 	}
 	return handler(ctx, req)
