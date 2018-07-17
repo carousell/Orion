@@ -3,6 +3,7 @@ package loggers
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"strings"
 )
 
@@ -67,7 +68,7 @@ const (
 
 //BaseLogger is the implementation that needs to be implemented by client loggers
 type BaseLogger interface {
-	Log(ctx context.Context, level Level, args ...interface{})
+	Log(ctx context.Context, level Level, skip int, args ...interface{})
 	SetLevel(level Level)
 	GetLevel() Level
 }
@@ -79,6 +80,8 @@ type Options struct {
 	Level              Level
 	TimestampFieldName string
 	LevelFieldName     string
+	CallerInfo         bool
+	CallerFileDepth    int
 }
 
 func GetDefaultOptions() Options {
@@ -92,6 +95,8 @@ var (
 		Level:              InfoLevel,
 		TimestampFieldName: "@timestamp",
 		LevelFieldName:     "level",
+		CallerInfo:         true,
+		CallerFileDepth:    2,
 	}
 )
 
@@ -105,7 +110,7 @@ func WithReplaceStdLogger(replaceStdLogger bool) Option {
 	}
 }
 
-//WithReplaceStdLogger enables/disables replacing std logger
+//WithJSONLogs enables/disables json logs
 func WithJSONLogs(json bool) Option {
 	return func(o *Options) {
 		o.JSONLogs = json
@@ -128,4 +133,38 @@ func WithLevelFieldName(name string) Option {
 			o.LevelFieldName = name
 		}
 	}
+}
+
+//WithCallerInfo enables/disables adding caller info to logs
+func WithCallerInfo(callerInfo bool) Option {
+	return func(o *Options) {
+		o.CallerInfo = callerInfo
+	}
+}
+
+//WithCallerFileDepth sets the depth of file to use in caller info
+func WithCallerFileDepth(depth int) Option {
+	return func(o *Options) {
+		if depth > 0 {
+			o.CallerFileDepth = depth
+		}
+	}
+}
+
+//FetchCallerInfo fetches function name, file name and line number from stack
+func FetchCallerInfo(skip int, depth int) (function string, file string, line int) {
+	pc, file, line, _ := runtime.Caller(skip + 1)
+	if depth <= 0 {
+		depth = 2
+	}
+	for i := len(file) - 1; i > 0; i-- {
+		if file[i] == '/' {
+			depth--
+			if depth == 0 {
+				file = file[i+1:]
+				break
+			}
+		}
+	}
+	return runtime.FuncForPC(pc).Name(), file, line
 }

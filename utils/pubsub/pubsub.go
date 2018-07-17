@@ -2,12 +2,12 @@ package pubsub
 
 import (
 	"context"
-	"log"
 	"time"
 
 	goPubSub "cloud.google.com/go/pubsub"
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/carousell/Orion/utils/executor"
+	"github.com/carousell/Orion/utils/log"
 	messageQueue "github.com/carousell/Orion/utils/pubsub/message_queue"
 	"github.com/carousell/Orion/utils/spanutils"
 )
@@ -83,7 +83,7 @@ func (g *pubSubService) PublishMessage(ctx context.Context, topic string, data [
 			return nil
 		}, nil)
 		if er != nil {
-			log.Println("Error:", er.Error())
+			log.Error(ctx, "err", er, "component", "pubsub msg publish")
 		} else {
 			break
 		}

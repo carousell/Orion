@@ -2,11 +2,11 @@ package utils
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"strings"
 
+	"github.com/carousell/Orion/utils/log"
 	newrelic "github.com/newrelic/go-agent"
 )
 
@@ -25,7 +25,7 @@ func GetHostname() string {
 	if host == "" {
 		host = "localhost"
 	}
-	log.Println("HOST", host)
+	log.Info(context.Background(), "HOST", host)
 	return host
 }
 

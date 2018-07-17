@@ -3,9 +3,9 @@ package worker
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 
+	"github.com/carousell/Orion/utils/log"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/satori/go.uuid"
@@ -28,7 +28,7 @@ func (w *workerInfo) MarshalTraceInfo(ctx context.Context) {
 			opentracing.HTTPHeaders,
 			opentracing.HTTPHeadersCarrier(w.Trace))
 	} else {
-		log.Println("Trace", "not found", ctx)
+		log.Info(ctx, "trace", "not found")
 	}
 }
 
@@ -47,7 +47,7 @@ func (w *workerInfo) UnmarshalTraceInfo(ctx context.Context) context.Context {
 func (w *workerInfo) String() string {
 	data, err := json.Marshal(w)
 	if err != nil {
-		log.Println("schedule", "scheduling error", "error", err.Error())
+		log.Info(context.Background(), "schedule", "scheduling error", "error", err)
 		return ""
 	}
 	return string(data)
@@ -67,7 +67,7 @@ func unmarshalWorkerInfo(payload string) *workerInfo {
 	wi := new(workerInfo)
 	err := json.Unmarshal([]byte(payload), wi)
 	if err != nil {
-		log.Println("worker", "can not deserialize work", "error", err.Error())
+		log.Error(context.Background(), "worker", "can not deserialize work", "error", err)
 		return nil
 	}
 	return wi

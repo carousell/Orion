@@ -18,20 +18,20 @@ func GetLevel() loggers.Level {
 
 //Debug writes out a debug log to global logger
 func Debug(ctx context.Context, args ...interface{}) {
-	GetLogger().Debug(ctx, args...)
+	GetLogger().Log(ctx, loggers.DebugLevel, 1, args...)
 }
 
 //Info writes out an info log to global logger
 func Info(ctx context.Context, args ...interface{}) {
-	GetLogger().Info(ctx, args...)
+	GetLogger().Log(ctx, loggers.InfoLevel, 1, args...)
 }
 
 //Warn writes out a warning log to global logger
 func Warn(ctx context.Context, args ...interface{}) {
-	GetLogger().Warn(ctx, args...)
+	GetLogger().Log(ctx, loggers.WarnLevel, 1, args...)
 }
 
 //Error writes out an error log to global logger
 func Error(ctx context.Context, args ...interface{}) {
-	GetLogger().Error(ctx, args...)
+	GetLogger().Log(ctx, loggers.ErrorLevel, 1, args...)
 }
