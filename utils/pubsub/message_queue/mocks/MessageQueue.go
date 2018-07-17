@@ -76,13 +76,13 @@ func (_m *MessageQueue) Publish(_a0 string, _a1 *message_queue.PubSubData) *pubs
 	return r0
 }
 
-// SubscribeMessages provides a mock function with given fields: ctx, subscriptionId
-func (_m *MessageQueue) SubscribeMessages(ctx context.Context, subscriptionId string) (chan pubsub.Message, chan error) {
-	ret := _m.Called(ctx, subscriptionId)
+// SubscribeMessages provides a mock function with given fields: ctx, subscriptionId, autoAck
+func (_m *MessageQueue) SubscribeMessages(ctx context.Context, subscriptionId string, autoAck bool) (chan pubsub.Message, chan error) {
+	ret := _m.Called(ctx, subscriptionId, autoAck)
 
 	var r0 chan pubsub.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string) chan pubsub.Message); ok {
-		r0 = rf(ctx, subscriptionId)
+	if rf, ok := ret.Get(0).(func(context.Context, string, bool) chan pubsub.Message); ok {
+		r0 = rf(ctx, subscriptionId, autoAck)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(chan pubsub.Message)
@@ -90,8 +90,8 @@ func (_m *MessageQueue) SubscribeMessages(ctx context.Context, subscriptionId st
 	}
 
 	var r1 chan error
-	if rf, ok := ret.Get(1).(func(context.Context, string) chan error); ok {
-		r1 = rf(ctx, subscriptionId)
+	if rf, ok := ret.Get(1).(func(context.Context, string, bool) chan error); ok {
+		r1 = rf(ctx, subscriptionId, autoAck)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(chan error)

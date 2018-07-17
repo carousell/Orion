@@ -139,7 +139,7 @@ func (_m *mockMessageQueueForRetry) Init(pubSubKey string, gProject string) erro
 func (_m *mockMessageQueueForRetry) Publish(_a0 string, _a1 *message_queue.PubSubData) *goPubSub.PublishResult {
 	return nil
 }
-func (_m *mockMessageQueueForRetry) SubscribeMessages(ctx context.Context, subscriptionId string) (chan goPubSub.Message, chan error) {
+func (_m *mockMessageQueueForRetry) SubscribeMessages(ctx context.Context, subscriptionId string, autoAck bool) (chan goPubSub.Message, chan error) {
 	return nil, nil
 }
 
@@ -161,7 +161,7 @@ func TestPublishMessageSyncWithRetries(t *testing.T) {
 	assert.Equal(t, 3, mockMessageQueue.tries)
 }
 
-func setupMessageQueueMockCallForSubscriber(expectedCtx context.Context) (*mockMessageQueue.MessageQueue, chan goPubSub.Message) {
+func setupMessageQueueMockCallForSubscriber(expectedCtx context.Context, autoAck bool) (*mockMessageQueue.MessageQueue, chan goPubSub.Message) {
 	mockMessageQueue := &mockMessageQueue.MessageQueue{}
 	newMessageQueueFn = func(enabled bool, serviceAccountKey string, project string) message_queue.MessageQueue {
 		return mockMessageQueue
@@ -169,14 +169,15 @@ func setupMessageQueueMockCallForSubscriber(expectedCtx context.Context) (*mockM
 	resultCn := make(chan goPubSub.Message)
 	mockMessageQueue.On("SubscribeMessages", mock.MatchedBy(func(ctx context.Context) bool {
 		return ctx == expectedCtx
-	}), "subscriptionId").Return(resultCn, nil)
+	}), "subscriptionId", autoAck).Return(resultCn, nil)
 	return mockMessageQueue, resultCn
 }
 func TestSubscribeMessages(t *testing.T) {
 	ctx := context.Background()
-	_, expectedResult := setupMessageQueueMockCallForSubscriber(ctx)
+	autoAck := true
+	_, expectedResult := setupMessageQueueMockCallForSubscriber(ctx, autoAck)
 	p := NewPubSubService(PubSubConfig{})
-	result := p.SubscribeMessages(ctx, "subscriptionId", true)
+	result := p.SubscribeMessages(ctx, "subscriptionId", false, autoAck)
 	assert.Equal(t, expectedResult, result.Data)
 	samplePubSubMsg := goPubSub.Message{
 		Data: []byte("some message"),

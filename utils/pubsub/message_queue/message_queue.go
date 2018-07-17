@@ -17,7 +17,7 @@ type MessageQueue interface {
 	Close() error
 	Publish(string, *PubSubData) *goPubSub.PublishResult
 	GetResult(ctx context.Context, result *goPubSub.PublishResult) (string, error)
-	SubscribeMessages(ctx context.Context, subscriptionId string) (chan goPubSub.Message, chan error)
+	SubscribeMessages(ctx context.Context, subscriptionId string, autoAck bool) (chan goPubSub.Message, chan error)
 }
 
 //PubSubData represents msg format to be used for writing messages to pubsub
@@ -112,7 +112,7 @@ func (pubsubqueue *PubSubQueue) GetResult(ctx context.Context, result *goPubSub.
 }
 
 //SubscribeMessages Initales a async subscriber call and returns channel to where the data will be sent
-func (pubsubqueue *PubSubQueue) SubscribeMessages(ctx context.Context, subscriptionId string) (chan goPubSub.Message, chan error) {
+func (pubsubqueue *PubSubQueue) SubscribeMessages(ctx context.Context, subscriptionId string, autoAck bool) (chan goPubSub.Message, chan error) {
 	dataCn := make(chan goPubSub.Message)
 	errors := make(chan error)
 	subscription := pubsubqueue.PubsubClient.Subscription(subscriptionId)
@@ -121,7 +121,9 @@ func (pubsubqueue *PubSubQueue) SubscribeMessages(ctx context.Context, subscript
 		defer cancel()
 		err := subscription.Receive(cctx, func(ctx context.Context, msg *goPubSub.Message) {
 			outputCh <- *msg
-			msg.Ack()
+			if autoAck {
+				msg.Ack()
+			}
 		})
 		if err != nil {
 			errors <- err
