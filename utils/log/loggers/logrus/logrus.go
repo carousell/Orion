@@ -2,6 +2,7 @@ package logrus
 
 import (
 	"context"
+	"fmt"
 	stdlog "log"
 	"os"
 
@@ -11,6 +12,7 @@ import (
 
 type logger struct {
 	logger *log.Logger
+	opt    loggers.Options
 }
 
 func toLogrusLogLevel(level loggers.Level) log.Level {
@@ -28,7 +30,7 @@ func toLogrusLogLevel(level loggers.Level) log.Level {
 	}
 }
 
-func (l *logger) Log(ctx context.Context, level loggers.Level, args ...interface{}) {
+func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ...interface{}) {
 	fields := make(log.Fields)
 
 	// fetch fields from context and add them to logrus fields
@@ -37,6 +39,11 @@ func (l *logger) Log(ctx context.Context, level loggers.Level, args ...interface
 		for k, v := range ctxFields {
 			fields[k] = v
 		}
+	}
+
+	if l.opt.CallerInfo {
+		_, file, line := loggers.FetchCallerInfo(skip+1, l.opt.CallerFileDepth)
+		fields["caller"] = fmt.Sprintf("%s:%d", file, line)
 	}
 
 	logger := l.logger.WithFields(fields)
@@ -102,6 +109,8 @@ func NewLogger(options ...loggers.Option) loggers.BaseLogger {
 			FullTimestamp: true,
 		}
 	}
+
+	l.opt = opt
 
 	if opt.ReplaceStdLogger {
 		stdlog.SetOutput(l.logger.Writer())

@@ -2,6 +2,7 @@ package gokit
 
 import (
 	"context"
+	"fmt"
 	stdlog "log"
 	"os"
 
@@ -10,13 +11,18 @@ import (
 )
 
 type logger struct {
-	logger   log.Logger
-	level    loggers.Level
-	levelKey string
+	logger log.Logger
+	level  loggers.Level
+	opt    loggers.Options
 }
 
-func (l *logger) Log(ctx context.Context, level loggers.Level, args ...interface{}) {
-	lgr := log.With(l.logger, l.levelKey, level.String())
+func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ...interface{}) {
+	lgr := log.With(l.logger, l.opt.LevelFieldName, level.String())
+
+	if l.opt.CallerInfo {
+		_, file, line := loggers.FetchCallerInfo(skip+1, l.opt.CallerFileDepth)
+		lgr = log.With(lgr, "caller", fmt.Sprintf("%s:%d", file, line))
+	}
 
 	// fetch fields from context and add them to logrus fields
 	ctxFields := loggers.FromContext(ctx)
@@ -64,7 +70,7 @@ func NewLogger(options ...loggers.Option) loggers.BaseLogger {
 	l.logger = log.With(l.logger, opt.TimestampFieldName, log.DefaultTimestamp)
 
 	l.level = opt.Level
-	l.levelKey = opt.LevelFieldName
+	l.opt = opt
 
 	if opt.ReplaceStdLogger {
 		stdlog.SetOutput(log.NewStdlibAdapter(l.logger))

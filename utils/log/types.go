@@ -8,8 +8,7 @@ import (
 
 // Logger interface is implemnted by the log implementation
 type Logger interface {
-	SetLevel(level loggers.Level)
-	GetLevel() loggers.Level
+	loggers.BaseLogger
 	Debug(ctx context.Context, args ...interface{})
 	Info(ctx context.Context, args ...interface{})
 	Warn(ctx context.Context, args ...interface{})

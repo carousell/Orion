@@ -3,11 +3,11 @@ package spanutils
 import (
 	"context"
 	"encoding/base64"
-	"log"
 	"net/http"
 	"strings"
 
 	"github.com/carousell/Orion/utils"
+	"github.com/carousell/Orion/utils/log"
 	newrelic "github.com/newrelic/go-agent"
 	opentracing "github.com/opentracing/opentracing-go"
 	otext "github.com/opentracing/opentracing-go/ext"
@@ -179,14 +179,14 @@ func GRPCTracingSpan(operationName string, ctx context.Context) context.Context 
 	if span := opentracing.SpanFromContext(ctx); span != nil {
 		// There's nothing we can do with an error here.
 		if err := tracer.Inject(span.Context(), opentracing.TextMap, metadataReaderWriter{&md}); err != nil {
-			log.Println("err", err)
+			log.Info(ctx, "err", err, "component", "spanutils")
 		}
 	}
 
 	var span opentracing.Span
 	wireContext, err := tracer.Extract(opentracing.TextMap, metadataReaderWriter{&md})
 	if err != nil && err != opentracing.ErrSpanContextNotFound {
-		log.Println("err", err)
+		log.Info(ctx, "err", err, "component", "spanutils")
 	}
 	span = tracer.StartSpan(operationName, otext.RPCServerOption(wireContext))
 	ctx = opentracing.ContextWithSpan(ctx, span)

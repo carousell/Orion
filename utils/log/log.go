@@ -15,46 +15,46 @@ var (
 )
 
 type logger struct {
-	log loggers.BaseLogger
+	baseLog loggers.BaseLogger
 }
 
 func (l *logger) SetLevel(level loggers.Level) {
-	l.log.SetLevel(level)
+	l.baseLog.SetLevel(level)
 }
 
 func (l *logger) GetLevel() loggers.Level {
-	return l.log.GetLevel()
+	return l.baseLog.GetLevel()
 }
 
 func (l *logger) Debug(ctx context.Context, args ...interface{}) {
-	l.Log(ctx, loggers.DebugLevel, args...)
+	l.Log(ctx, loggers.DebugLevel, 1, args...)
 }
 
 func (l *logger) Info(ctx context.Context, args ...interface{}) {
-	l.Log(ctx, loggers.InfoLevel, args...)
+	l.Log(ctx, loggers.InfoLevel, 1, args...)
 }
 
 func (l *logger) Warn(ctx context.Context, args ...interface{}) {
-	l.Log(ctx, loggers.WarnLevel, args...)
+	l.Log(ctx, loggers.WarnLevel, 1, args...)
 }
 
 func (l *logger) Error(ctx context.Context, args ...interface{}) {
-	l.Log(ctx, loggers.ErrorLevel, args...)
+	l.Log(ctx, loggers.ErrorLevel, 1, args...)
 }
 
-func (l *logger) Log(ctx context.Context, level loggers.Level, args ...interface{}) {
+func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ...interface{}) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 	if l.GetLevel() >= level {
-		l.log.Log(ctx, level, args...)
+		l.baseLog.Log(ctx, level, skip+1, args...)
 	}
 }
 
 //NewLogger creates a new logger with a provided BaseLogger
 func NewLogger(log loggers.BaseLogger) Logger {
 	l := new(logger)
-	l.log = log
+	l.baseLog = log
 	return l
 }
 
