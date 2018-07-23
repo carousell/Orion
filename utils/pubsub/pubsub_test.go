@@ -139,8 +139,8 @@ func (_m *mockMessageQueueForRetry) Init(pubSubKey string, gProject string) erro
 func (_m *mockMessageQueueForRetry) Publish(_a0 string, _a1 *message_queue.PubSubData) *goPubSub.PublishResult {
 	return nil
 }
-func (_m *mockMessageQueueForRetry) SubscribeMessages(ctx context.Context, subscriptionId string, autoAck bool) (chan goPubSub.Message, chan error) {
-	return nil, nil
+func (_m *mockMessageQueueForRetry) SubscribeMessages(ctx context.Context, subscriptionId string, subscribeFunction message_queue.SubscribeFunction) error {
+	return nil
 }
 
 func TestPublishMessageSyncWithRetries(t *testing.T) {
@@ -161,32 +161,20 @@ func TestPublishMessageSyncWithRetries(t *testing.T) {
 	assert.Equal(t, 3, mockMessageQueue.tries)
 }
 
-func setupMessageQueueMockCallForSubscriber(expectedCtx context.Context, autoAck bool) (*mockMessageQueue.MessageQueue, chan goPubSub.Message) {
+func testSubscriberFn(ctx context.Context, msg *goPubSub.Message) {
+}
+func TestSubscribeMessages(t *testing.T) {
+	ctx := context.Background()
 	mockMessageQueue := &mockMessageQueue.MessageQueue{}
 	newMessageQueueFn = func(enabled bool, serviceAccountKey string, project string) message_queue.MessageQueue {
 		return mockMessageQueue
 	}
-	resultCn := make(chan goPubSub.Message)
-	mockMessageQueue.On("SubscribeMessages", mock.MatchedBy(func(ctx context.Context) bool {
-		return ctx == expectedCtx
-	}), "subscriptionId", autoAck).Return(resultCn, nil)
-	return mockMessageQueue, resultCn
-}
-func TestSubscribeMessages(t *testing.T) {
-	ctx := context.Background()
-	autoAck := true
-	_, expectedResult := setupMessageQueueMockCallForSubscriber(ctx, autoAck)
+	mockMessageQueue.On("SubscribeMessages", ctx, "subscriptionId", mock.MatchedBy(func(subscriberFn message_queue.SubscribeFunction) bool {
+		return true
+	})).Return(nil)
 	p := NewPubSubService(PubSubConfig{})
-	result := p.SubscribeMessages(ctx, "subscriptionId", false, autoAck)
-	assert.Equal(t, expectedResult, result.Data)
-	samplePubSubMsg := goPubSub.Message{
-		Data: []byte("some message"),
-	}
-	go func(expectedMessage goPubSub.Message) {
-		for datum := range result.Data {
-			assert.Equal(t, string(expectedMessage.Data), string(datum.Data))
-		}
-	}(samplePubSubMsg)
-	expectedResult <- samplePubSubMsg
-	close(expectedResult)
+	p.SubscribeMessages(ctx, "subscriptionId", testSubscriberFn)
+
+	call := mockMessageQueue.Mock.ExpectedCalls[0]
+	assert.Equal(t, "SubscribeMessages", call.Method)
 }

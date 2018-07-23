@@ -17,7 +17,7 @@ type MessageQueue interface {
 	Close() error
 	Publish(string, *PubSubData) *goPubSub.PublishResult
 	GetResult(ctx context.Context, result *goPubSub.PublishResult) (string, error)
-	SubscribeMessages(ctx context.Context, subscriptionId string, autoAck bool) (chan goPubSub.Message, chan error)
+	SubscribeMessages(ctx context.Context, subscriptionId string, subscribeFunction SubscribeFunction) error
 }
 
 //PubSubData represents msg format to be used for writing messages to pubsub
@@ -111,23 +111,11 @@ func (pubsubqueue *PubSubQueue) GetResult(ctx context.Context, result *goPubSub.
 	return result.Get(ctx)
 }
 
-//SubscribeMessages Initales a async subscriber call and returns channel to where the data will be sent
-func (pubsubqueue *PubSubQueue) SubscribeMessages(ctx context.Context, subscriptionId string, autoAck bool) (chan goPubSub.Message, chan error) {
-	dataCn := make(chan goPubSub.Message)
-	errors := make(chan error)
+type SubscribeFunction func(ctx context.Context, msg *goPubSub.Message)
+
+//SubscribeMessages Initales a subscriber call and assigns to given subscriber function
+func (pubsubqueue *PubSubQueue) SubscribeMessages(ctx context.Context, subscriptionId string, subscribeFunction SubscribeFunction) error {
 	subscription := pubsubqueue.PubsubClient.Subscription(subscriptionId)
-	go func(outputCh chan goPubSub.Message) {
-		cctx, cancel := context.WithCancel(ctx)
-		defer cancel()
-		err := subscription.Receive(cctx, func(ctx context.Context, msg *goPubSub.Message) {
-			outputCh <- *msg
-			if autoAck {
-				msg.Ack()
-			}
-		})
-		if err != nil {
-			errors <- err
-		}
-	}(dataCn)
-	return dataCn, errors
+	err := subscription.Receive(ctx, subscribeFunction)
+	return err
 }
