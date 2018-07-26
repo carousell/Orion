@@ -14,6 +14,7 @@ import (
 	"github.com/carousell/Orion/orion/handlers"
 	"github.com/carousell/Orion/orion/modifiers"
 	"github.com/carousell/Orion/utils"
+	"github.com/carousell/Orion/utils/errors"
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/headers"
 	"github.com/carousell/Orion/utils/log"
@@ -57,7 +58,7 @@ func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, s
 			if e, ok := r.(error); ok {
 				err = e
 			} else {
-				err = fmt.Errorf("panic: %s", r)
+				err = errors.New(fmt.Sprintf("panic: %s", r))
 			}
 			utils.FinishNRTransaction(ctx, err)
 			notifier.NotifyWithLevel(err, "critical", req.URL.String(), ctx)
@@ -202,16 +203,16 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, ser
 		if err != nil {
 			if encErr != nil {
 				writeRespWithHeaders(resp, http.StatusBadRequest, []byte("Bad Request!"), responseHeaders)
-				return ctx, fmt.Errorf("Bad Request")
+				return ctx, errors.Wrap(encErr, "Bad Request")
 			}
 			code, msg := GrpcErrorToHTTP(err, http.StatusInternalServerError, "Internal Server Error!")
 			writeRespWithHeaders(resp, code, []byte(msg), responseHeaders)
-			return ctx, fmt.Errorf(msg)
+			return ctx, errors.Wrap(err, msg)
 		}
 		return ctx, h.serializeOut(ctx, resp, protoResponse.(proto.Message), responseHeaders)
 	}
 	writeResp(resp, http.StatusNotFound, []byte("Not Found: "+req.URL.String()))
-	return req.Context(), fmt.Errorf("Not Found: " + req.URL.String())
+	return req.Context(), errors.New("Not Found: " + req.URL.String())
 }
 
 func (h *httpHandler) serialize(ctx context.Context, msg proto.Message) ([]byte, string, error) {
