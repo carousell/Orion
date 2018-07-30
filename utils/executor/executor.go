@@ -45,7 +45,10 @@ func (e *exe) add(task Task) {
 
 func (e *exe) worker() {
 	for t := range e.work {
-		e.processTask(t)
+		// if e has errored stop processing and drain the queue
+		if !e.errored {
+			e.processTask(t)
+		}
 	}
 }
 
