@@ -73,7 +73,8 @@ func NewLogger(options ...loggers.Option) loggers.BaseLogger {
 	l.opt = opt
 
 	if opt.ReplaceStdLogger {
-		stdlog.SetOutput(log.NewStdlibAdapter(l.logger))
+		stdlog.SetFlags(stdlog.LUTC)
+		stdlog.SetOutput(log.NewStdlibAdapter(l.logger, log.TimestampKey(opt.TimestampFieldName)))
 	}
 	return &l
 }
