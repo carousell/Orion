@@ -85,11 +85,11 @@ type Options struct {
 }
 
 func GetDefaultOptions() Options {
-	return DefaulOptions
+	return DefaultOptions
 }
 
 var (
-	DefaulOptions = Options{
+	DefaultOptions = Options{
 		ReplaceStdLogger:   false,
 		JSONLogs:           true,
 		Level:              InfoLevel,
