@@ -10,6 +10,7 @@ import (
 	bugsnag "github.com/bugsnag/bugsnag-go"
 	"github.com/carousell/Orion/utils/errors"
 	"github.com/carousell/Orion/utils/log"
+	"github.com/carousell/Orion/utils/log/loggers"
 	"github.com/carousell/Orion/utils/options"
 	stdopentracing "github.com/opentracing/opentracing-go"
 	"github.com/pborman/uuid"
@@ -258,6 +259,7 @@ func SetTraceId(ctx context.Context) context.Context {
 	if strings.TrimSpace(traceID) == "" {
 		traceID = uuid.NewUUID().String()
 	}
+	ctx = loggers.AddToLogContext(ctx, "trace", traceID)
 	return options.AddToOptions(ctx, tracerID, traceID)
 }
 
