@@ -45,7 +45,13 @@ func (e *exe) add(task Task) {
 
 func (e *exe) worker() {
 	for t := range e.work {
-		e.processTask(t)
+		// if e has errored stop processing and drain the queue
+		if !e.errored {
+			e.processTask(t)
+		} else {
+			// no task, just handle all wait groups
+			e.processTask(nil)
+		}
 	}
 }
 
@@ -56,10 +62,12 @@ func (e *exe) processTask(task Task) {
 		}
 		e.wg.Done()
 	}(e)
-	err := task()
-	if err != nil {
-		if e.config.failOnError {
-			e.errc <- err
+	if task != nil {
+		err := task()
+		if err != nil {
+			if e.config.failOnError {
+				e.errc <- err
+			}
 		}
 	}
 }
