@@ -80,7 +80,7 @@ func (g *grpcHandler) grpcInterceptor() grpc.UnaryServerInterceptor {
 		// fetch method middlewares for this call
 		middlewares := make([]string, 0)
 		if g.middlewares != nil {
-			middlewares = append(middlewares, g.middlewares.GetMiddlewaresFromUrl(info.FullMethod)...)
+			middlewares = append(middlewares, g.middlewares.GetMiddlewaresFromURL(info.FullMethod)...)
 		}
 		// fetch interceptors from the service implementation and apply
 		interceptor := handlers.GetInterceptorsWithMethodMiddlewares(info.Server, g.config.CommonConfig, middlewares)

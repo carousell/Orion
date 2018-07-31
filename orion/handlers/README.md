@@ -36,7 +36,7 @@
   * [func NewMiddlewareMapping() \*MiddlewareMapping](#NewMiddlewareMapping)
   * [func (m \*MiddlewareMapping) AddMiddleware(service, method string, middlewares ...string)](#MiddlewareMapping.AddMiddleware)
   * [func (m \*MiddlewareMapping) GetMiddlewares(service, method string) []string](#MiddlewareMapping.GetMiddlewares)
-  * [func (m \*MiddlewareMapping) GetMiddlewaresFromUrl(url string) []string](#MiddlewareMapping.GetMiddlewaresFromUrl)
+  * [func (m \*MiddlewareMapping) GetMiddlewaresFromURL(url string) []string](#MiddlewareMapping.GetMiddlewaresFromURL)
 * [type Middlewareable](#Middlewareable)
 * [type Optionable](#Optionable)
 * [type WhitelistedHeaders](#WhitelistedHeaders)
@@ -50,17 +50,19 @@ func GetInterceptors(svc interface{}, config CommonConfig) grpc.UnaryServerInter
 ```
 GetInterceptors fetches interceptors from a given GRPC service
 
-## <a name="GetInterceptorsWithMethodMiddlewares">func</a> [GetInterceptorsWithMethodMiddlewares](./utils.go#L60)
+## <a name="GetInterceptorsWithMethodMiddlewares">func</a> [GetInterceptorsWithMethodMiddlewares](./utils.go#L61)
 ``` go
 func GetInterceptorsWithMethodMiddlewares(svc interface{}, config CommonConfig, middlewares []string) grpc.UnaryServerInterceptor
 ```
+GetInterceptorsWithMethodMiddlewares fetchs all middleware including those provided by method middlewares
 
-## <a name="GetMethodInterceptors">func</a> [GetMethodInterceptors](./utils.go#L100)
+## <a name="GetMethodInterceptors">func</a> [GetMethodInterceptors](./utils.go#L102)
 ``` go
 func GetMethodInterceptors(svc interface{}, config CommonConfig, middlewares []string) []grpc.UnaryServerInterceptor
 ```
+GetMethodInterceptors fetches all interceptors including method middlewares
 
-## <a name="CommonConfig">type</a> [CommonConfig](./types.go#L72-L74)
+## <a name="CommonConfig">type</a> [CommonConfig](./types.go#L73-L75)
 ``` go
 type CommonConfig struct {
     NoDefaultInterceptors bool
@@ -104,13 +106,13 @@ type GRPCMethodHandler func(srv interface{}, ctx context.Context, dec func(inter
 ```
 GRPCMethodHandler is the method type as defined in grpc-go
 
-## <a name="HTTPHandler">type</a> [HTTPHandler](./types.go#L57)
+## <a name="HTTPHandler">type</a> [HTTPHandler](./types.go#L58)
 ``` go
 type HTTPHandler func(http.ResponseWriter, *http.Request) bool
 ```
 HTTPHandler is the function that handles HTTP request
 
-## <a name="HTTPInterceptor">type</a> [HTTPInterceptor](./types.go#L52-L54)
+## <a name="HTTPInterceptor">type</a> [HTTPInterceptor](./types.go#L53-L55)
 ``` go
 type HTTPInterceptor interface {
     AddHTTPHandler(serviceName, method string, path string, handler HTTPHandler)
@@ -118,7 +120,7 @@ type HTTPInterceptor interface {
 ```
 HTTPInterceptor allows intercepting an HTTP connection
 
-## <a name="Handler">type</a> [Handler](./types.go#L60-L64)
+## <a name="Handler">type</a> [Handler](./types.go#L61-L65)
 ``` go
 type Handler interface {
     Add(sd *grpc.ServiceDesc, ss interface{}) error
@@ -137,34 +139,39 @@ type Interceptor interface {
 ```
 Interceptor interface when implemented by a service allows that service to provide custom interceptors
 
-## <a name="MiddlewareMapping">type</a> [MiddlewareMapping](./middleware.go#L12-L14)
+## <a name="MiddlewareMapping">type</a> [MiddlewareMapping](./middleware.go#L14-L16)
 ``` go
 type MiddlewareMapping struct {
     // contains filtered or unexported fields
 }
 ```
+MiddlewareMapping stores mapping between service,method and middlewares
 
-### <a name="NewMiddlewareMapping">func</a> [NewMiddlewareMapping](./middleware.go#L8)
+### <a name="NewMiddlewareMapping">func</a> [NewMiddlewareMapping](./middleware.go#L9)
 ``` go
 func NewMiddlewareMapping() *MiddlewareMapping
 ```
+NewMiddlewareMapping returns a new MiddlewareMapping
 
-### <a name="MiddlewareMapping.AddMiddleware">func</a> (\*MiddlewareMapping) [AddMiddleware](./middleware.go#L45)
+### <a name="MiddlewareMapping.AddMiddleware">func</a> (\*MiddlewareMapping) [AddMiddleware](./middleware.go#L50)
 ``` go
 func (m *MiddlewareMapping) AddMiddleware(service, method string, middlewares ...string)
 ```
+AddMiddleware adds middleware to a service, method
 
-### <a name="MiddlewareMapping.GetMiddlewares">func</a> (\*MiddlewareMapping) [GetMiddlewares](./middleware.go#L33)
+### <a name="MiddlewareMapping.GetMiddlewares">func</a> (\*MiddlewareMapping) [GetMiddlewares](./middleware.go#L37)
 ``` go
 func (m *MiddlewareMapping) GetMiddlewares(service, method string) []string
 ```
+GetMiddlewares fetches all middlewares for a specific service,method
 
-### <a name="MiddlewareMapping.GetMiddlewaresFromUrl">func</a> (\*MiddlewareMapping) [GetMiddlewaresFromUrl](./middleware.go#L28)
+### <a name="MiddlewareMapping.GetMiddlewaresFromURL">func</a> (\*MiddlewareMapping) [GetMiddlewaresFromURL](./middleware.go#L31)
 ``` go
-func (m *MiddlewareMapping) GetMiddlewaresFromUrl(url string) []string
+func (m *MiddlewareMapping) GetMiddlewaresFromURL(url string) []string
 ```
+GetMiddlewaresFromURL fetches all middleware for a specific URL
 
-## <a name="Middlewareable">type</a> [Middlewareable](./types.go#L67-L69)
+## <a name="Middlewareable">type</a> [Middlewareable](./types.go#L68-L70)
 ``` go
 type Middlewareable interface {
     AddMiddleware(serviceName, method string, middleware ...string)
@@ -172,12 +179,13 @@ type Middlewareable interface {
 ```
 Middlewareable implemets support for method specific middleware
 
-## <a name="Optionable">type</a> [Optionable](./types.go#L47-L49)
+## <a name="Optionable">type</a> [Optionable](./types.go#L48-L50)
 ``` go
 type Optionable interface {
     AddOption(ServiceName, method, option string)
 }
 ```
+Optionable interface that is implemented by a handler that support custom Orion options
 
 ## <a name="WhitelistedHeaders">type</a> [WhitelistedHeaders](./types.go#L22-L27)
 ``` go

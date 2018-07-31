@@ -12,7 +12,8 @@ import (
 	"github.com/carousell/Orion/utils/spanutils"
 )
 
-type PubSubConfig struct {
+//Config is the config for pubsub
+type Config struct {
 	Key                    string
 	Project                string
 	Enabled                bool
@@ -21,7 +22,8 @@ type PubSubConfig struct {
 	Retries                int
 }
 
-type PubSubService interface {
+//Service is the interface implemented by a pubsub service
+type Service interface {
 	PublishMessage(ctx context.Context, topic string, data []byte, waitSync bool) (*goPubSub.PublishResult, error)
 	BulkPublishMessages(ctx context.Context, topic string, data [][]byte, waitSync bool)
 	SubscribeMessages(ctx context.Context, subscribe string, subscribeFunction messageQueue.SubscribeFunction) error
@@ -30,14 +32,14 @@ type PubSubService interface {
 
 type pubSubService struct {
 	MessageQueue messageQueue.MessageQueue
-	Config       PubSubConfig
+	Config       Config
 }
 
 var newMessageQueueFn = messageQueue.NewMessageQueue
 var newExecutorFn = executor.NewExecutor
 
 //NewPubSubService build and returns an pubsub service handler
-func NewPubSubService(config PubSubConfig) PubSubService {
+func NewPubSubService(config Config) Service {
 	hysConfig := hystrix.CommandConfig{Timeout: config.Timeout}
 	hystrix.ConfigureCommand("PubSubPublish", hysConfig)
 	return &pubSubService{

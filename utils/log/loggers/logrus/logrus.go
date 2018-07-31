@@ -1,3 +1,4 @@
+// Package logrus provides a BaseLogger implementation for logrus
 package logrus
 
 import (

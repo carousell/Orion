@@ -33,7 +33,7 @@ type Executor interface {
 ```
 Executor is the interface for a basic executor pipeline
 
-### <a name="NewExecutor">func</a> [NewExecutor](./executor.go#L102)
+### <a name="NewExecutor">func</a> [NewExecutor](./executor.go#L110)
 ``` go
 func NewExecutor(options ...Option) Executor
 ```

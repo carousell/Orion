@@ -9,6 +9,7 @@
 
 ## <a name="pkg-imports">Imported Packages</a>
 
+- [github.com/carousell/Orion/utils/log](./log)
 - [github.com/newrelic/go-agent](https://godoc.org/github.com/newrelic/go-agent)
 
 ## <a name="pkg-index">Index</a>

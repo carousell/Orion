@@ -12,20 +12,21 @@
 - [cloud.google.com/go/pubsub](https://godoc.org/cloud.google.com/go/pubsub)
 - [github.com/afex/hystrix-go/hystrix](https://godoc.org/github.com/afex/hystrix-go/hystrix)
 - [github.com/carousell/Orion/utils/executor](./../executor)
+- [github.com/carousell/Orion/utils/log](./../log)
 - [github.com/carousell/Orion/utils/pubsub/message_queue](./message_queue)
 - [github.com/carousell/Orion/utils/spanutils](./../spanutils)
 
 ## <a name="pkg-index">Index</a>
-* [type PubSubConfig](#PubSubConfig)
-* [type PubSubService](#PubSubService)
-  * [func NewPubSubService(config PubSubConfig) PubSubService](#NewPubSubService)
+* [type Config](#Config)
+* [type Service](#Service)
+  * [func NewPubSubService(config Config) Service](#NewPubSubService)
 
 #### <a name="pkg-files">Package files</a>
 [pubsub.go](./pubsub.go) 
 
-## <a name="PubSubConfig">type</a> [PubSubConfig](./pubsub.go#L15-L22)
+## <a name="Config">type</a> [Config](./pubsub.go#L16-L23)
 ``` go
-type PubSubConfig struct {
+type Config struct {
     Key                    string
     Project                string
     Enabled                bool
@@ -34,19 +35,22 @@ type PubSubConfig struct {
     Retries                int
 }
 ```
+Config is the config for pubsub
 
-## <a name="PubSubService">type</a> [PubSubService](./pubsub.go#L24-L28)
+## <a name="Service">type</a> [Service](./pubsub.go#L26-L31)
 ``` go
-type PubSubService interface {
+type Service interface {
     PublishMessage(ctx context.Context, topic string, data []byte, waitSync bool) (*goPubSub.PublishResult, error)
     BulkPublishMessages(ctx context.Context, topic string, data [][]byte, waitSync bool)
+    SubscribeMessages(ctx context.Context, subscribe string, subscribeFunction messageQueue.SubscribeFunction) error
     Close()
 }
 ```
+Service is the interface implemented by a pubsub service
 
-### <a name="NewPubSubService">func</a> [NewPubSubService](./pubsub.go#L39)
+### <a name="NewPubSubService">func</a> [NewPubSubService](./pubsub.go#L42)
 ``` go
-func NewPubSubService(config PubSubConfig) PubSubService
+func NewPubSubService(config Config) Service
 ```
 NewPubSubService build and returns an pubsub service handler
 

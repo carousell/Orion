@@ -37,7 +37,7 @@ func TestPublishMessageSync(t *testing.T) {
 	mockMessageQueue, result := setupMessageQueueMockCall(1)
 	mockMessageQueue.On("GetResult", ctx, result).Return(serverID, nil)
 
-	p := NewPubSubService(PubSubConfig{})
+	p := NewPubSubService(Config{})
 	data := []byte(pubsubMsg)
 	response, err := p.PublishMessage(ctx, pubsubTopic, data, true)
 	assert.Nil(t, response)
@@ -52,7 +52,7 @@ func TestPublishMessageAsync(t *testing.T) {
 	ctx := context.Background()
 	mockMessageQueue, result := setupMessageQueueMockCall(1)
 
-	p := NewPubSubService(PubSubConfig{})
+	p := NewPubSubService(Config{})
 	data := []byte(pubsubMsg)
 	response, err := p.PublishMessage(ctx, pubsubTopic, data, false)
 	assert.Equal(t, result, response)
@@ -83,7 +83,7 @@ func TestBulkPublishMessageAsync(t *testing.T) {
 	newExecutorFn = func(options ...executor.Option) executor.Executor {
 		return mockExecutor
 	}
-	p := NewPubSubService(PubSubConfig{})
+	p := NewPubSubService(Config{})
 	data := [][]byte{[]byte(pubsubMsg), []byte(pubsubMsg)}
 	p.BulkPublishMessages(ctx, pubsubTopic, data, false)
 	p.Close()
@@ -107,7 +107,7 @@ func TestBulkPublishMessageSync(t *testing.T) {
 	newExecutorFn = func(options ...executor.Option) executor.Executor {
 		return mockExecutor
 	}
-	p := NewPubSubService(PubSubConfig{})
+	p := NewPubSubService(Config{})
 	data := [][]byte{[]byte(pubsubMsg), []byte(pubsubMsg)}
 	p.BulkPublishMessages(ctx, pubsubTopic, data, true)
 	p.Close()
@@ -139,7 +139,7 @@ func (_m *mockMessageQueueForRetry) Init(pubSubKey string, gProject string) erro
 func (_m *mockMessageQueueForRetry) Publish(_a0 string, _a1 *message_queue.PubSubData) *goPubSub.PublishResult {
 	return nil
 }
-func (_m *mockMessageQueueForRetry) SubscribeMessages(ctx context.Context, subscriptionId string, subscribeFunction message_queue.SubscribeFunction) error {
+func (_m *mockMessageQueueForRetry) SubscribeMessages(ctx context.Context, subscriptionID string, subscribeFunction message_queue.SubscribeFunction) error {
 	return nil
 }
 
@@ -150,7 +150,7 @@ func TestPublishMessageSyncWithRetries(t *testing.T) {
 		return mockMessageQueue
 	}
 
-	p := NewPubSubService(PubSubConfig{Retries: 2})
+	p := NewPubSubService(Config{Retries: 2})
 	data := []byte(pubsubMsg)
 	response, err := p.PublishMessage(ctx, pubsubTopic, data, true)
 	assert.Nil(t, response)
@@ -172,7 +172,7 @@ func TestSubscribeMessages(t *testing.T) {
 	mockMessageQueue.On("SubscribeMessages", ctx, "subscriptionId", mock.MatchedBy(func(subscriberFn message_queue.SubscribeFunction) bool {
 		return true
 	})).Return(nil)
-	p := NewPubSubService(PubSubConfig{})
+	p := NewPubSubService(Config{})
 	p.SubscribeMessages(ctx, "subscriptionId", testSubscriberFn)
 
 	call := mockMessageQueue.Mock.ExpectedCalls[0]

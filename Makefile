@@ -40,7 +40,7 @@ doc:
 	godoc -http=:6060
 
 update:
-	govendor fetch +vendor
+	govendor fetch -v +vendor
 	go get -u github.com/carousell/Orion/protoc-gen-orion
 
 run:

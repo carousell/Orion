@@ -79,6 +79,7 @@ type DefaultServerImpl struct {
 	dataBag map[string]interface{}
 }
 
+//AddMiddleware adds middlewares for particular service/method
 func (d *DefaultServerImpl) AddMiddleware(serviceName string, method string, middlewares ...string) {
 	if d.middlewares == nil {
 		d.middlewares = make(map[string]*middlewareInfo)
@@ -170,6 +171,7 @@ func (d *DefaultServerImpl) AddDefaultDecoder(serviceName string, decoder Decode
 	d.defDecoders[serviceName] = decoder
 }
 
+//AddOption adds a option for the particular service/method
 func (d *DefaultServerImpl) AddOption(serviceName, method, option string) {
 	if d.options == nil {
 		d.options = make(map[string]*optionInfo)

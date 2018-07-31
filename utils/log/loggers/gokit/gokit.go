@@ -1,3 +1,4 @@
+//Package gokit provides BaseLogger implementation for go-kit/log
 package gokit
 
 import (

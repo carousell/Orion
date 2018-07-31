@@ -57,6 +57,7 @@ func GetInterceptors(svc interface{}, config CommonConfig) grpc.UnaryServerInter
 	return chainUnaryServer(getInterceptors(svc, config, []string{})...)
 }
 
+//GetInterceptorsWithMethodMiddlewares fetchs all middleware including those provided by method middlewares
 func GetInterceptorsWithMethodMiddlewares(svc interface{}, config CommonConfig, middlewares []string) grpc.UnaryServerInterceptor {
 	return chainUnaryServer(getInterceptors(svc, config, middlewares)...)
 }
@@ -97,6 +98,7 @@ func getMiddleware(svc interface{}, middleware string) (grpc.UnaryServerIntercep
 	return nil, errors.New("could not find middleware " + middleware)
 }
 
+//GetMethodInterceptors fetches all interceptors including method middlewares
 func GetMethodInterceptors(svc interface{}, config CommonConfig, middlewares []string) []grpc.UnaryServerInterceptor {
 	interceptors := make([]grpc.UnaryServerInterceptor, 0)
 	for _, middleware := range middlewares {

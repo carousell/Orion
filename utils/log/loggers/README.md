@@ -6,6 +6,7 @@
 * [Index](#pkg-index)
 
 ## <a name="pkg-overview">Overview</a>
+Package loggers provides loggers implementation for log package
 
 ## <a name="pkg-imports">Imported Packages</a>
 
@@ -15,6 +16,7 @@ No packages beyond the Go standard library are imported.
 * [Constants](#pkg-constants)
 * [Variables](#pkg-variables)
 * [func AddToLogContext(ctx context.Context, key string, value interface{}) context.Context](#AddToLogContext)
+* [func FetchCallerInfo(skip int, depth int) (function string, file string, line int)](#FetchCallerInfo)
 * [type BaseLogger](#BaseLogger)
 * [type Level](#Level)
   * [func ParseLevel(lvl string) (Level, error)](#ParseLevel)
@@ -24,8 +26,14 @@ No packages beyond the Go standard library are imported.
   * [func (o LogFields) Add(key string, value interface{})](#LogFields.Add)
   * [func (o LogFields) Del(key string)](#LogFields.Del)
 * [type Option](#Option)
+  * [func WithCallerFileDepth(depth int) Option](#WithCallerFileDepth)
+  * [func WithCallerInfo(callerInfo bool) Option](#WithCallerInfo)
+  * [func WithJSONLogs(json bool) Option](#WithJSONLogs)
+  * [func WithLevelFieldName(name string) Option](#WithLevelFieldName)
   * [func WithReplaceStdLogger(replaceStdLogger bool) Option](#WithReplaceStdLogger)
+  * [func WithTimestampFieldName(name string) Option](#WithTimestampFieldName)
 * [type Options](#Options)
+  * [func GetDefaultOptions() Options](#GetDefaultOptions)
 
 #### <a name="pkg-files">Package files</a>
 [fields.go](./fields.go) [loggers.go](./loggers.go) 
@@ -59,35 +67,57 @@ var AllLevels = []Level{
 ```
 AllLevels A constant exposing all logging levels
 
-## <a name="AddToLogContext">func</a> [AddToLogContext](./fields.go#L29)
+``` go
+var (
+    DefaultOptions = Options{
+        ReplaceStdLogger:   false,
+        JSONLogs:           true,
+        Level:              InfoLevel,
+        TimestampFieldName: "@timestamp",
+        LevelFieldName:     "level",
+        CallerInfo:         true,
+        CallerFileDepth:    2,
+    }
+)
+```
+DefaultOptions stores all default options in loggers package
+
+## <a name="AddToLogContext">func</a> [AddToLogContext](./fields.go#L30)
 ``` go
 func AddToLogContext(ctx context.Context, key string, value interface{}) context.Context
 ```
-AddToLogContext adds log fields to context
+AddToLogContext adds log fields to context.
+Any info added here will be added to all logs using this context
 
-## <a name="BaseLogger">type</a> [BaseLogger](./loggers.go#L69-L73)
+## <a name="FetchCallerInfo">func</a> [FetchCallerInfo](./loggers.go#L159)
+``` go
+func FetchCallerInfo(skip int, depth int) (function string, file string, line int)
+```
+FetchCallerInfo fetches function name, file name and line number from stack
+
+## <a name="BaseLogger">type</a> [BaseLogger](./loggers.go#L72-L76)
 ``` go
 type BaseLogger interface {
-    Log(ctx context.Context, level Level, args ...interface{})
+    Log(ctx context.Context, level Level, skip int, args ...interface{})
     SetLevel(level Level)
     GetLevel() Level
 }
 ```
-BaseLogger is the implementation that needs to be implemented by client loggers
+BaseLogger is the interface that needs to be implemented by client loggers
 
-## <a name="Level">type</a> [Level](./loggers.go#L10)
+## <a name="Level">type</a> [Level](./loggers.go#L13)
 ``` go
 type Level uint32
 ```
 Level type
 
-### <a name="ParseLevel">func</a> [ParseLevel](./loggers.go#L29)
+### <a name="ParseLevel">func</a> [ParseLevel](./loggers.go#L32)
 ``` go
 func ParseLevel(lvl string) (Level, error)
 ```
 ParseLevel takes a string level and returns the log level constant.
 
-### <a name="Level.String">func</a> (Level) [String](./loggers.go#L13)
+### <a name="Level.String">func</a> (Level) [String](./loggers.go#L16)
 ``` go
 func (level Level) String() string
 ```
@@ -99,7 +129,7 @@ type LogFields map[string]interface{}
 ```
 LogFields contains all fields that have to be added to logs
 
-### <a name="FromContext">func</a> [FromContext](./fields.go#L43)
+### <a name="FromContext">func</a> [FromContext](./fields.go#L44)
 ``` go
 func FromContext(ctx context.Context) LogFields
 ```
@@ -117,25 +147,67 @@ func (o LogFields) Del(key string)
 ```
 Del deletes a log field entry
 
-## <a name="Option">type</a> [Option](./loggers.go#L81)
+## <a name="Option">type</a> [Option](./loggers.go#L108)
 ``` go
 type Option func(*Options)
 ```
 Option defines an option for BaseLogger
 
-### <a name="WithReplaceStdLogger">func</a> [WithReplaceStdLogger](./loggers.go#L84)
+### <a name="WithCallerFileDepth">func</a> [WithCallerFileDepth](./loggers.go#L150)
+``` go
+func WithCallerFileDepth(depth int) Option
+```
+WithCallerFileDepth sets the depth of file to use in caller info
+
+### <a name="WithCallerInfo">func</a> [WithCallerInfo](./loggers.go#L143)
+``` go
+func WithCallerInfo(callerInfo bool) Option
+```
+WithCallerInfo enables/disables adding caller info to logs
+
+### <a name="WithJSONLogs">func</a> [WithJSONLogs](./loggers.go#L118)
+``` go
+func WithJSONLogs(json bool) Option
+```
+WithJSONLogs enables/disables json logs
+
+### <a name="WithLevelFieldName">func</a> [WithLevelFieldName](./loggers.go#L134)
+``` go
+func WithLevelFieldName(name string) Option
+```
+WithLevelFieldName sets the name of the level field in logs
+
+### <a name="WithReplaceStdLogger">func</a> [WithReplaceStdLogger](./loggers.go#L111)
 ``` go
 func WithReplaceStdLogger(replaceStdLogger bool) Option
 ```
 WithReplaceStdLogger enables/disables replacing std logger
 
-## <a name="Options">type</a> [Options](./loggers.go#L76-L78)
+### <a name="WithTimestampFieldName">func</a> [WithTimestampFieldName](./loggers.go#L125)
+``` go
+func WithTimestampFieldName(name string) Option
+```
+WithTimestampFieldName sets the name of the time stamp field in logs
+
+## <a name="Options">type</a> [Options](./loggers.go#L79-L87)
 ``` go
 type Options struct {
-    ReplaceStdLogger bool
+    ReplaceStdLogger   bool
+    JSONLogs           bool
+    Level              Level
+    TimestampFieldName string
+    LevelFieldName     string
+    CallerInfo         bool
+    CallerFileDepth    int
 }
 ```
 Options contain all common options for BaseLoggers
+
+### <a name="GetDefaultOptions">func</a> [GetDefaultOptions](./loggers.go#L90)
+``` go
+func GetDefaultOptions() Options
+```
+GetDefaultOptions fetches loggers default options
 
 - - -
 Generated by [godoc2ghmd](https://github.com/GandalfUK/godoc2ghmd)

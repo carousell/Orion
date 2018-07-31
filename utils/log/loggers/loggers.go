@@ -1,3 +1,5 @@
+/*Package loggers provides loggers implementation for log package
+ */
 package loggers
 
 import (
@@ -66,7 +68,7 @@ const (
 	DebugLevel
 )
 
-//BaseLogger is the implementation that needs to be implemented by client loggers
+//BaseLogger is the interface that needs to be implemented by client loggers
 type BaseLogger interface {
 	Log(ctx context.Context, level Level, skip int, args ...interface{})
 	SetLevel(level Level)
@@ -84,10 +86,12 @@ type Options struct {
 	CallerFileDepth    int
 }
 
+//GetDefaultOptions fetches loggers default options
 func GetDefaultOptions() Options {
 	return DefaultOptions
 }
 
+// DefaultOptions stores all default options in loggers package
 var (
 	DefaultOptions = Options{
 		ReplaceStdLogger:   false,
@@ -153,10 +157,13 @@ func WithCallerFileDepth(depth int) Option {
 
 //FetchCallerInfo fetches function name, file name and line number from stack
 func FetchCallerInfo(skip int, depth int) (function string, file string, line int) {
-	pc, file, line, _ := runtime.Caller(skip + 1)
 	if depth <= 0 {
 		depth = 2
 	}
+	if skip < 0 {
+		skip = 0
+	}
+	pc, file, line, _ := runtime.Caller(skip + 1)
 	for i := len(file) - 1; i > 0; i-- {
 		if file[i] == '/' {
 			depth--

@@ -45,7 +45,7 @@ func NewMessageQueue(enabled bool, serviceAccountKey string, project string) Mes
 	return MessageQueue
 }
 
-//Init Initiales connection to Google Pubsub
+//Init initiates connection to Google Pubsub
 func (pubsubqueue *PubSubQueue) Init(pubSubKey string, gProject string) error {
 	var err error
 	pubsubqueue.pubSubKey = pubSubKey
@@ -111,6 +111,7 @@ func (pubsubqueue *PubSubQueue) GetResult(ctx context.Context, result *goPubSub.
 	return result.Get(ctx)
 }
 
+//SubscribeFunction recieves messages from a subscription
 type SubscribeFunction func(ctx context.Context, msg *goPubSub.Message)
 
 //SubscribeMessages Initales a subscriber call and assigns to given subscriber function

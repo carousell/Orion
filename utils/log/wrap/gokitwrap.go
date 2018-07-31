@@ -1,3 +1,4 @@
+//Package wrap provides multiple wrap functions to wrap log implementation of other log packages
 package wrap
 
 import (

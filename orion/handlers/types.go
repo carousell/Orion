@@ -44,6 +44,7 @@ type Decodable interface {
 	AddDefaultDecoder(serviceName string, decoder Decoder)
 }
 
+//Optionable interface that is implemented by a handler that support custom Orion options
 type Optionable interface {
 	AddOption(ServiceName, method, option string)
 }

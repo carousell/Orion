@@ -5,6 +5,7 @@ import (
 	"net"
 )
 
+//CustomListener provides an implementation for a custom net.Listener
 type CustomListener interface {
 	net.Listener
 	CanClose(bool)
@@ -68,6 +69,7 @@ func (c *customListener) StopAccept() {
 	}
 }
 
+//NewListener creates a new CustomListener
 func NewListener(network, laddr string) (CustomListener, error) {
 	lis, err := net.Listen(network, laddr)
 	if err != nil {

@@ -1,3 +1,4 @@
+//Package stdlog provides a BaseLogger implementation for golang "log" package
 package stdlog
 
 import (

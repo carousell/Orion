@@ -56,6 +56,7 @@ func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 	}
 }
 
+//DefaultClientInterceptor are the set of default interceptors that should be applied to all client calls
 func DefaultClientInterceptor(address string) grpc.UnaryClientInterceptor {
 	return grpc_middleware.ChainUnaryClient(DefaultClientInterceptors(address)...)
 }
