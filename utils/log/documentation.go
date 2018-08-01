@@ -3,13 +3,13 @@ Orion and orion utils use this log package for all logs.
 
 How To Use
 
-simplest way to use this package is by calling static log functions to report particular level (error/warning/info/debug)
+The simplest way to use this package is by calling static log functions to report particular level (error/warning/info/debug)
 	log.Error(...)
 	log.Warn(...)
 	log.Info(...)
 	log.Debug(...)
 
-You can also initialize a new logger by calling 'log.NewLogger' and passing a loggers.BaseLogger implementation (loggers package provides a number of pre built implemnetations)
+You can also initialize a new logger by calling 'log.NewLogger' and passing a loggers.BaseLogger implementation (loggers package provides a number of pre built implementations)
 	logger := log.NewLogger(gokit.NewLogger())
 	logger.Info(ctx, "key", "value")
 
