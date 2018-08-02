@@ -180,12 +180,15 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		if e, ok := err.(errors.ErrorExt); ok {
 			// rollbar needs different format for stackframe
 			rollbar.ErrorWithStack(level, e, convToRollbar(e.StackFrame()), fields...)
-			log.Error(ctx, "error", e, "stack", e.StackFrame())
 		} else {
 			e := errors.WrapWithSkip(err, "", skip)
-			log.Error(ctx, "error", e, "stack", e.StackFrame())
 			rollbar.ErrorWithStack(level, e, convToRollbar(e.StackFrame()), fields...)
 		}
+	}
+	if e, ok := err.(errors.ErrorExt); ok {
+		log.GetLogger().Log(ctx, loggers.ErrorLevel, skip+1, "err", e, "stack", e.StackFrame())
+	} else {
+		log.GetLogger().Log(ctx, loggers.ErrorLevel, skip+1, "err", err)
 	}
 	return err
 }
@@ -266,6 +269,11 @@ func SetTraceId(ctx context.Context) context.Context {
 func GetTraceId(ctx context.Context) string {
 	if o := options.FromContext(ctx); o != nil {
 		if data, found := o.Get(tracerID); found {
+			return data.(string)
+		}
+	}
+	if logCtx := loggers.FromContext(ctx); logCtx != nil {
+		if data, found := logCtx["trace"]; found {
 			return data.(string)
 		}
 	}
