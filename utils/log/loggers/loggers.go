@@ -84,6 +84,7 @@ type Options struct {
 	LevelFieldName     string
 	CallerInfo         bool
 	CallerFileDepth    int
+	CallerFieldName    string
 }
 
 //GetDefaultOptions fetches loggers default options
@@ -101,6 +102,7 @@ var (
 		LevelFieldName:     "level",
 		CallerInfo:         true,
 		CallerFileDepth:    2,
+		CallerFieldName:    "caller",
 	}
 )
 
@@ -151,6 +153,16 @@ func WithCallerFileDepth(depth int) Option {
 	return func(o *Options) {
 		if depth > 0 {
 			o.CallerFileDepth = depth
+		}
+	}
+}
+
+//WithCallerFieldName sets the name of callerinfo field
+func WithCallerFieldName(name string) Option {
+	return func(o *Options) {
+		name = strings.TrimSpace(name)
+		if name != "" {
+			o.CallerFieldName = name
 		}
 	}
 }
