@@ -44,7 +44,7 @@ func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ..
 
 	if l.opt.CallerInfo {
 		_, file, line := loggers.FetchCallerInfo(skip+1, l.opt.CallerFileDepth)
-		fields["caller"] = fmt.Sprintf("%s:%d", file, line)
+		fields[l.opt.CallerFieldName] = fmt.Sprintf("%s:%d", file, line)
 	}
 
 	logger := l.logger.WithFields(fields)

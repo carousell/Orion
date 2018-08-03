@@ -22,7 +22,7 @@ func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ..
 
 	if l.opt.CallerInfo {
 		_, file, line := loggers.FetchCallerInfo(skip+1, l.opt.CallerFileDepth)
-		lgr = log.With(lgr, "caller", fmt.Sprintf("%s:%d", file, line))
+		lgr = log.With(lgr, l.opt.CallerFieldName, fmt.Sprintf("%s:%d", file, line))
 	}
 
 	// fetch fields from context and add them to logrus fields
