@@ -60,9 +60,6 @@ func DefaultWSUpgrader(w http.ResponseWriter, r *http.Request, responseHeader ht
 		HandshakeTimeout: time.Second * 2,
 		ReadBufferSize:   1024,
 		WriteBufferSize:  1024,
-		CheckOrigin: func(r *http.Request) bool {
-			return true
-		},
 	}
 	return up.Upgrade(w, r, responseHeader)
 }
