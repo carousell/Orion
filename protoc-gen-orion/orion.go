@@ -57,6 +57,7 @@ type service struct {
 	Handlers       []*handler
 	Options        []*orionOption
 	Middlewares    []*orionMiddleware
+	Streams        []*stream
 }
 
 type encoder struct {
@@ -73,6 +74,14 @@ type handler struct {
 	SvcName    string
 	MethodName string
 	Path       string
+}
+type stream struct {
+	SvcName      string
+	MethodName   string
+	Path         string
+	ClientStream bool
+	ServerStream bool
+	Methods      string
 }
 
 type orionOption struct {
@@ -121,6 +130,10 @@ func Register{{.SvcName}}{{.MethodName}}Handler(svr orion.Server, handler orion.
 func Register{{.SvcName}}{{.MethodName}}Decoder(svr orion.Server, decoder orion.Decoder) {
 	orion.RegisterDecoder(svr, "{{.SvcName}}", "{{.MethodName}}", decoder)
 }
+{{ end }}
+//Streams
+{{ range .Streams }}
+// {{ . }}
 {{ end }}
 // Register{{.ServName}}OrionServer registers {{.ServName}} to Orion server
 func Register{{.ServName}}OrionServer(srv orion.ServiceFactory, orionServer orion.Server) {
@@ -243,6 +256,7 @@ func generate(d *data, file *descriptor.FileDescriptorProto) {
 		s.Decoders = make([]*decoder, 0)
 		s.Options = make([]*orionOption, 0)
 		s.Middlewares = make([]*orionMiddleware, 0)
+		s.Streams = make([]*stream, 0)
 		s.ServiceDescVar = serviceDescVar
 		s.ServName = servName
 		d.Services = append(d.Services, s)
@@ -257,57 +271,70 @@ func generate(d *data, file *descriptor.FileDescriptorProto) {
 					// ** --- END -- Find comments in grpc services
 
 					if option := parseComments(line); option != nil {
-						if option.Encoder {
-							methods := strings.Split(option.Method, "/")
-							for i := range methods {
-								if strings.ToLower(methods[i]) == "options" {
+						if method.GetClientStreaming() || method.GetServerStreaming() {
+							str := new(stream)
+							str.SvcName = svc.GetName()
+							str.MethodName = method.GetName()
+							str.ClientStream = method.GetClientStreaming()
+							str.ServerStream = method.GetServerStreaming()
+							if option.Encoder || option.Decoder {
+								str.Path = option.Path
+								str.Methods = option.Method
+							}
+							s.Streams = append(s.Streams, str)
+						} else { // dont add others for streaming use cases
+							if option.Encoder {
+								methods := strings.Split(option.Method, "/")
+								for i := range methods {
+									if strings.ToLower(methods[i]) == "options" {
+									}
+									methods[i] = "\"" + methods[i] + "\""
 								}
-								methods[i] = "\"" + methods[i] + "\""
+								methodsString := strings.Join(methods, ", ")
+
+								// populate encoder
+								enc := new(encoder)
+								enc.SvcName = svc.GetName()
+								enc.MethodName = method.GetName()
+								enc.Path = option.Path
+								enc.Methods = methodsString
+								s.Encoders = append(s.Encoders, enc)
+
+								// popluate handler
+								han := new(handler)
+								han.SvcName = svc.GetName()
+								han.MethodName = method.GetName()
+								han.Path = option.Path
+								s.Handlers = append(s.Handlers, han)
 							}
-							methodsString := strings.Join(methods, ", ")
 
-							// populate encoder
-							enc := new(encoder)
-							enc.SvcName = svc.GetName()
-							enc.MethodName = method.GetName()
-							enc.Path = option.Path
-							enc.Methods = methodsString
-							s.Encoders = append(s.Encoders, enc)
-
-							// popluate handler
-							han := new(handler)
-							han.SvcName = svc.GetName()
-							han.MethodName = method.GetName()
-							han.Path = option.Path
-							s.Handlers = append(s.Handlers, han)
-						}
-
-						if option.Decoder {
-							// popluate decoder
-							dec := new(decoder)
-							dec.SvcName = svc.GetName()
-							dec.MethodName = method.GetName()
-							s.Decoders = append(s.Decoders, dec)
-						}
-
-						if option.Option {
-							opt := new(orionOption)
-							opt.SvcName = svc.GetName()
-							opt.MethodName = method.GetName()
-							opt.OptionType = strings.TrimSpace(option.Value)
-							s.Options = append(s.Options, opt)
-						}
-
-						if option.Middleware {
-							mid := new(orionMiddleware)
-							mid.SvcName = svc.GetName()
-							mid.MethodName = method.GetName()
-							names := strings.Split(option.Value, ",")
-							for i := range names {
-								names[i] = "\"" + strings.TrimSpace(names[i]) + "\""
+							if option.Decoder {
+								// popluate decoder
+								dec := new(decoder)
+								dec.SvcName = svc.GetName()
+								dec.MethodName = method.GetName()
+								s.Decoders = append(s.Decoders, dec)
 							}
-							mid.Names = strings.Join(names, ", ")
-							s.Middlewares = append(s.Middlewares, mid)
+
+							if option.Option {
+								opt := new(orionOption)
+								opt.SvcName = svc.GetName()
+								opt.MethodName = method.GetName()
+								opt.OptionType = strings.TrimSpace(option.Value)
+								s.Options = append(s.Options, opt)
+							}
+
+							if option.Middleware {
+								mid := new(orionMiddleware)
+								mid.SvcName = svc.GetName()
+								mid.MethodName = method.GetName()
+								names := strings.Split(option.Value, ",")
+								for i := range names {
+									names[i] = "\"" + strings.TrimSpace(names[i]) + "\""
+								}
+								mid.Names = strings.Join(names, ", ")
+								s.Middlewares = append(s.Middlewares, mid)
+							}
 						}
 					}
 				}

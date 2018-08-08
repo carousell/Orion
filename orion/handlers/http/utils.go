@@ -14,14 +14,20 @@ import (
 //ContentTypeFromHeaders searches for a matching content type
 func ContentTypeFromHeaders(ctx context.Context) string {
 	hdrs := headers.RequestHeadersFromContext(ctx)
-	if values, found := hdrs["Accept"]; found {
+	if values, found := hdrs["Content-Type"]; found {
 		for _, v := range values {
 			if t, ok := ContentTypeMap[v]; ok {
 				return t
 			}
 		}
 	}
-	if values, found := hdrs["Content-Type"]; found {
+	return ""
+}
+
+//AcceptTypeFromHeaders searches for a mathing accept type
+func AcceptTypeFromHeaders(ctx context.Context) string {
+	hdrs := headers.RequestHeadersFromContext(ctx)
+	if values, found := hdrs["Accept"]; found {
 		for _, v := range values {
 			if t, ok := ContentTypeMap[v]; ok {
 				return t
