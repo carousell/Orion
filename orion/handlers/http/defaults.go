@@ -55,6 +55,7 @@ func deserialize(ctx context.Context, data []byte, r interface{}) error {
 	}
 }
 
+// DefaultWSUpgrader upgrades a websocket if none are registered.
 func DefaultWSUpgrader(w http.ResponseWriter, r *http.Request, responseHeader http.Header) (*websocket.Conn, error) {
 	up := websocket.Upgrader{
 		HandshakeTimeout: time.Second * 2,

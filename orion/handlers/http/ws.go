@@ -30,12 +30,15 @@ func (h *httpHandler) wsHandler(resp http.ResponseWriter, req *http.Request, ser
 	}(time.Now())
 	info, ok := h.mapping.Get(service, method)
 	if ok {
+		//setup context
 		ctx = prepareContext(req, info)
 		ctx = processOptions(ctx, req, info)
 		ctx = loggers.AddToLogContext(ctx, "transport", "ws")
 		req = req.WithContext(ctx)
+
 		notifier.SetTraceId(ctx)
 		log.Info(ctx, "path", req.URL.String(), "msg", "new websocket connection")
+
 		// httpHandler allows handling entire http request
 		if info.httpHandler != nil {
 			req = req.WithContext(ctx)
@@ -44,10 +47,12 @@ func (h *httpHandler) wsHandler(resp http.ResponseWriter, req *http.Request, ser
 				return
 			}
 		}
+
 		if info.stream == nil {
 			log.Error(ctx, "ws", "no stream registered", "url", req.URL.String())
 			err = errors.New("No stream registered")
 		}
+
 		var con *websocket.Conn
 		con, err = DefaultWSUpgrader(resp, req, http.Header{})
 		if err != nil {
@@ -55,12 +60,18 @@ func (h *httpHandler) wsHandler(resp http.ResponseWriter, req *http.Request, ser
 			return
 		}
 		defer con.Close()
+
+		//create a cancelable context from request context
 		ctx = req.Context()
+		streamCtx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
 		stream := streamServer{
-			ctx: ctx,
+			ctx: streamCtx,
 			con: con,
 			han: h,
 		}
+		// handle the stream
 		err = info.stream(info.svc.svc, &stream)
 		return
 	}
