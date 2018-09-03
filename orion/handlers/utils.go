@@ -80,6 +80,10 @@ func getInterceptors(svc interface{}, config CommonConfig, middlewares []string)
 	// check and add method interceptors
 	opts = append(opts, GetMethodInterceptors(svc, config, middlewares)...)
 
+	// return error as GRPC status if the request is GRPC
+	// need to be the last one of execution order
+	opts = append(opts, interceptors.GRPCResponseInterceptor())
+
 	return opts
 }
 

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc/codes"
+
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/carousell/Orion/orion/modifiers"
 	"github.com/carousell/Orion/utils"
@@ -19,6 +21,7 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	newrelic "github.com/newrelic/go-agent"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -59,6 +62,23 @@ func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 //DefaultClientInterceptor are the set of default interceptors that should be applied to all client calls
 func DefaultClientInterceptor(address string) grpc.UnaryClientInterceptor {
 	return grpc_middleware.ChainUnaryClient(DefaultClientInterceptors(address)...)
+}
+
+//GRPCResponseInterceptor is the interceptor that handle returning GRPC status as error if the request is GRPC
+func GRPCResponseInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		resp, err = handler(ctx, req)
+		if modifiers.IsGRPCRequest(ctx) {
+			if _, ok := status.FromError(err); !ok {
+				if g, ok := err.(errors.GRPCExt); ok {
+					err = g.ToGRPCStatus().Err()
+				} else {
+					err = status.New(codes.Internal, err.Error()).Err()
+				}
+			}
+		}
+		return resp, err
+	}
 }
 
 //DebugLoggingInterceptor is the interceptor that logs all request/response from a handler
