@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/carousell/Orion/utils/errors"
 	"github.com/carousell/Orion/utils/headers"
 	"github.com/carousell/Orion/utils/log"
 	"google.golang.org/grpc/codes"
@@ -42,45 +43,52 @@ func AcceptTypeFromHeaders(ctx context.Context) string {
 func GrpcErrorToHTTP(err error, defaultStatus int, defaultMessage string) (int, string) {
 	code := defaultStatus
 	msg := defaultMessage
+	var _code codes.Code
+
 	if s, ok := status.FromError(err); ok {
 		msg = s.Message()
-		switch s.Code() {
-		case codes.NotFound:
-			code = http.StatusNotFound
-		case codes.InvalidArgument:
-			code = http.StatusBadRequest
-		case codes.Unauthenticated:
-			code = http.StatusUnauthorized
-		case codes.PermissionDenied:
-			code = http.StatusForbidden
-		case codes.OK:
-			code = http.StatusOK
-		case codes.Canceled:
-			code = http.StatusRequestTimeout
-		case codes.Unknown:
-			code = http.StatusInternalServerError
-		case codes.DeadlineExceeded:
-			code = http.StatusGatewayTimeout
-		case codes.AlreadyExists:
-			code = http.StatusConflict
-		case codes.ResourceExhausted:
-			code = http.StatusTooManyRequests
-		case codes.FailedPrecondition:
-			code = http.StatusBadRequest
-		case codes.Aborted:
-			code = http.StatusConflict
-		case codes.OutOfRange:
-			code = http.StatusBadRequest
-		case codes.Unimplemented:
-			code = http.StatusNotImplemented
-		case codes.Internal:
-			code = http.StatusInternalServerError
-		case codes.Unavailable:
-			code = http.StatusServiceUnavailable
-		case codes.DataLoss:
-			code = http.StatusInternalServerError
-		}
+		_code = s.Code()
+	} else if g, ok := err.(errors.GRPCExt); ok {
+		_code = g.Code()
+		msg = _code.String()
 	}
+	switch _code {
+	case codes.NotFound:
+		code = http.StatusNotFound
+	case codes.InvalidArgument:
+		code = http.StatusBadRequest
+	case codes.Unauthenticated:
+		code = http.StatusUnauthorized
+	case codes.PermissionDenied:
+		code = http.StatusForbidden
+	case codes.OK:
+		code = http.StatusOK
+	case codes.Canceled:
+		code = http.StatusRequestTimeout
+	case codes.Unknown:
+		code = http.StatusInternalServerError
+	case codes.DeadlineExceeded:
+		code = http.StatusGatewayTimeout
+	case codes.AlreadyExists:
+		code = http.StatusConflict
+	case codes.ResourceExhausted:
+		code = http.StatusTooManyRequests
+	case codes.FailedPrecondition:
+		code = http.StatusBadRequest
+	case codes.Aborted:
+		code = http.StatusConflict
+	case codes.OutOfRange:
+		code = http.StatusBadRequest
+	case codes.Unimplemented:
+		code = http.StatusNotImplemented
+	case codes.Internal:
+		code = http.StatusInternalServerError
+	case codes.Unavailable:
+		code = http.StatusServiceUnavailable
+	case codes.DataLoss:
+		code = http.StatusInternalServerError
+	}
+
 	return code, msg
 }
 
