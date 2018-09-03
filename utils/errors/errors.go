@@ -189,13 +189,9 @@ func WrapWithSkipAndCode(err error, msg string, skip int, code Code) ErrorExt {
 			c.shouldNotify = n.ShouldNotify()
 		}
 
-		if g, ok := e.(GRPCExt); ok {
-			if code == MaxCode { // if no new value, keep original code
-				c.code = g.Code()
-			} else {
-				c.code = newCode
-			}
-
+		if g, ok := e.(GRPCExt); ok && code == MaxCode {
+			// if no new value, keep original code
+			c.code = g.Code()
 		}
 
 		return c
