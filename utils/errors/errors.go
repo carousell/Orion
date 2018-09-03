@@ -40,7 +40,7 @@ type GRPCExt interface {
 	// TBD: interface support default code and default http status
 	// now we're using internal server error as default
 	Code() Code
-	ToGRPCStatus() status.Status
+	ToGRPCStatus() *status.Status
 }
 
 func (c *customError) Code() Code {
