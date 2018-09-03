@@ -41,55 +41,55 @@ func AcceptTypeFromHeaders(ctx context.Context) string {
 // GrpcErrorToHTTP converts gRPC error code into HTTP response status code.
 // See: https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
 func GrpcErrorToHTTP(err error, defaultStatus int, defaultMessage string) (int, string) {
-	code := defaultStatus
+	httpStatus := defaultStatus
 	msg := defaultMessage
-	var _code codes.Code
+	var code codes.Code
 
 	if s, ok := status.FromError(err); ok {
 		msg = s.Message()
-		_code = s.Code()
+		code = s.Code()
 	} else if g, ok := err.(errors.GRPCExt); ok {
-		_code = g.Code()
-		msg = _code.String()
+		code = g.Code()
+		msg = code.String()
 	}
-	switch _code {
+	switch code {
 	case codes.NotFound:
-		code = http.StatusNotFound
+		httpStatus = http.StatusNotFound
 	case codes.InvalidArgument:
-		code = http.StatusBadRequest
+		httpStatus = http.StatusBadRequest
 	case codes.Unauthenticated:
-		code = http.StatusUnauthorized
+		httpStatus = http.StatusUnauthorized
 	case codes.PermissionDenied:
-		code = http.StatusForbidden
+		httpStatus = http.StatusForbidden
 	case codes.OK:
-		code = http.StatusOK
+		httpStatus = http.StatusOK
 	case codes.Canceled:
-		code = http.StatusRequestTimeout
+		httpStatus = http.StatusRequestTimeout
 	case codes.Unknown:
-		code = http.StatusInternalServerError
+		httpStatus = http.StatusInternalServerError
 	case codes.DeadlineExceeded:
-		code = http.StatusGatewayTimeout
+		httpStatus = http.StatusGatewayTimeout
 	case codes.AlreadyExists:
-		code = http.StatusConflict
+		httpStatus = http.StatusConflict
 	case codes.ResourceExhausted:
-		code = http.StatusTooManyRequests
+		httpStatus = http.StatusTooManyRequests
 	case codes.FailedPrecondition:
-		code = http.StatusBadRequest
+		httpStatus = http.StatusBadRequest
 	case codes.Aborted:
-		code = http.StatusConflict
+		httpStatus = http.StatusConflict
 	case codes.OutOfRange:
-		code = http.StatusBadRequest
+		httpStatus = http.StatusBadRequest
 	case codes.Unimplemented:
-		code = http.StatusNotImplemented
+		httpStatus = http.StatusNotImplemented
 	case codes.Internal:
-		code = http.StatusInternalServerError
+		httpStatus = http.StatusInternalServerError
 	case codes.Unavailable:
-		code = http.StatusServiceUnavailable
+		httpStatus = http.StatusServiceUnavailable
 	case codes.DataLoss:
-		code = http.StatusInternalServerError
+		httpStatus = http.StatusInternalServerError
 	}
 
-	return code, msg
+	return httpStatus, msg
 }
 
 func processWhitelist(ctx context.Context, data map[string][]string, allowedKeys []string) map[string][]string {
