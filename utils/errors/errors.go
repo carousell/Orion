@@ -197,6 +197,10 @@ func WrapWithSkipAndCode(err error, msg string, skip int, code Code) ErrorExt {
 		return c
 	}
 
+	if s, ok := status.FromError(err); ok {
+		newCode = s.Code()
+	}
+
 	c := &customError{
 		Msg:          msg + err.Error(),
 		cause:        err,
