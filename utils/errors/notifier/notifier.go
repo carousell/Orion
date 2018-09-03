@@ -85,7 +85,15 @@ func parseRawData(rawData ...interface{}) map[string]interface{} {
 }
 
 func Notify(err error, rawData ...interface{}) error {
-	return NotifyWithLevelAndSkip(err, 2, rollbar.ERR, rawData...)
+	if g, ok := err.(errors.GRPCExt); ok {
+		if g.NotifyLevel() == errors.ReportLevelWarn {
+			return NotifyWithLevelAndSkip(err, 2, rollbar.WARN, rawData...)
+		} else {
+			return NotifyWithLevelAndSkip(err, 2, rollbar.ERR, rawData...)
+		}
+	} else {
+		return NotifyWithLevelAndSkip(err, 2, rollbar.ERR, rawData...)
+	}
 }
 
 func NotifyWithLevel(err error, level string, rawData ...interface{}) error {

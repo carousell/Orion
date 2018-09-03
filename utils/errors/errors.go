@@ -41,6 +41,7 @@ type GRPCExt interface {
 	// now we're using internal server error as default
 	Code() Code
 	ToGRPCStatus() *status.Status
+	NotifyLevel() ReportLevel
 }
 
 func (c *customError) Code() Code {
@@ -49,6 +50,11 @@ func (c *customError) Code() Code {
 
 func (c *customError) ToGRPCStatus() *status.Status {
 	return status.New(c.Code(), c.Msg)
+}
+
+func (c *customError) NotifyLevel() ReportLevel {
+	// TBD: try to define a general code to report level map
+	return ReportLevelError
 }
 
 type customError struct {
