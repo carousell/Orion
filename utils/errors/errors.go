@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
+
+	// fully extend GRPC Code ability and prevent import cycle
+	. "google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -32,12 +36,28 @@ type NotifyExt interface {
 	Notified(status bool)
 }
 
+type GRPCExt interface {
+	// TBD: interface support default code and default http status
+	// now we're using internal server error as default
+	Code() Code
+	ToGRPCStatus() status.Status
+}
+
+func (c *customError) Code() Code {
+	return c.code
+}
+
+func (c *customError) ToGRPCStatus() *status.Status {
+	return status.New(c.Code(), c.Msg)
+}
+
 type customError struct {
 	Msg          string
 	stack        []uintptr
 	frame        []StackFrame
 	cause        error
 	shouldNotify bool
+	code         Code
 }
 
 // implements notifier.NotifyExt
@@ -115,6 +135,11 @@ func packageFuncName(pc uintptr) (string, string) {
 	return packageName, funcName
 }
 
+// NewWithCode create a new error with stack trace and code for grpc
+func NewWithCode(msg string, code Code) ErrorExt {
+	return WrapWithSkipAndCode(fmt.Errorf(msg), "", 2, code)
+}
+
 //New creates a new error with stack trace
 func New(msg string) ErrorExt {
 	return NewWithSkip(msg, 1)
@@ -132,6 +157,10 @@ func Wrap(err error, msg string) ErrorExt {
 
 //WrapWithSkip wraps an existing error and appends stack information if it does not exists skipping the number of function on the stack
 func WrapWithSkip(err error, msg string, skip int) ErrorExt {
+	return WrapWithSkipAndCode(err, msg, skip, MaxCode)
+}
+
+func WrapWithSkipAndCode(err error, msg string, skip int, code Code) ErrorExt {
 	if err == nil {
 		return nil
 	}
@@ -141,17 +170,34 @@ func WrapWithSkip(err error, msg string, skip int) ErrorExt {
 		msg = msg + " :"
 	}
 
+	newCode := Internal // default
+	if code != MaxCode {
+		newCode = code
+	}
+
 	//if we have stack information reuse that
 	if e, ok := err.(ErrorExt); ok {
 		c := &customError{
 			Msg:   msg + e.Error(),
 			cause: e.Cause(),
+			code:  newCode,
 		}
 		c.stack = e.Callers()
 		c.frame = e.StackFrame()
+
 		if n, ok := e.(NotifyExt); ok {
 			c.shouldNotify = n.ShouldNotify()
 		}
+
+		if g, ok := e.(GRPCExt); ok {
+			if code == MaxCode { // if no new value, keep original code
+				c.code = g.Code()
+			} else {
+				c.code = newCode
+			}
+
+		}
+
 		return c
 	}
 
@@ -159,6 +205,7 @@ func WrapWithSkip(err error, msg string, skip int) ErrorExt {
 		Msg:          msg + err.Error(),
 		cause:        err,
 		shouldNotify: true,
+		code:         newCode,
 	}
 	c.generateStack(skip + 1)
 	return c
