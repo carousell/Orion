@@ -78,7 +78,7 @@ func (c customError) Cause() error {
 
 func (c customError) GRPCStatus() *status.Status {
 	if c.status == nil {
-		return status.New(codes.Unknown, "error occured")
+		return status.New(codes.Unknown, c.Error())
 	}
 	return c.status
 }
