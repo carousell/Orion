@@ -42,7 +42,7 @@ func AcceptTypeFromHeaders(ctx context.Context) string {
 func GrpcErrorToHTTP(err error, defaultStatus int, defaultMessage string) (int, string) {
 	code := defaultStatus
 	msg := defaultMessage
-	if s, ok := status.FromError(err); ok {
+	if s, ok := status.FromError(err); ok && s != nil {
 		msg = s.Message()
 		switch s.Code() {
 		case codes.NotFound:
