@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	grpcstatus "google.golang.org/grpc/status"
 )
 
 var (
@@ -28,7 +28,7 @@ type ErrorExt interface {
 	//Cause returns the original error object that caused this error
 	Cause() error
 	//GRPCStatus allows ErrorExt to be treated as a GRPC Error
-	GRPCStatus() *status.Status
+	GRPCStatus() *grpcstatus.Status
 }
 
 //NotifyExt is the interface definition for notifier related options
@@ -43,7 +43,7 @@ type customError struct {
 	frame        []StackFrame
 	cause        error
 	shouldNotify bool
-	status       *status.Status
+	status       *grpcstatus.Status
 }
 
 // implements notifier.NotifyExt
@@ -76,9 +76,9 @@ func (c customError) Cause() error {
 	return c.cause
 }
 
-func (c customError) GRPCStatus() *status.Status {
+func (c customError) GRPCStatus() *grpcstatus.Status {
 	if c.status == nil {
-		return status.New(codes.Internal, c.Error())
+		return grpcstatus.New(codes.Internal, c.Error())
 	}
 	return c.status
 }
@@ -134,7 +134,7 @@ func New(msg string) ErrorExt {
 }
 
 //NewWithStatus creates a new error with statck information and GRPC status
-func NewWithStatus(msg string, status *status.Status) ErrorExt {
+func NewWithStatus(msg string, status *grpcstatus.Status) ErrorExt {
 	return NewWithSkipAndStatus(msg, 1, status)
 }
 
@@ -144,7 +144,7 @@ func NewWithSkip(msg string, skip int) ErrorExt {
 }
 
 //NewWithSkipAndStatus creates a new error skipping the number of function on the stack and GRPC status
-func NewWithSkipAndStatus(msg string, skip int, status *status.Status) ErrorExt {
+func NewWithSkipAndStatus(msg string, skip int, status *grpcstatus.Status) ErrorExt {
 	return WrapWithSkipAndStatus(fmt.Errorf(msg), "", skip+1, status)
 }
 
@@ -154,7 +154,7 @@ func Wrap(err error, msg string) ErrorExt {
 }
 
 //Wrap wraps an existing error and appends stack information if it does not exists along with GRPC status
-func WrapWithStatus(err error, msg string, status *status.Status) ErrorExt {
+func WrapWithStatus(err error, msg string, status *grpcstatus.Status) ErrorExt {
 	return WrapWithSkipAndStatus(err, msg, 1, status)
 }
 
@@ -164,7 +164,7 @@ func WrapWithSkip(err error, msg string, skip int) ErrorExt {
 }
 
 //WrapWithSkip wraps an existing error and appends stack information if it does not exists skipping the number of function on the stack along with GRPC status
-func WrapWithSkipAndStatus(err error, msg string, skip int, status *status.Status) ErrorExt {
+func WrapWithSkipAndStatus(err error, msg string, skip int, status *grpcstatus.Status) ErrorExt {
 	if err == nil {
 		return nil
 	}
@@ -174,16 +174,21 @@ func WrapWithSkipAndStatus(err error, msg string, skip int, status *status.Statu
 		msg = msg + " :"
 	}
 
+	if status == nil {
+		// try to get status from existing one from error
+		if s, ok := grpcstatus.FromError(err); ok {
+			status = s
+		}
+	}
+
 	//if we have stack information reuse that
 	if e, ok := err.(ErrorExt); ok {
 		c := &customError{
 			Msg:    msg + e.Error(),
 			cause:  e.Cause(),
-			status: e.GRPCStatus(),
+			status: status,
 		}
-		if status != nil {
-			c.status = status
-		}
+
 		c.stack = e.Callers()
 		c.frame = e.StackFrame()
 		if n, ok := e.(NotifyExt); ok {
