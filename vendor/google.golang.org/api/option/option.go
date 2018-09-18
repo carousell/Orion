@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -153,6 +153,9 @@ func (w withGRPCConnectionPool) Apply(o *internal.DialSettings) {
 
 // WithAPIKey returns a ClientOption that specifies an API key to be used
 // as the basis for authentication.
+//
+// API Keys can only be used for JSON-over-HTTP APIs, including those under
+// the import path google.golang.org/api/....
 func WithAPIKey(apiKey string) ClientOption {
 	return withAPIKey(apiKey)
 }

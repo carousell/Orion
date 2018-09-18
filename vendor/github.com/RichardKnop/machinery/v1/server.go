@@ -11,7 +11,7 @@ import (
 	"github.com/RichardKnop/machinery/v1/config"
 	"github.com/RichardKnop/machinery/v1/tasks"
 	"github.com/RichardKnop/machinery/v1/tracing"
-	"github.com/satori/go.uuid"
+	"github.com/google/uuid"
 
 	backendsiface "github.com/RichardKnop/machinery/v1/backends/iface"
 	brokersiface "github.com/RichardKnop/machinery/v1/brokers/iface"
@@ -60,6 +60,17 @@ func (server *Server) NewWorker(consumerTag string, concurrency int) *Worker {
 		server:      server,
 		ConsumerTag: consumerTag,
 		Concurrency: concurrency,
+		Queue:       "",
+	}
+}
+
+// NewWorker creates Worker instance with Custom Queue
+func (server *Server) NewCustomQueueWorker(consumerTag string, concurrency int, queue string) *Worker {
+	return &Worker{
+		server:      server,
+		ConsumerTag: consumerTag,
+		Concurrency: concurrency,
+		Queue:       queue,
 	}
 }
 
@@ -151,13 +162,7 @@ func (server *Server) SendTask(signature *tasks.Signature) (*result.AsyncResult,
 
 	// Auto generate a UUID if not set already
 	if signature.UUID == "" {
-
-		taskID, err := uuid.NewV4()
-
-		if err != nil {
-			return nil, fmt.Errorf("Error generating task id: %s", err.Error())
-		}
-
+		taskID := uuid.New().String()
 		signature.UUID = fmt.Sprintf("task_%v", taskID)
 	}
 
