@@ -240,17 +240,23 @@ func (p *pprofInitializer) ReInit(svr Server) error {
 type errorLoggingInitializer struct{}
 
 func (e *errorLoggingInitializer) Init(svr Server) error {
-	token := svr.GetOrionConfig().RollbarToken
-	if strings.TrimSpace(token) == "" {
-		log.Info(context.Background(), "rollbar", "rollbar token is empty not initializing rollbar")
-		return nil
-	}
 	env := svr.GetOrionConfig().Env
 	// environment for error notification
 	notifier.SetEnvironemnt(env)
+
 	// rollbar
-	notifier.InitRollbar(token, env)
-	log.Info(context.Background(), "rollbarToken", token, "env", env)
+	rToken := svr.GetOrionConfig().RollbarToken
+	if strings.TrimSpace(rToken) != "" {
+		notifier.InitRollbar(rToken, env)
+		log.Debug(context.Background(), "rollbarToken", rToken, "env", env)
+	}
+
+	//sentry
+	sToken := svr.GetOrionConfig().SentryDSN
+	if strings.TrimSpace(sToken) != "" {
+		notifier.InitSentry(sToken)
+		log.Debug(context.Background(), "sentryDSN", rToken, "env", env)
+	}
 	return nil
 }
 

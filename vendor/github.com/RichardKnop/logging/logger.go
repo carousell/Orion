@@ -53,7 +53,7 @@ func New(out, errOut io.Writer, f Formatter) Logger {
 		f = new(DefaultFormatter)
 	}
 
-	l := make(map[level]LoggerInterface, 4)
+	l := make(map[level]LoggerInterface, 5)
 	l[DEBUG] = &Wrapper{lvl: DEBUG, formatter: f, logger: log.New(out, f.GetPrefix(DEBUG)+prefix[DEBUG], flag)}
 	l[INFO] = &Wrapper{lvl: INFO, formatter: f, logger: log.New(out, f.GetPrefix(INFO)+prefix[INFO], flag)}
 	l[WARNING] = &Wrapper{lvl: INFO, formatter: f, logger: log.New(out, f.GetPrefix(WARNING)+prefix[WARNING], flag)}

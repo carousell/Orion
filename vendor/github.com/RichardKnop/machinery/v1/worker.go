@@ -21,6 +21,7 @@ type Worker struct {
 	server       *Server
 	ConsumerTag  string
 	Concurrency  int
+	Queue        string
 	errorHandler func(err error)
 }
 
@@ -42,7 +43,11 @@ func (worker *Worker) LaunchAsync(errorsChan chan<- error) {
 	// Log some useful information about worker configuration
 	log.INFO.Printf("Launching a worker with the following settings:")
 	log.INFO.Printf("- Broker: %s", cnf.Broker)
-	log.INFO.Printf("- DefaultQueue: %s", cnf.DefaultQueue)
+	if worker.Queue == "" {
+		log.INFO.Printf("- DefaultQueue: %s", cnf.DefaultQueue)
+	} else {
+		log.INFO.Printf("- CustomQueue: %s", worker.Queue)
+	}
 	log.INFO.Printf("- ResultBackend: %s", cnf.ResultBackend)
 	if cnf.AMQP != nil {
 		log.INFO.Printf("- AMQP: %s", cnf.AMQP.Exchange)
@@ -97,6 +102,11 @@ func (worker *Worker) LaunchAsync(errorsChan chan<- error) {
 			}
 		}()
 	}
+}
+
+// Returns Custom Queue of the running worker process
+func (worker *Worker) CustomQueue() string {
+	return worker.Queue
 }
 
 // Quit tears down the running worker process
@@ -223,7 +233,7 @@ func (worker *Worker) taskSucceeded(signature *tasks.Signature, taskResults []*t
 	} else {
 		debugResults = tasks.HumanReadableResults(results)
 	}
-	log.INFO.Printf("Processed task %s. Results = %s", signature.UUID, debugResults)
+	log.DEBUG.Printf("Processed task %s. Results = %s", signature.UUID, debugResults)
 
 	// Trigger success callbacks
 
@@ -353,4 +363,9 @@ func (worker *Worker) hasAMQPBackend() bool {
 // A default behavior is just to log the error after all the retry attempts fail
 func (worker *Worker) SetErrorHandler(handler func(err error)) {
 	worker.errorHandler = handler
+}
+
+//GetServer returns server
+func (worker *Worker) GetServer() *Server {
+	return worker.server
 }

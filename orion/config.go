@@ -45,6 +45,8 @@ type Config struct {
 	NewRelicConfig NewRelicConfig
 	//RollbarToken is the token to be used in rollbar
 	RollbarToken string
+	//SentryDSN is the token used by sentry for error reporting
+	SentryDSN string
 	//Env is the environment this service is running in
 	Env string
 }
