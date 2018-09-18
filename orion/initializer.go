@@ -240,14 +240,15 @@ func (p *pprofInitializer) ReInit(svr Server) error {
 type errorLoggingInitializer struct{}
 
 func (e *errorLoggingInitializer) Init(svr Server) error {
+	env := svr.GetOrionConfig().Env
+	// environment for error notification
+	notifier.SetEnvironemnt(env)
+
 	token := svr.GetOrionConfig().RollbarToken
 	if strings.TrimSpace(token) == "" {
 		log.Info(context.Background(), "rollbar", "rollbar token is empty not initializing rollbar")
 		return nil
 	}
-	env := svr.GetOrionConfig().Env
-	// environment for error notification
-	notifier.SetEnvironemnt(env)
 	// rollbar
 	notifier.InitRollbar(token, env)
 	log.Info(context.Background(), "rollbarToken", token, "env", env)
