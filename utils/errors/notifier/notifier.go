@@ -93,7 +93,7 @@ func convToSentry(in []errors.StackFrame) *raven.Stacktrace {
 	return out
 }
 
-func parseRawData(rawData ...interface{}) map[string]interface{} {
+func parseRawData(ctx context.Context, rawData ...interface{}) map[string]interface{} {
 	m := make(map[string]interface{})
 	for pos := range rawData {
 		data := rawData[pos]
@@ -101,6 +101,11 @@ func parseRawData(rawData ...interface{}) map[string]interface{} {
 			continue
 		}
 		m[reflect.TypeOf(data).String()+strconv.Itoa(pos)] = data
+	}
+	if logFields := loggers.FromContext(ctx); logFields != nil {
+		for k, v := range logFields {
+			m[k] = v
+		}
 	}
 	return m
 }
@@ -177,7 +182,7 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		n = gobrake.NewNotice(errWithStack, nil, 1)
 		n.Errors[0].Backtrace = convToGoBrake(errWithStack.StackFrame())
 		if len(list) > 0 {
-			m := parseRawData(list...)
+			m := parseRawData(ctx, list...)
 			for k, v := range m {
 				n.Context[k] = v
 			}
@@ -191,7 +196,7 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 	if bugsnagInited {
 		bugsnag.Notify(errWithStack, list...)
 	}
-	parsedData := parseRawData(list...)
+	parsedData := parseRawData(ctx, list...)
 	if rollbarInited {
 		fields := []*rollbar.Field{}
 		if len(list) > 0 {
@@ -253,6 +258,14 @@ func NotifyOnPanic(rawData ...interface{}) {
 	if airbrake != nil {
 		defer airbrake.NotifyOnPanic()
 	}
+
+	ctx := context.Background()
+	for _, d := range rawData {
+		if c, ok := d.(context.Context); ok {
+			ctx = c
+			break
+		}
+	}
 	if r := recover(); r != nil {
 		var e errors.ErrorExt
 		switch val := r.(type) {
@@ -263,7 +276,7 @@ func NotifyOnPanic(rawData ...interface{}) {
 		default:
 			e = errors.NewWithSkip("Panic", 1)
 		}
-		parsedData := parseRawData(rawData...)
+		parsedData := parseRawData(ctx, rawData...)
 		if rollbarInited {
 			rollbar.ErrorWithStack(rollbar.CRIT, e, convToRollbar(e.StackFrame()), &rollbar.Field{Name: "panic", Data: r})
 		}

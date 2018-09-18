@@ -168,7 +168,7 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 					log.Error(ctx, "panic", r, "method", method, "req", req, "reply", reply)
 				}
 			}()
-			defer notifier.NotifyOnPanic()
+			defer notifier.NotifyOnPanic(newCtx, method)
 			return invoker(newCtx, method, req, reply, cc, opts...)
 		}, nil)
 	}
