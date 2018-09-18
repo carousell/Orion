@@ -91,6 +91,7 @@ func BuildDefaultConfig(name string) Config {
 		EnablePrometheusHistogram: viper.GetBool("orion.EnablePrometheusHistogram"),
 		RollbarToken:              viper.GetString("orion.rollbar-token"),
 		Env:                       viper.GetString("orion.Env"),
+		SentryDSN:                 viper.GetString("orion.SentryDSN"),
 		OrionServerName:           name,
 		HystrixConfig:             BuildDefaultHystrixConfig(),
 		ZipkinConfig:              BuildDefaultZipkinConfig(),
