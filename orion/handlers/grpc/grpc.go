@@ -65,11 +65,9 @@ func (g *grpcHandler) Stop(timeout time.Duration) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	log.Info(context.Background(), "GRPC", "stopping server")
-	s := g.grpcServer
-	g.grpcServer = nil
-	s.GracefulStop()
+	g.grpcServer.GracefulStop()
 	time.Sleep(timeout)
-	s.Stop()
+	g.grpcServer.Stop()
 	log.Info(context.Background(), "GRPC", "stopped server")
 	return nil
 }
