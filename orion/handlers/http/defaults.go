@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/carousell/Orion/orion/modifiers"
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/mitchellh/mapstructure"
