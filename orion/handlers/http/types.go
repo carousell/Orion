@@ -6,7 +6,7 @@ import (
 
 	"github.com/carousell/Orion/orion/handlers"
 	"github.com/carousell/Orion/orion/modifiers"
-	"github.com/gogo/protobuf/jsonpb"
+	"github.com/golang/protobuf/jsonpb"
 	"google.golang.org/grpc"
 )
 
