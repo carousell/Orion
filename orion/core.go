@@ -423,10 +423,11 @@ func (d *DefaultServerImpl) RegisterService(sd *grpc.ServiceDesc, sf interface{}
 	if sf == nil {
 		return ErrNil
 	}
-	if f, ok := sf.(ServiceFactory); ok {
-		return d.registerService(sd, &sfv2{f}, false)
-	} else if f, ok := sf.(ServiceFactoryV2); ok {
+	// first check for ServiceFactoryV2
+	if f, ok := sf.(ServiceFactoryV2); ok {
 		return d.registerService(sd, f, false)
+	} else if f, ok := sf.(ServiceFactory); ok {
+		return d.registerService(sd, &sfv2{f}, false)
 	}
 	return ErrNotServiceFactory
 }
