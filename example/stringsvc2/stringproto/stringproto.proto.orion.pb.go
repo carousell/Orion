@@ -16,8 +16,25 @@ var _ = orion.ProtoGenVersion1_0
 
 // Decoders
 
-// RegisterStringServiceOrionServer registers StringService to Orion server
-func RegisterStringServiceOrionServer(srv orion.ServiceFactory, orionServer orion.Server) {
-	orionServer.RegisterService(&_StringService_serviceDesc, srv)
+//Streams
 
+// RegisterStringServiceOrionServer registers StringService to Orion server
+// Services need to pass either ServiceFactory or ServiceFactoryV2 implementation
+func RegisterStringServiceOrionServer(srv interface{}, orionServer orion.Server) error {
+	err := orionServer.RegisterService(&_StringService_serviceDesc, srv)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DefaultEncoder
+func RegisterStringServiceDefaultEncoder(svr orion.Server, encoder orion.Encoder) {
+	orion.RegisterDefaultEncoder(svr, "StringService", encoder)
+}
+
+// DefaultDecoder
+func RegisterStringServiceDefaultDecoder(svr orion.Server, decoder orion.Decoder) {
+	orion.RegisterDefaultDecoder(svr, "StringService", decoder)
 }

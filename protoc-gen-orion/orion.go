@@ -136,8 +136,12 @@ func Register{{.SvcName}}{{.MethodName}}Decoder(svr orion.Server, decoder orion.
 // {{ . }}
 {{ end }}
 // Register{{.ServName}}OrionServer registers {{.ServName}} to Orion server
-func Register{{.ServName}}OrionServer(srv orion.ServiceFactory, orionServer orion.Server) {
-	orionServer.RegisterService(&{{.ServiceDescVar}}, srv)
+// Services need to pass either ServiceFactory or ServiceFactoryV2 implementation
+func Register{{.ServName}}OrionServer(srv interface{}, orionServer orion.Server) error {
+	err := orionServer.RegisterService(&{{.ServiceDescVar}}, srv)
+	if err != nil {
+		return err
+	}
 {{ range .Encoders }}
 	Register{{.SvcName}}{{.MethodName}}Encoder(orionServer, nil)
 {{- end }}
@@ -147,6 +151,7 @@ func Register{{.ServName}}OrionServer(srv orion.ServiceFactory, orionServer orio
 {{- range .Middlewares }}
 	orion.RegisterMiddleware(orionServer, "{{.SvcName}}", "{{.MethodName}}", {{.Names}})
 {{- end }}
+	return nil
 }
 
 // DefaultEncoder

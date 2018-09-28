@@ -26,7 +26,7 @@ type Server interface {
 	//Start starts the orion server, this is non blocking call
 	Start()
 	//RegisterService registers the service to origin server
-	RegisterService(sd *grpc.ServiceDesc, sf ServiceFactory) error
+	RegisterService(sd *grpc.ServiceDesc, sf interface{}) error
 	//Wait waits for the Server loop to exit
 	Wait() error
 	//Stop stops the Server
@@ -47,10 +47,28 @@ type Initializer interface {
 
 // ServiceFactory is the interface that need to be implemented by client that provides with a new service object
 type ServiceFactory interface {
-	// NewService function receives the server obejct for which service has to be initialized
+	// NewService function receives the server object for which service has to be initialized
 	NewService(Server) interface{}
 	//DisposeService function disposes the service object
 	DisposeService(svc interface{})
+}
+
+// FactoryParams are the parameters used by the ServiceFactoryV2
+type FactoryParams struct {
+	// ServiceName contains the proto service name
+	ServiceName string
+	// Version is a counter that is incremented every time a new service object is requested
+	// NOTE: version might rollover in long running services
+	Version uint64
+}
+
+// ServiceFactoryV2 is the interface that needs to be implemented by client that provides a new service object for multiple services
+// this allows a single struct to implement multiple services
+type ServiceFactoryV2 interface {
+	// NewService function receives the server object for which service has to be initialized
+	NewService(svr Server, params FactoryParams) interface{}
+	//DisposeService function disposes the service object
+	DisposeService(svc interface{}, params FactoryParams)
 }
 
 //Encoder is the function type needed for request encoders
