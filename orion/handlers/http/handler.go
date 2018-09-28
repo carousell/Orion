@@ -15,7 +15,7 @@ import (
 )
 
 //NewHTTPHandler creates a new HTTP handler
-func NewHTTPHandler(config HandlerConfig) handlers.Handler {
+func NewHTTPHandler(config Config) handlers.Handler {
 	return &httpHandler{
 		config:      config,
 		mapping:     newMethodInfoMapping(),

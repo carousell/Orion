@@ -12,20 +12,20 @@ import (
 	"google.golang.org/grpc"
 )
 
-// GRPCConfig is the configuration for GRPC Handler
-type GRPCConfig struct {
+// Config is the configuration for GRPC Handler
+type Config struct {
 	handlers.CommonConfig
 }
 
 //NewGRPCHandler creates a new GRPC handler
-func NewGRPCHandler(config GRPCConfig) handlers.Handler {
+func NewGRPCHandler(config Config) handlers.Handler {
 	return &grpcHandler{config: config}
 }
 
 type grpcHandler struct {
 	grpcServer  *grpc.Server
 	mu          sync.Mutex
-	config      GRPCConfig
+	config      Config
 	middlewares *handlers.MiddlewareMapping
 }
 
@@ -68,6 +68,8 @@ func (g *grpcHandler) Stop(timeout time.Duration) error {
 	g.grpcServer.GracefulStop()
 	time.Sleep(timeout)
 	g.grpcServer.Stop()
+	g.grpcServer = nil
+	g.middlewares = nil
 	log.Info(context.Background(), "GRPC", "stopped server")
 	return nil
 }

@@ -39,8 +39,8 @@ const (
 	ContentTypeProto = "application/octet-stream"
 )
 
-//HandlerConfig is the configuration for HTTP Handler
-type HandlerConfig struct {
+//Config is the configuration for HTTP Handler
+type Config struct {
 	handlers.CommonConfig
 	EnableProtoURL bool
 }
@@ -77,5 +77,5 @@ type httpHandler struct {
 	defDecoders map[string]handlers.Decoder
 	mar         jsonpb.Marshaler
 	svr         *http.Server
-	config      HandlerConfig
+	config      Config
 }
