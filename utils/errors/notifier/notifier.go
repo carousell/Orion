@@ -307,6 +307,7 @@ func SetEnvironemnt(env string) {
 	raven.SetEnvironment(env)
 }
 
+//SetTraceId updates the traceID based on context values
 func SetTraceId(ctx context.Context) context.Context {
 	if GetTraceId(ctx) != "" {
 		return ctx
@@ -323,6 +324,7 @@ func SetTraceId(ctx context.Context) context.Context {
 	return options.AddToOptions(ctx, tracerID, traceID)
 }
 
+//GetTraceId fetches traceID from context
 func GetTraceId(ctx context.Context) string {
 	if o := options.FromContext(ctx); o != nil {
 		if data, found := o.Get(tracerID); found {
@@ -331,10 +333,21 @@ func GetTraceId(ctx context.Context) string {
 	}
 	if logCtx := loggers.FromContext(ctx); logCtx != nil {
 		if data, found := logCtx["trace"]; found {
-			return data.(string)
+			traceID := data.(string)
+			options.AddToOptions(ctx, tracerID, traceID)
+			return traceID
 		}
 	}
 	return ""
+}
+
+//UpdateTraceId force updates the traced id to provided id
+func UpdateTraceId(ctx context.Context, traceID string) context.Context {
+	if traceID == "" {
+		return SetTraceId(ctx)
+	}
+	ctx = loggers.AddToLogContext(ctx, "trace", traceID)
+	return options.AddToOptions(ctx, tracerID, traceID)
 }
 
 func SetServerRoot(path string) {
