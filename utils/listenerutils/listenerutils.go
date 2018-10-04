@@ -3,6 +3,7 @@ package listenerutils
 import (
 	"errors"
 	"net"
+	"time"
 )
 
 //CustomListener provides an implementation for a custom net.Listener
@@ -18,6 +19,7 @@ type customListener struct {
 	canClose bool
 	accept   chan *acceptValues
 	stop     chan *bool
+	timeout  time.Duration
 }
 
 type acceptValues struct {
@@ -38,6 +40,12 @@ func (c *customListener) Accept() (net.Conn, error) {
 	case <-c.stop:
 		return nil, errors.New("can not accpet on this connection")
 	case connection := <-c.accept:
+		go func() {
+			// wait for timeout after stop and close all active connections
+			<-c.stop
+			time.Sleep(c.timeout)
+			connection.conn.Close()
+		}()
 		return connection.conn, connection.err
 	}
 }
@@ -55,7 +63,7 @@ func (c *customListener) CanClose(canClose bool) {
 }
 
 func (c *customListener) GetListener() CustomListener {
-	return newListener(c.Listener, c.accept)
+	return newListener(c.Listener, c.accept, c.timeout)
 }
 
 func (c *customListener) StopAccept() {
@@ -71,18 +79,27 @@ func (c *customListener) StopAccept() {
 
 //NewListener creates a new CustomListener
 func NewListener(network, laddr string) (CustomListener, error) {
+	return NewListenerWithTimeout(network, laddr, time.Second)
+}
+
+func NewListenerWithTimeout(network, laddr string, timeout time.Duration) (CustomListener, error) {
 	lis, err := net.Listen(network, laddr)
 	if err != nil {
 		return nil, err
 	}
-	return newListener(lis, make(chan *acceptValues, 0)), nil
+	return newListener(lis, make(chan *acceptValues, 0), timeout), nil
 }
 
-func newListener(lis net.Listener, accept chan *acceptValues) CustomListener {
-	return &customListener{
+func newListener(lis net.Listener, accept chan *acceptValues, timeout time.Duration) CustomListener {
+	if timeout < time.Millisecond {
+		timeout = time.Millisecond * 100
+	}
+	l := &customListener{
 		Listener: lis,
 		canClose: false,
 		accept:   accept,
 		stop:     make(chan *bool, 0),
+		timeout:  timeout,
 	}
+	return l
 }
