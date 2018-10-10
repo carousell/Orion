@@ -67,6 +67,7 @@ GetMethodInterceptors fetches all interceptors including method middlewares
 type CommonConfig struct {
     NoDefaultInterceptors bool
 }
+
 ```
 CommonConfig is the config that is common across both http and grpc handlers
 
@@ -144,6 +145,7 @@ Interceptor interface when implemented by a service allows that service to provi
 type MiddlewareMapping struct {
     // contains filtered or unexported fields
 }
+
 ```
 MiddlewareMapping stores mapping between service,method and middlewares
 
