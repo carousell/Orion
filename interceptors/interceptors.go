@@ -56,6 +56,15 @@ func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 	}
 }
 
+//DefaultStreamInterceptors are the set of default interceptors that should be applied to all Orion streams
+func DefaultStreamInterceptors() []grpc.StreamServerInterceptor {
+	return []grpc.StreamServerInterceptor{
+		grpc_ctxtags.StreamServerInterceptor(),
+		grpc_opentracing.StreamServerInterceptor(),
+		grpc_prometheus.StreamServerInterceptor,
+	}
+}
+
 //DefaultClientInterceptor are the set of default interceptors that should be applied to all client calls
 func DefaultClientInterceptor(address string) grpc.UnaryClientInterceptor {
 	return grpc_middleware.ChainUnaryClient(DefaultClientInterceptors(address)...)

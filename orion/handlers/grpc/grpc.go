@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"net"
+	"reflect"
 	"sync"
 	"time"
 
@@ -31,9 +32,10 @@ type grpcHandler struct {
 
 func (g *grpcHandler) init() {
 	if g.grpcServer == nil {
-		opt := make([]grpc.ServerOption, 0)
-		opt = append(opt, grpc.UnaryInterceptor(g.grpcInterceptor()))
-		g.grpcServer = grpc.NewServer(opt...)
+		g.grpcServer = grpc.NewServer(
+			grpc.UnaryInterceptor(g.grpcInterceptor()),
+			grpc.StreamInterceptor(g.grpcStreamInterceptor()),
+		)
 	}
 	if g.middlewares == nil {
 		g.middlewares = handlers.NewMiddlewareMapping()
@@ -85,5 +87,14 @@ func (g *grpcHandler) grpcInterceptor() grpc.UnaryServerInterceptor {
 		// fetch interceptors from the service implementation and apply
 		interceptor := handlers.GetInterceptorsWithMethodMiddlewares(info.Server, g.config.CommonConfig, middlewares)
 		return interceptor(ctx, req, info, handler)
+	}
+}
+
+// grpcStreamInterceptor acts as default interceptor for gprc streams and applies service specific interceptors based on implementation
+func (g *grpcHandler) grpcStreamInterceptor() grpc.StreamServerInterceptor {
+	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		interceptor := handlers.GetStreamInterceptors(srv, g.config.CommonConfig)
+		log.Info(context.Background(), "svr", srv, "type", reflect.TypeOf(srv))
+		return interceptor(srv, ss, info, handler)
 	}
 }

@@ -52,9 +52,54 @@ func chainUnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnarySer
 	}
 }
 
+// ChainStreamServer creates a single interceptor out of a chain of many interceptors.
+//
+// Execution is done in left-to-right order, including passing of context.
+// For example ChainUnaryServer(one, two, three) will execute one before two before three.
+// If you want to pass context between interceptors, use WrapServerStream.
+func chainStreamServer(interceptors ...grpc.StreamServerInterceptor) grpc.StreamServerInterceptor {
+	n := len(interceptors)
+
+	if n > 1 {
+		lastI := n - 1
+		return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+			var (
+				chainHandler grpc.StreamHandler
+				curI         int
+			)
+
+			chainHandler = func(currentSrv interface{}, currentStream grpc.ServerStream) error {
+				if curI == lastI {
+					return handler(currentSrv, currentStream)
+				}
+				curI++
+				err := interceptors[curI](currentSrv, currentStream, info, chainHandler)
+				curI--
+				return err
+			}
+
+			return interceptors[0](srv, stream, info, chainHandler)
+		}
+	}
+
+	if n == 1 {
+		return interceptors[0]
+	}
+
+	// n == 0; Dummy interceptor maintained for backward compatibility to avoid returning nil.
+	return func(srv interface{}, stream grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		return handler(srv, stream)
+	}
+}
+
 //GetInterceptors fetches interceptors from a given GRPC service
 func GetInterceptors(svc interface{}, config CommonConfig) grpc.UnaryServerInterceptor {
 	return chainUnaryServer(getInterceptors(svc, config, []string{})...)
+}
+
+//GetStreamInterceptors fetches stream interceptors from a given GRPC service
+func GetStreamInterceptors(svc interface{}, config CommonConfig) grpc.StreamServerInterceptor {
+	return chainStreamServer(getStreamInterceptors(svc, config)...)
 }
 
 //GetInterceptorsWithMethodMiddlewares fetchs all middleware including those provided by method middlewares
@@ -79,6 +124,25 @@ func getInterceptors(svc interface{}, config CommonConfig, middlewares []string)
 
 	// check and add method interceptors
 	opts = append(opts, GetMethodInterceptors(svc, config, middlewares)...)
+
+	return opts
+}
+
+func getStreamInterceptors(svc interface{}, config CommonConfig) []grpc.StreamServerInterceptor {
+	// TODO options interceptor for stream
+	opts := []grpc.StreamServerInterceptor{}
+
+	// check and add default interceptors
+	if !config.NoDefaultInterceptors {
+		// Add default interceptors
+		opts = append(opts, interceptors.DefaultStreamInterceptors()...)
+	}
+
+	// check and add service interceptors
+	interceptor, ok := svc.(StreamInterceptor)
+	if ok {
+		opts = append(opts, interceptor.GetStreamInterceptors()...)
+	}
 
 	return opts
 }
