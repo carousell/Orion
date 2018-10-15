@@ -326,7 +326,6 @@ type Config struct {
     //Env is the environment this service is running in
     Env string
 }
-
 ```
 Config is the configuration used by Orion core
 
@@ -347,7 +346,6 @@ Decoder is the function type needed for request decoders
 type DefaultServerImpl struct {
     // contains filtered or unexported fields
 }
-
 ```
 DefaultServerImpl provides a default implementation of orion.Server this can be embedded in custom orion.Server implementations
 
@@ -452,7 +450,6 @@ type FactoryParams struct {
     // NOTE: version might rollover in long running services
     Version uint64
 }
-
 ```
 FactoryParams are the parameters used by the ServiceFactoryV2
 
@@ -472,7 +469,6 @@ type HystrixConfig struct {
     //StatsdAddr is the address of the statsd hosts to send hystrix data to
     StatsdAddr string
 }
-
 ```
 HystrixConfig is configuration used by hystrix
 
@@ -535,7 +531,6 @@ type NewRelicConfig struct {
     IncludeAttributes []string
     ExcludeAttributes []string
 }
-
 ```
 NewRelicConfig is the configuration for newrelic
 
@@ -614,7 +609,6 @@ type ZipkinConfig struct {
     //Addr is the address of the zipkin collector
     Addr string
 }
-
 ```
 ZipkinConfig is the configuration for the zipkin collector
 

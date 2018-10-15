@@ -40,7 +40,6 @@ type Config struct {
     LocalMode    bool
     RabbitConfig *RabbitMQConfig
 }
-
 ```
 Config is the config used to intialize workers
 
@@ -54,7 +53,6 @@ type RabbitMQConfig struct {
     Port        string
     QueueName   string
 }
-
 ```
 RabbitMQConfig is the config used for scheduling tasks through rabbitmq
 
@@ -63,7 +61,6 @@ RabbitMQConfig is the config used for scheduling tasks through rabbitmq
 type ScheduleConfig struct {
     // contains filtered or unexported fields
 }
-
 ```
 ScheduleConfig is the config used when scheduling a task
 
