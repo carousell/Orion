@@ -129,8 +129,7 @@ func getInterceptors(svc interface{}, config CommonConfig, middlewares []string)
 }
 
 func getStreamInterceptors(svc interface{}, config CommonConfig) []grpc.StreamServerInterceptor {
-	// TODO options interceptor for stream
-	opts := []grpc.StreamServerInterceptor{}
+	opts := []grpc.StreamServerInterceptor{optionsStreamInterceptor}
 
 	// check and add default interceptors
 	if !config.NoDefaultInterceptors {
@@ -177,6 +176,29 @@ func GetMethodInterceptors(svc interface{}, config CommonConfig, middlewares []s
 		}
 	}
 	return interceptors
+}
+
+type streamServer struct {
+	grpc.ServerStream
+	Ctx context.Context
+}
+
+func (ss *streamServer) Context() context.Context {
+	if ss.Ctx == nil {
+		return ss.ServerStream.Context()
+	}
+	return ss.Ctx
+}
+
+func optionsStreamInterceptor(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	ctx := ss.Context()
+	ctx = options.AddToOptions(ctx, "", "")
+	ctx = loggers.AddToLogContext(ctx, "grpcMethod", info.FullMethod)
+	newServer := &streamServer{
+		ServerStream: ss,
+		Ctx:          ctx,
+	}
+	return handler(srv, newServer)
 }
 
 func optionsInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
