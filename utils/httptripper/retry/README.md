@@ -63,7 +63,6 @@ type OptionsData struct {
     RetryAllMethods bool
     Strategy        strategy.Strategy
 }
-
 ```
 OptionsData stores all options used across retry
 

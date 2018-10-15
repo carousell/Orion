@@ -34,7 +34,6 @@ type Config struct {
     BulkPublishConcurrency int
     Retries                int
 }
-
 ```
 Config is the config for pubsub
 

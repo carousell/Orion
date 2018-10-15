@@ -133,7 +133,6 @@ type OptionsData struct {
     HystrixEnabled bool
     Retrier        retry.Retriable
 }
-
 ```
 OptionsData is the data polulated by the options
 
