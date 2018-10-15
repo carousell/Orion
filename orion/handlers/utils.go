@@ -180,14 +180,14 @@ func GetMethodInterceptors(svc interface{}, config CommonConfig, middlewares []s
 
 type streamServer struct {
 	grpc.ServerStream
-	Ctx context.Context
+	ctx context.Context
 }
 
 func (ss *streamServer) Context() context.Context {
-	if ss.Ctx == nil {
+	if ss.ctx == nil {
 		return ss.ServerStream.Context()
 	}
-	return ss.Ctx
+	return ss.ctx
 }
 
 func optionsStreamInterceptor(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
@@ -196,7 +196,7 @@ func optionsStreamInterceptor(srv interface{}, ss grpc.ServerStream, info *grpc.
 	ctx = loggers.AddToLogContext(ctx, "grpcMethod", info.FullMethod)
 	newServer := &streamServer{
 		ServerStream: ss,
-		Ctx:          ctx,
+		ctx:          ctx,
 	}
 	return handler(srv, newServer)
 }
