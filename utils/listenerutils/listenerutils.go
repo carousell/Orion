@@ -22,7 +22,7 @@ type customListener struct {
 	net.Listener
 	canClose bool
 	accept   chan *acceptValues
-	stop     chan *bool
+	stop     chan struct{}
 	timeout  time.Duration
 }
 
@@ -78,6 +78,18 @@ func (c *customConn) checkErrorAndClose(err error) {
 	}
 }
 
+func (c *customConn) watcher(stop chan struct{}, timeout time.Duration) {
+	// wait for timeout after stop and close all active connections
+	select {
+	case <-stop:
+		time.Sleep(timeout)
+		c.Close()
+	case <-c.closed:
+		// do nothing connection is already closed
+		return
+	}
+}
+
 func (c *customConn) doClose() {
 	defer func() {
 		if err := recover(); err != nil {
@@ -102,17 +114,7 @@ func (c *customListener) Accept() (net.Conn, error) {
 			Conn:   connection.conn,
 			closed: make(chan struct{}, 0),
 		}
-		go func() {
-			// wait for timeout after stop and close all active connections
-			select {
-			case <-c.stop:
-				time.Sleep(c.timeout)
-				conn.Close()
-			case <-conn.closed:
-				// do nothing connection is already closed
-				return
-			}
-		}()
+		go conn.watcher(c.stop, c.timeout)
 		return conn, connection.err
 	}
 }
@@ -134,6 +136,11 @@ func (c *customListener) GetListener() CustomListener {
 }
 
 func (c *customListener) StopAccept() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Info(context.Background(), "msg", "panic trying to close channel", "err", err)
+		}
+	}()
 	select {
 	case _, open := <-c.stop:
 		if open {
@@ -165,7 +172,7 @@ func newListener(lis net.Listener, accept chan *acceptValues, timeout time.Durat
 		Listener: lis,
 		canClose: false,
 		accept:   accept,
-		stop:     make(chan *bool, 0),
+		stop:     make(chan struct{}, 0),
 		timeout:  timeout,
 	}
 	return l
