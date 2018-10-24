@@ -1,9 +1,13 @@
 package listenerutils
 
 import (
+	"context"
 	"errors"
+	"io"
 	"net"
 	"time"
+
+	"github.com/carousell/Orion/utils/log"
 )
 
 //CustomListener provides an implementation for a custom net.Listener
@@ -34,19 +38,82 @@ func (c *customListener) Close() error {
 	return nil
 }
 
+type customConn struct {
+	net.Conn
+	closed chan struct{}
+}
+
+func (c *customConn) Read(b []byte) (n int, err error) {
+	n, err = c.Conn.Read(b)
+	c.checkErrorAndClose(err)
+	return
+}
+
+func (c *customConn) Write(b []byte) (n int, err error) {
+	n, err = c.Conn.Write(b)
+	c.checkErrorAndClose(err)
+	return
+}
+
+func (c *customConn) Close() error {
+	c.doClose()
+	return c.Conn.Close()
+}
+
+func (c *customConn) checkErrorAndClose(err error) {
+	if err != nil {
+		if err == io.EOF {
+			c.doClose()
+		} else if e, ok := err.(net.Error); ok {
+			// close on non temporary error
+			if !e.Temporary() {
+				c.doClose()
+			}
+		} else {
+			// this should not happen as all errors
+			// returned from Read should implement net.Error
+			// but its better we close on all other errors
+			c.doClose()
+		}
+	}
+}
+
+func (c *customConn) doClose() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Info(context.Background(), "msg", "panic trying to close channel", "err", err)
+		}
+	}()
+	select {
+	case <-c.closed:
+	// do nothing already closed
+	default:
+		close(c.closed)
+	}
+}
+
 func (c *customListener) Accept() (net.Conn, error) {
 	go c.doAccept()
 	select {
 	case <-c.stop:
 		return nil, errors.New("can not accpet on this connection")
 	case connection := <-c.accept:
+		conn := &customConn{
+			Conn:   connection.conn,
+			closed: make(chan struct{}, 0),
+		}
 		go func() {
 			// wait for timeout after stop and close all active connections
-			<-c.stop
-			time.Sleep(c.timeout)
-			connection.conn.Close()
+			select {
+			case <-c.stop:
+				time.Sleep(c.timeout)
+				connection.conn.Close()
+			case <-conn.closed:
+				// do nothing connection is already closed
+				return
+			}
 		}()
-		return connection.conn, connection.err
+		return conn, connection.err
 	}
 }
 
