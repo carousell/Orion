@@ -1,9 +1,13 @@
 package listenerutils
 
 import (
+	"context"
 	"errors"
+	"io"
 	"net"
 	"time"
+
+	"github.com/carousell/Orion/utils/log"
 )
 
 //CustomListener provides an implementation for a custom net.Listener
@@ -18,7 +22,7 @@ type customListener struct {
 	net.Listener
 	canClose bool
 	accept   chan *acceptValues
-	stop     chan *bool
+	stop     chan struct{}
 	timeout  time.Duration
 }
 
@@ -34,19 +38,84 @@ func (c *customListener) Close() error {
 	return nil
 }
 
+type customConn struct {
+	net.Conn
+	closed chan struct{}
+}
+
+func (c *customConn) Read(b []byte) (n int, err error) {
+	n, err = c.Conn.Read(b)
+	c.checkErrorAndClose(err)
+	return
+}
+
+func (c *customConn) Write(b []byte) (n int, err error) {
+	n, err = c.Conn.Write(b)
+	c.checkErrorAndClose(err)
+	return
+}
+
+func (c *customConn) Close() error {
+	c.doClose()
+	return c.Conn.Close()
+}
+
+func (c *customConn) checkErrorAndClose(err error) {
+	if err != nil {
+		if err == io.EOF {
+			c.doClose()
+		} else if e, ok := err.(net.Error); ok {
+			// close on non temporary error
+			if !e.Temporary() {
+				c.doClose()
+			}
+		} else {
+			// this should not happen as all errors
+			// returned from Read should implement net.Error
+			// but its better we close on all other errors
+			c.doClose()
+		}
+	}
+}
+
+func (c *customConn) watcher(stop chan struct{}, timeout time.Duration) {
+	// wait for timeout after stop and close all active connections
+	select {
+	case <-stop:
+		time.Sleep(timeout)
+		c.Close()
+	case <-c.closed:
+		// do nothing connection is already closed
+		return
+	}
+}
+
+func (c *customConn) doClose() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Info(context.Background(), "msg", "panic trying to close channel", "err", err)
+		}
+	}()
+	select {
+	case <-c.closed:
+	// do nothing already closed
+	default:
+		close(c.closed)
+	}
+}
+
 func (c *customListener) Accept() (net.Conn, error) {
 	go c.doAccept()
 	select {
 	case <-c.stop:
 		return nil, errors.New("can not accpet on this connection")
 	case connection := <-c.accept:
-		go func() {
-			// wait for timeout after stop and close all active connections
-			<-c.stop
-			time.Sleep(c.timeout)
-			connection.conn.Close()
-		}()
-		return connection.conn, connection.err
+		conn := &customConn{
+			Conn:   connection.conn,
+			closed: make(chan struct{}, 0),
+		}
+		go conn.watcher(c.stop, c.timeout)
+		return conn, connection.err
 	}
 }
 
@@ -67,6 +136,11 @@ func (c *customListener) GetListener() CustomListener {
 }
 
 func (c *customListener) StopAccept() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Info(context.Background(), "msg", "panic trying to close channel", "err", err)
+		}
+	}()
 	select {
 	case _, open := <-c.stop:
 		if open {
@@ -98,7 +172,7 @@ func newListener(lis net.Listener, accept chan *acceptValues, timeout time.Durat
 		Listener: lis,
 		canClose: false,
 		accept:   accept,
-		stop:     make(chan *bool, 0),
+		stop:     make(chan struct{}, 0),
 		timeout:  timeout,
 	}
 	return l
