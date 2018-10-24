@@ -107,7 +107,7 @@ func (c *customListener) Accept() (net.Conn, error) {
 			select {
 			case <-c.stop:
 				time.Sleep(c.timeout)
-				connection.conn.Close()
+				conn.Close()
 			case <-conn.closed:
 				// do nothing connection is already closed
 				return
