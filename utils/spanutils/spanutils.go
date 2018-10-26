@@ -20,6 +20,7 @@ type TracingSpan interface {
 	Finish()
 	SetTag(key string, value interface{})
 	SetQuery(query string)
+	SetError(msg string)
 }
 
 type tracingSpan struct {
@@ -32,6 +33,10 @@ type tracingSpan struct {
 }
 
 func (span *tracingSpan) End() {
+	if span == nil {
+		// dont panic when called against a nil span
+		return
+	}
 	span.openSpan.Finish()
 	if span.datastore {
 		span.dataSegment.End()
@@ -47,13 +52,31 @@ func (span *tracingSpan) Finish() {
 }
 
 func (span *tracingSpan) SetTag(key string, value interface{}) {
+	if span == nil {
+		// dont panic when called against a nil span
+		return
+	}
 	span.openSpan.SetTag(key, value)
 }
 
 func (span *tracingSpan) SetQuery(query string) {
+	if span == nil {
+		// dont panic when called against a nil span
+		return
+	}
 	span.openSpan.SetTag("query", query)
 	if span.datastore {
 		span.dataSegment.ParameterizedQuery = query
+	}
+}
+
+func (span *tracingSpan) SetError(msg string) {
+	if span == nil {
+		// dont panic when called against a nil span
+		return
+	}
+	if msg != "" {
+		span.openSpan.SetTag("error", msg)
 	}
 }
 
