@@ -9,7 +9,7 @@
 
 ## <a name="pkg-imports">Imported Packages</a>
 
-No packages beyond the Go standard library are imported.
+- [github.com/carousell/Orion/utils/log](./../log)
 
 ## <a name="pkg-index">Index</a>
 * [type CustomListener](#CustomListener)
@@ -19,7 +19,7 @@ No packages beyond the Go standard library are imported.
 #### <a name="pkg-files">Package files</a>
 [listenerutils.go](./listenerutils.go) 
 
-## <a name="CustomListener">type</a> [CustomListener](./listenerutils.go#L10-L15)
+## <a name="CustomListener">type</a> [CustomListener](./listenerutils.go#L14-L19)
 ``` go
 type CustomListener interface {
     net.Listener
@@ -30,13 +30,13 @@ type CustomListener interface {
 ```
 CustomListener provides an implementation for a custom net.Listener
 
-### <a name="NewListener">func</a> [NewListener](./listenerutils.go#L81)
+### <a name="NewListener">func</a> [NewListener](./listenerutils.go#L155)
 ``` go
 func NewListener(network, laddr string) (CustomListener, error)
 ```
 NewListener creates a new CustomListener
 
-### <a name="NewListenerWithTimeout">func</a> [NewListenerWithTimeout](./listenerutils.go#L85)
+### <a name="NewListenerWithTimeout">func</a> [NewListenerWithTimeout](./listenerutils.go#L159)
 ``` go
 func NewListenerWithTimeout(network, laddr string, timeout time.Duration) (CustomListener, error)
 ```
