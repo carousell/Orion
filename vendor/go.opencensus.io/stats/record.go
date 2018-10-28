@@ -18,6 +18,7 @@ package stats
 import (
 	"context"
 
+	"go.opencensus.io/exemplar"
 	"go.opencensus.io/stats/internal"
 	"go.opencensus.io/tag"
 )
@@ -50,5 +51,19 @@ func Record(ctx context.Context, ms ...Measurement) {
 	if !record {
 		return
 	}
-	recorder(tag.FromContext(ctx), ms)
+	recorder(tag.FromContext(ctx), ms, exemplar.AttachmentsFromContext(ctx))
+}
+
+// RecordWithTags records one or multiple measurements at once.
+//
+// Measurements will be tagged with the tags in the context mutated by the mutators.
+// RecordWithTags is useful if you want to record with tag mutations but don't want
+// to propagate the mutations in the context.
+func RecordWithTags(ctx context.Context, mutators []tag.Mutator, ms ...Measurement) error {
+	ctx, err := tag.New(ctx, mutators...)
+	if err != nil {
+		return err
+	}
+	Record(ctx, ms...)
+	return nil
 }
