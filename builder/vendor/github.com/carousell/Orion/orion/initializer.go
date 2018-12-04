@@ -1,8 +1,8 @@
 package orion
 
 import (
+	"context"
 	"errors"
-	"log"
 	"net"
 	"net/http"
 	_ "net/http/pprof" // import pprof
@@ -15,7 +15,7 @@ import (
 	"github.com/afex/hystrix-go/plugins"
 	"github.com/carousell/Orion/utils"
 	"github.com/carousell/Orion/utils/errors/notifier"
-	"github.com/carousell/Orion/utils/httptripper"
+	"github.com/carousell/Orion/utils/log"
 	logg "github.com/go-kit/kit/log"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	newrelic "github.com/newrelic/go-agent"
@@ -66,11 +66,6 @@ func PprofInitializer() Initializer {
 	return &pprofInitializer{}
 }
 
-//HTTPZipkinInitializer returns an Initializer implementation for httptripper which appends zipkin trace info to all outgoing HTTP requests
-func HTTPZipkinInitializer() Initializer {
-	return &httpZipkinInitializer{}
-}
-
 type hystrixInitializer struct {
 }
 
@@ -92,16 +87,16 @@ func (h *hystrixInitializer) Init(svr Server) error {
 		})
 		if err == nil {
 			metricCollector.Registry.Register(c.NewStatsdCollector)
-			log.Println("HystrixStatsd", config.HystrixConfig.StatsdAddr)
+			log.Info(context.Background(), "HystrixStatsd", config.HystrixConfig.StatsdAddr)
 		} else {
-			log.Println("Hystrix", err.Error())
+			log.Info(context.Background(), "Hystrix", err.Error())
 		}
 
 	}
 	hystrixStreamHandler := hystrix.NewStreamHandler()
 	hystrixStreamHandler.Start()
 	port := config.HystrixConfig.Port
-	log.Println("HystrixPort", port)
+	log.Info(context.Background(), "HystrixPort", port)
 	go http.ListenAndServe(net.JoinHostPort("", port), hystrixStreamHandler)
 	return nil
 }
@@ -135,11 +130,11 @@ func (n *newRelicInitializer) Init(svr Server) error {
 	}
 	app, err := newrelic.NewApplication(nrConfig)
 	if err != nil {
-		log.Println("nr-error", err)
+		log.Error(context.Background(), "nr-error", err)
 		return err
 	}
 	utils.NewRelicApp = app
-	log.Println("NR", "initialized with "+serviceName)
+	log.Info(context.Background(), "NR", "initialized with "+serviceName)
 	return nil
 }
 
@@ -159,8 +154,8 @@ func (z *zipkinInitializer) Init(svr Server) error {
 	zipkinAddr := svr.GetOrionConfig().ZipkinConfig.Addr
 	serviceName := svr.GetOrionConfig().OrionServerName
 	if zipkinAddr != "" {
-		logger := logg.NewLogfmtLogger(os.Stdout)
-		logger = logg.With(logger, "ts", logg.DefaultTimestampUTC)
+		logger := logg.NewJSONLogger(os.Stdout)
+		logger = logg.With(logger, "time", logg.DefaultTimestampUTC)
 		logger.Log("zipkin-addr", zipkinAddr)
 		var err error
 		if strings.HasPrefix(zipkinAddr, "http") {
@@ -232,7 +227,7 @@ func (p *pprofInitializer) Init(svr Server) error {
 
 	go func(svr Server) {
 		pprofport := svr.GetOrionConfig().PProfport
-		log.Println("PprofPort", pprofport)
+		log.Info(context.Background(), "PprofPort", pprofport)
 		http.ListenAndServe(":"+pprofport, nil)
 	}(svr)
 	return nil
@@ -242,34 +237,26 @@ func (p *pprofInitializer) ReInit(svr Server) error {
 	return nil
 }
 
-type httpZipkinInitializer struct {
-}
-
-func (h *httpZipkinInitializer) Init(svr Server) error {
-	tripper := httptripper.WrapTripper(http.DefaultTransport)
-	http.DefaultTransport = tripper
-	return nil
-}
-
-func (h *httpZipkinInitializer) ReInit(svr Server) error {
-	// Do nothing
-	return nil
-}
-
 type errorLoggingInitializer struct{}
 
 func (e *errorLoggingInitializer) Init(svr Server) error {
-	token := svr.GetOrionConfig().RollbarToken
-	if strings.TrimSpace(token) == "" {
-		log.Println("warning", "rollbar token is empty not initializing rollbar")
-		return nil
-	}
 	env := svr.GetOrionConfig().Env
 	// environment for error notification
 	notifier.SetEnvironemnt(env)
+
 	// rollbar
-	notifier.InitRollbar(token, env)
-	log.Println("rollbarToken", token, "env", env)
+	rToken := svr.GetOrionConfig().RollbarToken
+	if strings.TrimSpace(rToken) != "" {
+		notifier.InitRollbar(rToken, env)
+		log.Debug(context.Background(), "rollbarToken", rToken, "env", env)
+	}
+
+	//sentry
+	sToken := svr.GetOrionConfig().SentryDSN
+	if strings.TrimSpace(sToken) != "" {
+		notifier.InitSentry(sToken)
+		log.Debug(context.Background(), "sentryDSN", rToken, "env", env)
+	}
 	return nil
 }
 

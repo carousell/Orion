@@ -11,7 +11,12 @@ import (
 	"time"
 )
 
-const tagKeyMultiline = "multiline"
+const (
+	tagFieldName    = "toml"
+	tagFieldComment = "comment"
+	tagCommented    = "commented"
+	tagMultiline    = "multiline"
+)
 
 type tomlOpts struct {
 	name      string
@@ -29,6 +34,20 @@ type encOpts struct {
 
 var encOptsDefaults = encOpts{
 	quoteMapKeys: false,
+}
+
+type annotation struct {
+	tag       string
+	comment   string
+	commented string
+	multiline string
+}
+
+var annotationDefault = annotation{
+	tag:       tagFieldName,
+	comment:   tagFieldComment,
+	commented: tagCommented,
+	multiline: tagMultiline,
 }
 
 var timeType = reflect.TypeOf(time.Time{})
@@ -145,13 +164,15 @@ func Marshal(v interface{}) ([]byte, error) {
 type Encoder struct {
 	w io.Writer
 	encOpts
+	annotation
 }
 
 // NewEncoder returns a new encoder that writes to w.
 func NewEncoder(w io.Writer) *Encoder {
 	return &Encoder{
-		w:       w,
-		encOpts: encOptsDefaults,
+		w:          w,
+		encOpts:    encOptsDefaults,
+		annotation: annotationDefault,
 	}
 }
 
@@ -197,11 +218,43 @@ func (e *Encoder) ArraysWithOneElementPerLine(v bool) *Encoder {
 	return e
 }
 
+// SetTagName allows changing default tag "toml"
+func (e *Encoder) SetTagName(v string) *Encoder {
+	e.tag = v
+	return e
+}
+
+// SetTagComment allows changing default tag "comment"
+func (e *Encoder) SetTagComment(v string) *Encoder {
+	e.comment = v
+	return e
+}
+
+// SetTagCommented allows changing default tag "commented"
+func (e *Encoder) SetTagCommented(v string) *Encoder {
+	e.commented = v
+	return e
+}
+
+// SetTagMultiline allows changing default tag "multiline"
+func (e *Encoder) SetTagMultiline(v string) *Encoder {
+	e.multiline = v
+	return e
+}
+
 func (e *Encoder) marshal(v interface{}) ([]byte, error) {
 	mtype := reflect.TypeOf(v)
-	if mtype.Kind() != reflect.Struct {
-		return []byte{}, errors.New("Only a struct can be marshaled to TOML")
+
+	switch mtype.Kind() {
+	case reflect.Struct, reflect.Map:
+	case reflect.Ptr:
+		if mtype.Elem().Kind() != reflect.Struct {
+			return []byte{}, errors.New("Only pointer to struct can be marshaled to TOML")
+		}
+	default:
+		return []byte{}, errors.New("Only a struct or map can be marshaled to TOML")
 	}
+
 	sval := reflect.ValueOf(v)
 	if isCustomMarshaler(mtype) {
 		return callCustomMarshaler(sval)
@@ -227,7 +280,7 @@ func (e *Encoder) valueToTree(mtype reflect.Type, mval reflect.Value) (*Tree, er
 	case reflect.Struct:
 		for i := 0; i < mtype.NumField(); i++ {
 			mtypef, mvalf := mtype.Field(i), mval.Field(i)
-			opts := tomlOptions(mtypef)
+			opts := tomlOptions(mtypef, e.annotation)
 			if opts.include && (!opts.omitempty || !isZero(mvalf)) {
 				val, err := e.valueToToml(mtypef.Type, mvalf)
 				if err != nil {
@@ -307,6 +360,9 @@ func (e *Encoder) valueToToml(mtype reflect.Type, mval reflect.Value) (interface
 		case reflect.Bool:
 			return mval.Bool(), nil
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			if mtype.Kind() == reflect.Int64 && mtype == reflect.TypeOf(time.Duration(1)) {
+				return fmt.Sprint(mval), nil
+			}
 			return mval.Int(), nil
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 			return mval.Uint(), nil
@@ -326,7 +382,7 @@ func (e *Encoder) valueToToml(mtype reflect.Type, mval reflect.Value) (interface
 // Neither Unmarshaler interfaces nor UnmarshalTOML functions are supported for
 // sub-structs, and only definite types can be unmarshaled.
 func (t *Tree) Unmarshal(v interface{}) error {
-	d := Decoder{tval: t}
+	d := Decoder{tval: t, tagName: tagFieldName}
 	return d.unmarshal(v)
 }
 
@@ -362,6 +418,7 @@ type Decoder struct {
 	r    io.Reader
 	tval *Tree
 	encOpts
+	tagName string
 }
 
 // NewDecoder returns a new decoder that reads from r.
@@ -369,6 +426,7 @@ func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{
 		r:       r,
 		encOpts: encOptsDefaults,
+		tagName: tagFieldName,
 	}
 }
 
@@ -383,6 +441,12 @@ func (d *Decoder) Decode(v interface{}) error {
 		return err
 	}
 	return d.unmarshal(v)
+}
+
+// SetTagName allows changing default tag "toml"
+func (d *Decoder) SetTagName(v string) *Decoder {
+	d.tagName = v
+	return d
 }
 
 func (d *Decoder) unmarshal(v interface{}) error {
@@ -410,10 +474,16 @@ func (d *Decoder) valueFromTree(mtype reflect.Type, tval *Tree) (reflect.Value, 
 		mval = reflect.New(mtype).Elem()
 		for i := 0; i < mtype.NumField(); i++ {
 			mtypef := mtype.Field(i)
-			opts := tomlOptions(mtypef)
+			an := annotation{tag: d.tagName}
+			opts := tomlOptions(mtypef, an)
 			if opts.include {
 				baseKey := opts.name
-				keysToTry := []string{baseKey, strings.ToLower(baseKey), strings.ToTitle(baseKey)}
+				keysToTry := []string{
+					baseKey,
+					strings.ToLower(baseKey),
+					strings.ToTitle(baseKey),
+					strings.ToLower(string(baseKey[0])) + baseKey[1:],
+				}
 				for _, key := range keysToTry {
 					exists := tval.Has(key)
 					if !exists {
@@ -476,20 +546,20 @@ func (d *Decoder) valueFromToml(mtype reflect.Type, tval interface{}) (reflect.V
 		return d.unwrapPointer(mtype, tval)
 	}
 
-	switch tval.(type) {
+	switch t := tval.(type) {
 	case *Tree:
 		if isTree(mtype) {
-			return d.valueFromTree(mtype, tval.(*Tree))
+			return d.valueFromTree(mtype, t)
 		}
 		return reflect.ValueOf(nil), fmt.Errorf("Can't convert %v(%T) to a tree", tval, tval)
 	case []*Tree:
 		if isTreeSlice(mtype) {
-			return d.valueFromTreeSlice(mtype, tval.([]*Tree))
+			return d.valueFromTreeSlice(mtype, t)
 		}
 		return reflect.ValueOf(nil), fmt.Errorf("Can't convert %v(%T) to trees", tval, tval)
 	case []interface{}:
 		if isOtherSlice(mtype) {
-			return d.valueFromOtherSlice(mtype, tval.([]interface{}))
+			return d.valueFromOtherSlice(mtype, t)
 		}
 		return reflect.ValueOf(nil), fmt.Errorf("Can't convert %v(%T) to a slice", tval, tval)
 	default:
@@ -512,10 +582,17 @@ func (d *Decoder) valueFromToml(mtype reflect.Type, tval interface{}) (reflect.V
 			return val.Convert(mtype), nil
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			val := reflect.ValueOf(tval)
+			if mtype.Kind() == reflect.Int64 && mtype == reflect.TypeOf(time.Duration(1)) && val.Kind() == reflect.String {
+				d, err := time.ParseDuration(val.String())
+				if err != nil {
+					return reflect.ValueOf(nil), fmt.Errorf("Can't convert %v(%T) to %v. %s", tval, tval, mtype.String(), err)
+				}
+				return reflect.ValueOf(d), nil
+			}
 			if !val.Type().ConvertibleTo(mtype) {
 				return reflect.ValueOf(nil), fmt.Errorf("Can't convert %v(%T) to %v", tval, tval, mtype.String())
 			}
-			if reflect.Indirect(reflect.New(mtype)).OverflowInt(val.Int()) {
+			if reflect.Indirect(reflect.New(mtype)).OverflowInt(val.Convert(mtype).Int()) {
 				return reflect.ValueOf(nil), fmt.Errorf("%v(%T) would overflow %v", tval, tval, mtype.String())
 			}
 
@@ -525,10 +602,11 @@ func (d *Decoder) valueFromToml(mtype reflect.Type, tval interface{}) (reflect.V
 			if !val.Type().ConvertibleTo(mtype) {
 				return reflect.ValueOf(nil), fmt.Errorf("Can't convert %v(%T) to %v", tval, tval, mtype.String())
 			}
-			if val.Int() < 0 {
+
+			if val.Convert(reflect.TypeOf(int(1))).Int() < 0 {
 				return reflect.ValueOf(nil), fmt.Errorf("%v(%T) is negative so does not fit in %v", tval, tval, mtype.String())
 			}
-			if reflect.Indirect(reflect.New(mtype)).OverflowUint(uint64(val.Int())) {
+			if reflect.Indirect(reflect.New(mtype)).OverflowUint(uint64(val.Convert(mtype).Uint())) {
 				return reflect.ValueOf(nil), fmt.Errorf("%v(%T) would overflow %v", tval, tval, mtype.String())
 			}
 
@@ -538,7 +616,7 @@ func (d *Decoder) valueFromToml(mtype reflect.Type, tval interface{}) (reflect.V
 			if !val.Type().ConvertibleTo(mtype) {
 				return reflect.ValueOf(nil), fmt.Errorf("Can't convert %v(%T) to %v", tval, tval, mtype.String())
 			}
-			if reflect.Indirect(reflect.New(mtype)).OverflowFloat(val.Float()) {
+			if reflect.Indirect(reflect.New(mtype)).OverflowFloat(val.Convert(mtype).Float()) {
 				return reflect.ValueOf(nil), fmt.Errorf("%v(%T) would overflow %v", tval, tval, mtype.String())
 			}
 
@@ -559,15 +637,15 @@ func (d *Decoder) unwrapPointer(mtype reflect.Type, tval interface{}) (reflect.V
 	return mval, nil
 }
 
-func tomlOptions(vf reflect.StructField) tomlOpts {
-	tag := vf.Tag.Get("toml")
+func tomlOptions(vf reflect.StructField, an annotation) tomlOpts {
+	tag := vf.Tag.Get(an.tag)
 	parse := strings.Split(tag, ",")
 	var comment string
-	if c := vf.Tag.Get("comment"); c != "" {
+	if c := vf.Tag.Get(an.comment); c != "" {
 		comment = c
 	}
-	commented, _ := strconv.ParseBool(vf.Tag.Get("commented"))
-	multiline, _ := strconv.ParseBool(vf.Tag.Get(tagKeyMultiline))
+	commented, _ := strconv.ParseBool(vf.Tag.Get(an.commented))
+	multiline, _ := strconv.ParseBool(vf.Tag.Get(an.multiline))
 	result := tomlOpts{name: vf.Name, comment: comment, commented: commented, multiline: multiline, include: true, omitempty: false}
 	if parse[0] != "" {
 		if parse[0] == "-" && len(parse) == 1 {

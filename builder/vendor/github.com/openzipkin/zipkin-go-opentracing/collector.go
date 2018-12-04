@@ -3,7 +3,7 @@ package zipkintracer
 import (
 	"strings"
 
-	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
+	"github.com/openzipkin-contrib/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 )
 
 // Collector represents a Zipkin trace collector, which is probably a set of
@@ -47,6 +47,11 @@ func (c MultiCollector) aggregateErrors(f func(c Collector) error) error {
 			e.errs[i] = err
 		}
 	}
+
+	if e == nil {
+		return nil
+	}
+
 	return e
 }
 

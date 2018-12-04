@@ -2,11 +2,12 @@ package worker
 
 import (
 	"context"
-	"log"
 
 	"github.com/RichardKnop/machinery/v1"
 	machineryConfig "github.com/RichardKnop/machinery/v1/config"
 	"github.com/RichardKnop/machinery/v1/tasks"
+	"github.com/carousell/Orion/utils/errors"
+	"github.com/carousell/Orion/utils/log"
 	"github.com/carousell/Orion/utils/spanutils"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -69,6 +70,9 @@ func (w *worker) scheduleRemote(ctx context.Context, name string, payload string
 	}
 	signature.RetryCount = c.retries
 	signature.RoutingKey = c.queueName
+	if w.server == nil {
+		return errors.New("Server not initialized")
+	}
 	_, err := w.server.SendTask(signature)
 	if err != nil {
 		return err
@@ -88,6 +92,9 @@ func (w *worker) RegisterTask(name string, taskFunc Work) error {
 	if w.config.LocalMode {
 		w.LocalMap[name] = wrapperFunc(taskFunc)
 	} else {
+		if w.server == nil {
+			return errors.New("Server not initialized")
+		}
 		return w.server.RegisterTask(name, wrapperFunc(taskFunc))
 	}
 	return nil
@@ -118,7 +125,7 @@ func wrapperFunc(task Work) wrappedWork {
 	}
 }
 
-func (w *worker) init(config Config) {
+func (w *worker) init(config Config) error {
 	w.config = buildConfig(config)
 	if w.config.LocalMode {
 		w.LocalMap = make(map[string]wrappedWork)
@@ -139,10 +146,12 @@ func (w *worker) init(config Config) {
 		var err error
 		w.server, err = machinery.NewServer(cfg)
 		if err != nil {
-			log.Println(err)
+			log.Error(context.Background(), "err", err, "")
+			return err
 		}
 		w.server.SetBackend(&fakeBackend{})
 	}
+	return nil
 }
 
 func (w *worker) RunWorker(name string, concurrency int) {
@@ -153,15 +162,19 @@ func (w *worker) RunWorker(name string, concurrency int) {
 					if f, ok := w.LocalMap[wi.Name]; ok {
 						f(wi.String())
 					} else {
-						log.Println("error", "could not find "+wi.Name)
+						log.Error(context.Background(), "err", "could not find "+wi.Name)
 					}
 				}
 			}()
 		}
 	} else {
-		w.worker = w.server.NewWorker(name, concurrency)
-		errc := make(chan error, 1)
-		w.worker.LaunchAsync(errc)
+		if w.server == nil {
+			log.Error(context.Background(), "err", "worker not started, server not initialized")
+		} else {
+			w.worker = w.server.NewWorker(name, concurrency)
+			errc := make(chan error, 1)
+			w.worker.LaunchAsync(errc)
+		}
 	}
 }
 

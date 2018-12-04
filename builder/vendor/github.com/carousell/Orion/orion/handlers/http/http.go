@@ -4,9 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"log"
-	"net"
 	"net/http"
 	"runtime/debug"
 	"strings"
@@ -15,26 +12,16 @@ import (
 	"github.com/carousell/Orion/orion/handlers"
 	"github.com/carousell/Orion/orion/modifiers"
 	"github.com/carousell/Orion/utils"
+	"github.com/carousell/Orion/utils/errors"
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/headers"
+	"github.com/carousell/Orion/utils/log"
+	"github.com/carousell/Orion/utils/log/loggers"
 	"github.com/carousell/Orion/utils/options"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-	"github.com/mitchellh/mapstructure"
 	opentracing "github.com/opentracing/opentracing-go"
-	"google.golang.org/grpc"
 )
-
-//NewHTTPHandler creates a new HTTP handler
-func NewHTTPHandler(config HandlerConfig) handlers.Handler {
-	return &httpHandler{
-		config:      config,
-		mapping:     newMethodInfoMapping(),
-		middlewares: handlers.NewMiddlewareMapping(),
-	}
-}
 
 func (h *httpHandler) getHTTPHandler(serviceName, methodName string) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
@@ -43,24 +30,25 @@ func (h *httpHandler) getHTTPHandler(serviceName, methodName string) http.Handle
 }
 
 func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, service, method string) {
+	ctx := utils.StartNRTransaction(req.URL.Path, req.Context(), req, resp)
+	ctx = loggers.AddToLogContext(ctx, "transport", "http")
 	var err error
-	ctx := utils.StartNRTransaction(req.URL.String(), req.Context(), req, resp)
 	defer func(resp http.ResponseWriter, ctx context.Context, t time.Time) {
 		// panic handler
 		if r := recover(); r != nil {
 			writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
-			log.Println("panic", r, "path", req.URL.String(), "method", req.Method, "took", time.Since(t))
-			log.Print(string(debug.Stack()))
+			log.Error(ctx, "panic", r, "path", req.URL.String(), "method", req.Method, "took", time.Since(t))
+			log.Error(ctx, string(debug.Stack()))
 			var err error
 			if e, ok := r.(error); ok {
 				err = e
 			} else {
-				err = fmt.Errorf("panic: %s", r)
+				err = errors.New(fmt.Sprintf("panic: %s", r))
 			}
 			utils.FinishNRTransaction(ctx, err)
 			notifier.NotifyWithLevel(err, "critical", req.URL.String(), ctx)
 		} else {
-			log.Println("path", req.URL.String(), "method", req.Method, "error", err, "took", time.Since(t))
+			log.Info(ctx, "path", req.URL.Path, "method", req.Method, "error", err, "took", time.Since(t))
 		}
 	}(resp, ctx, time.Now())
 	req = req.WithContext(ctx)
@@ -124,31 +112,14 @@ func processOptions(ctx context.Context, req *http.Request, info *methodInfo) co
 	return ctx
 }
 
-// DefaultEncoder encodes a HTTP request if none are registered. This encoder
-// populates the proto message with URL route variables or fields from a JSON
-// body if either are available.
-func DefaultEncoder(req *http.Request, r interface{}) error {
-	protoReq := r.(proto.Message)
-	// check and map url params to request
-	params := mux.Vars(req)
-	if len(params) > 0 {
-		mapstructure.Decode(params, protoReq)
-	}
-	err := jsonpb.Unmarshal(req.Body, protoReq)
-	if req.Method == http.MethodGet && err == io.EOF {
-		return nil
-	}
-	return err
-}
-
 func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, serviceName, methodName string) (context.Context, error) {
 	info, ok := h.mapping.Get(serviceName, methodName)
 	if ok {
 		ctx := prepareContext(req, info)
 		ctx = processOptions(ctx, req, info)
+		req = req.WithContext(ctx)
 		// httpHandler allows handling entire http request
 		if info.httpHandler != nil {
-			req = req.WithContext(ctx)
 			if info.httpHandler(resp, req) {
 				// short circuit if handler has handled request
 				return ctx, nil
@@ -196,43 +167,49 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, ser
 		}
 
 		hdr := headers.ResponseHeadersFromContext(ctx)
-		responseHeaders := processWhitelist(hdr, append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
+		responseHeaders := processWhitelist(ctx, hdr, append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
 		if err != nil {
 			if encErr != nil {
 				writeRespWithHeaders(resp, http.StatusBadRequest, []byte("Bad Request!"), responseHeaders)
-				return ctx, fmt.Errorf("Bad Request")
+				return ctx, errors.Wrap(encErr, "Bad Request")
 			}
 			code, msg := GrpcErrorToHTTP(err, http.StatusInternalServerError, "Internal Server Error!")
 			writeRespWithHeaders(resp, code, []byte(msg), responseHeaders)
-			return ctx, fmt.Errorf(msg)
+			return ctx, errors.Wrap(err, msg)
 		}
 		return ctx, h.serializeOut(ctx, resp, protoResponse.(proto.Message), responseHeaders)
 	}
 	writeResp(resp, http.StatusNotFound, []byte("Not Found: "+req.URL.String()))
-	return req.Context(), fmt.Errorf("Not Found: " + req.URL.String())
+	return req.Context(), errors.New("Not Found: " + req.URL.String())
 }
 
 func (h *httpHandler) serialize(ctx context.Context, msg proto.Message) ([]byte, string, error) {
+	// first check if any serialization is
 	serType, _ := modifiers.GetSerialization(ctx)
 	if serType == "" {
-		serType = ContentTypeFromHeaders(ctx)
+		// try and match an accept header
+		serType = AcceptTypeFromHeaders(ctx)
 		if serType == "" {
-			serType = modifiers.JSON
+			// try and match the original content type
+			serType = ContentTypeFromHeaders(ctx)
+			if serType == "" {
+				serType = modifiers.JSON
+			}
 		}
 	}
 	switch serType {
 	case modifiers.JSONPB:
 		sData, err := h.mar.MarshalToString(msg)
-		return []byte(sData), "application/json", err
+		return []byte(sData), ContentTypeJSON, err
 	case modifiers.ProtoBuf:
 		data, err := proto.Marshal(msg)
-		return data, "application/octet-stream", err
+		return data, ContentTypeProto, err
 	case modifiers.JSON:
 		fallthrough
 	default:
 		// modifiers.JSON goes in here
 		data, err := json.Marshal(msg)
-		return data, "application/json", err
+		return data, ContentTypeJSON, err
 	}
 }
 
@@ -244,150 +221,5 @@ func (h *httpHandler) serializeOut(ctx context.Context, resp http.ResponseWriter
 	}
 	responseHeaders.Add("Content-Type", contentType)
 	writeRespWithHeaders(resp, http.StatusOK, data, responseHeaders)
-	return nil
-}
-
-func (h *httpHandler) Add(sd *grpc.ServiceDesc, ss interface{}) error {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	svcInfo := &serviceInfo{
-		desc: sd,
-		svc:  ss,
-	}
-
-	if headers, ok := ss.(handlers.WhitelistedHeaders); ok {
-		svcInfo.requestHeaders = headers.GetRequestHeaders()
-		svcInfo.responseHeaders = headers.GetResponseHeaders()
-	}
-
-	// TODO recover in case of error
-	for _, m := range sd.Methods {
-		info := &methodInfo{
-			method:      handlers.GRPCMethodHandler(m.Handler),
-			svc:         svcInfo,
-			httpMethod:  []string{"POST"},
-			serviceName: sd.ServiceName,
-			methodName:  m.MethodName,
-			urls:        make([]string, 0),
-		}
-		info.urls = append(info.urls, generateURL(sd.ServiceName, m.MethodName))
-		if h.config.EnableProtoURL {
-			// add proto urls if enabled
-			info.urls = append(info.urls, generateProtoURL(sd.ServiceName, m.MethodName))
-		}
-		h.mapping.Add(info.serviceName, info.methodName, info)
-	}
-	return nil
-}
-
-func (h *httpHandler) AddEncoder(serviceName, method string, httpMethod []string, path string, encoder handlers.Encoder) {
-	if h.mapping != nil {
-		if info, ok := h.mapping.Get(serviceName, method); ok {
-			info.encoder = encoder
-			info.httpMethod = httpMethod
-			url := generateURL(serviceName, method)
-			if strings.TrimSpace(path) != "" {
-				info.encoderPath = path
-				info.urls = append(info.urls, path)
-			} else {
-				info.encoderPath = url
-			}
-		} else {
-			fmt.Println("Service and Method NOT found!", serviceName, method, h.mapping)
-		}
-	}
-}
-
-func (h *httpHandler) AddDefaultEncoder(serviceName string, encoder handlers.Encoder) {
-	if h.defEncoders == nil {
-		h.defEncoders = make(map[string]handlers.Encoder)
-	}
-	if encoder != nil {
-		h.defEncoders[cleanSvcName(serviceName)] = encoder
-	}
-}
-
-func (h *httpHandler) AddHTTPHandler(serviceName string, method string, path string, handler handlers.HTTPHandler) {
-	if h.mapping != nil {
-		if info, ok := h.mapping.Get(serviceName, method); ok {
-			info.httpHandler = handler
-		} else {
-			fmt.Println("Service and Method NOT found!", serviceName, method, h.mapping)
-		}
-	}
-}
-
-func (h *httpHandler) AddDecoder(serviceName, method string, decoder handlers.Decoder) {
-	if h.mapping != nil {
-		if info, ok := h.mapping.Get(serviceName, method); ok {
-			info.decoder = decoder
-		} else {
-			fmt.Println("Service and Method NOT found!", serviceName, method, h.mapping)
-		}
-	}
-}
-
-func (h *httpHandler) AddDefaultDecoder(serviceName string, decoder handlers.Decoder) {
-	if h.defDecoders == nil {
-		h.defDecoders = make(map[string]handlers.Decoder)
-	}
-	if decoder != nil {
-		h.defDecoders[cleanSvcName(serviceName)] = decoder
-	}
-}
-
-func (h *httpHandler) AddOption(serviceName, method, option string) {
-	if info, ok := h.mapping.Get(serviceName, method); ok {
-		if info.options == nil {
-			info.options = make([]string, 0)
-		}
-		info.options = append(info.options, option)
-	}
-
-}
-
-func (h *httpHandler) AddMiddleware(serviceName string, method string, middlewares ...string) {
-	if h.middlewares == nil {
-		h.middlewares = handlers.NewMiddlewareMapping()
-	}
-	h.middlewares.AddMiddleware(serviceName, method, middlewares...)
-}
-
-func (h *httpHandler) Run(httpListener net.Listener) error {
-	r := mux.NewRouter()
-	fmt.Println("Mapped URLs: ")
-	allPaths := h.mapping.GetAllMethodInfoByOrder()
-	for i := range allPaths {
-		info := allPaths[i]
-		for _, url := range info.urls {
-			if strings.TrimSpace(info.encoderPath) != "" && info.encoderPath != url {
-				// only add the encoder url if encoder is defined, skip others
-				continue
-			}
-			routeURL := url
-			handler := h.getHTTPHandler(info.serviceName, info.methodName)
-			r.Methods(info.httpMethod...).Path(url).Handler(handler)
-			if !strings.HasSuffix(url, "/") {
-				routeURL = url + "/"
-				r.Methods(info.httpMethod...).Path(url + "/").Handler(handler)
-			}
-			fmt.Println("\t", info.httpMethod, routeURL, "mapped to", info.serviceName, info.methodName)
-		}
-	}
-	h.svr = &http.Server{
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		Handler:      r,
-	}
-	return h.svr.Serve(httpListener)
-}
-
-func (h *httpHandler) Stop(timeout time.Duration) error {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	ctx, can := context.WithTimeout(context.Background(), timeout)
-	defer can()
-	h.svr.Shutdown(ctx)
 	return nil
 }

@@ -10,6 +10,7 @@
 ## <a name="pkg-imports">Imported Packages</a>
 
 - [github.com/carousell/Orion/utils](./..)
+- [github.com/carousell/Orion/utils/log](./../log)
 - [github.com/newrelic/go-agent](https://godoc.org/github.com/newrelic/go-agent)
 - [github.com/opentracing/opentracing-go](https://godoc.org/github.com/opentracing/opentracing-go)
 - [github.com/opentracing/opentracing-go/ext](https://godoc.org/github.com/opentracing/opentracing-go/ext)
@@ -27,47 +28,48 @@
 #### <a name="pkg-files">Package files</a>
 [spanutils.go](./spanutils.go) 
 
-## <a name="ClientSpan">func</a> [ClientSpan](./spanutils.go#L156)
+## <a name="ClientSpan">func</a> [ClientSpan](./spanutils.go#L179)
 ``` go
 func ClientSpan(operationName string, ctx context.Context) (context.Context, opentracing.Span)
 ```
 ClientSpan starts a new client span linked to the existing spans if any are found
 
-## <a name="GRPCTracingSpan">func</a> [GRPCTracingSpan](./spanutils.go#L172)
+## <a name="GRPCTracingSpan">func</a> [GRPCTracingSpan](./spanutils.go#L195)
 ``` go
 func GRPCTracingSpan(operationName string, ctx context.Context) context.Context
 ```
 
-## <a name="TracingSpan">type</a> [TracingSpan](./spanutils.go#L18-L23)
+## <a name="TracingSpan">type</a> [TracingSpan](./spanutils.go#L18-L24)
 ``` go
 type TracingSpan interface {
     End()
     Finish()
     SetTag(key string, value interface{})
     SetQuery(query string)
+    SetError(msg string)
 }
 ```
 TracingSpan defines an interface for implementing a tracing span
 
-### <a name="NewDatastoreSpan">func</a> [NewDatastoreSpan](./spanutils.go#L75)
+### <a name="NewDatastoreSpan">func</a> [NewDatastoreSpan](./spanutils.go#L98)
 ``` go
 func NewDatastoreSpan(ctx context.Context, name string, datastore string) (TracingSpan, context.Context)
 ```
 NewDatastoreSpan starts a span for tracing data store actions
 
-### <a name="NewExternalSpan">func</a> [NewExternalSpan](./spanutils.go#L110)
+### <a name="NewExternalSpan">func</a> [NewExternalSpan](./spanutils.go#L133)
 ``` go
 func NewExternalSpan(ctx context.Context, name string, url string) (TracingSpan, context.Context)
 ```
 NewExternalSpan starts a span for tracing external actions
 
-### <a name="NewHTTPExternalSpan">func</a> [NewHTTPExternalSpan](./spanutils.go#L115)
+### <a name="NewHTTPExternalSpan">func</a> [NewHTTPExternalSpan](./spanutils.go#L138)
 ``` go
 func NewHTTPExternalSpan(ctx context.Context, name string, url string, hdr http.Header) (TracingSpan, context.Context)
 ```
 NewHTTPExternalSpan starts a span for tracing external HTTP actions
 
-### <a name="NewInternalSpan">func</a> [NewInternalSpan](./spanutils.go#L61)
+### <a name="NewInternalSpan">func</a> [NewInternalSpan](./spanutils.go#L84)
 ``` go
 func NewInternalSpan(ctx context.Context, name string) (TracingSpan, context.Context)
 ```

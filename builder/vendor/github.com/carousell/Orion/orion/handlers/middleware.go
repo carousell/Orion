@@ -1,15 +1,16 @@
 package handlers
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 )
 
+//NewMiddlewareMapping returns a new MiddlewareMapping
 func NewMiddlewareMapping() *MiddlewareMapping {
 	return &MiddlewareMapping{}
 }
 
+//MiddlewareMapping stores mapping between service,method and middlewares
 type MiddlewareMapping struct {
 	mapping sync.Map
 }
@@ -26,31 +27,32 @@ func (m *MiddlewareMapping) getKeyFromURL(url string) string {
 	return ""
 }
 
-func (m *MiddlewareMapping) GetMiddlewaresFromUrl(url string) []string {
+//GetMiddlewaresFromURL fetches all middleware for a specific URL
+func (m *MiddlewareMapping) GetMiddlewaresFromURL(url string) []string {
 	key := m.getKeyFromURL(url)
 	return m.getMiddleware(key)
 }
 
+//GetMiddlewares fetches all middlewares for a specific service,method
 func (m *MiddlewareMapping) GetMiddlewares(service, method string) []string {
 	key := m.getKey(service, method)
 	return m.getMiddleware(key)
 }
 
 func (m *MiddlewareMapping) getMiddleware(key string) []string {
-	fmt.Println("fetching middlewares", key)
 	if result, ok := m.mapping.Load(key); ok {
 		return result.([]string)
 	}
 	return []string{}
 }
 
+//AddMiddleware adds middleware to a service, method
 func (m *MiddlewareMapping) AddMiddleware(service, method string, middlewares ...string) {
 	key := m.getKey(service, method)
 	m.addMiddleware(key, middlewares...)
 }
 
 func (m *MiddlewareMapping) addMiddleware(key string, middlewares ...string) {
-	fmt.Println("adding middlewares", key, middlewares)
 	list := make([]string, 0)
 	if result, ok := m.mapping.Load(key); ok {
 		list = append(list, result.([]string)...)

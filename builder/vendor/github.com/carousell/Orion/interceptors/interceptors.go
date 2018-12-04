@@ -3,14 +3,17 @@ package interceptors
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/carousell/Orion/orion/modifiers"
 	"github.com/carousell/Orion/utils"
+	"github.com/carousell/Orion/utils/errors"
 	"github.com/carousell/Orion/utils/errors/notifier"
+	"github.com/carousell/Orion/utils/log"
+	"github.com/carousell/Orion/utils/log/loggers"
+	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
@@ -53,12 +56,26 @@ func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 	}
 }
 
+//DefaultStreamInterceptors are the set of default interceptors that should be applied to all Orion streams
+func DefaultStreamInterceptors() []grpc.StreamServerInterceptor {
+	return []grpc.StreamServerInterceptor{
+		grpc_ctxtags.StreamServerInterceptor(),
+		grpc_opentracing.StreamServerInterceptor(),
+		grpc_prometheus.StreamServerInterceptor,
+	}
+}
+
+//DefaultClientInterceptor are the set of default interceptors that should be applied to all client calls
+func DefaultClientInterceptor(address string) grpc.UnaryClientInterceptor {
+	return grpc_middleware.ChainUnaryClient(DefaultClientInterceptors(address)...)
+}
+
 //DebugLoggingInterceptor is the interceptor that logs all request/response from a handler
 func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		fmt.Println(info, "requst", req)
 		resp, err := handler(ctx, req)
-		fmt.Println(info, "response", resp, err)
+		fmt.Println(info, "response", resp, "err", err)
 		return resp, err
 	}
 }
@@ -69,7 +86,7 @@ func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 		// dont log for HTTP request, let HTTP Handler manage it
 		if !modifiers.IsHTTPRequest(ctx) {
 			defer func(begin time.Time) {
-				log.Println("method", info.FullMethod, "error", err, "took", time.Since(begin))
+				log.Info(ctx, "method", info.FullMethod, "error", err, "took", time.Since(begin))
 			}(time.Now())
 		}
 		resp, err = handler(ctx, req)
@@ -104,7 +121,9 @@ func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 
 		t := grpc_ctxtags.Extract(ctx)
 		if t != nil {
-			t.Set("trace", notifier.GetTraceId(ctx))
+			traceId := notifier.GetTraceId(ctx)
+			t.Set("trace", traceId)
+			ctx = loggers.AddToLogContext(ctx, "trace", traceId)
 		}
 		// dont log Error for HTTP request, let HTTP Handler manage it
 		if modifiers.IsHTTPRequest(ctx) {
@@ -139,9 +158,26 @@ func GRPCClientInterceptor() grpc.UnaryClientInterceptor {
 //HystrixClientInterceptor is the interceptor that intercepts all cleint requests and adds hystrix info to them
 func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		options := clientOptions{
+			hystrixName: method,
+		}
+		for _, opt := range opts {
+			if opt != nil {
+				if o, ok := opt.(clientOption); ok {
+					o.process(&options)
+				}
+			}
+		}
 		newCtx, cancel := context.WithCancel(ctx)
 		defer cancel()
-		return hystrix.Do(method, func() error {
+		return hystrix.Do(options.hystrixName, func() (err error) {
+			defer func() {
+				if r := recover(); r != nil {
+					err = errors.Wrap(fmt.Errorf("Panic inside hystrix Method: %s, req: %v, reply: %v", method, req, reply), "Hystrix")
+					log.Error(ctx, "panic", r, "method", method, "req", req, "reply", reply)
+				}
+			}()
+			defer notifier.NotifyOnPanic(newCtx, method)
 			return invoker(newCtx, method, req, reply, cc, opts...)
 		}, nil)
 	}

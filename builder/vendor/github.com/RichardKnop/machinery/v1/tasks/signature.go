@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/satori/go.uuid"
+	"github.com/google/uuid"
 )
 
 // Arg represents a single argument passed to invocation fo a task
@@ -22,7 +22,7 @@ func (h Headers) Set(key, val string) {
 	h[key] = val
 }
 
-// ForEachKey on Headers implements opentracing.TextMapReader for trace propagation.
+// ForeachKey on Headers implements opentracing.TextMapReader for trace propagation.
 // It is essentially the same as the opentracing.TextMapReader implementation except
 // for the added casting from interface{} to string.
 func (h Headers) ForeachKey(handler func(key, val string) error) error {
@@ -61,13 +61,7 @@ type Signature struct {
 
 // NewSignature creates a new task signature
 func NewSignature(name string, args []Arg) (*Signature, error) {
-
-	signatureID, err := uuid.NewV4()
-
-	if err != nil {
-		return nil, fmt.Errorf("Error generating signature id: %s", err.Error())
-	}
-
+	signatureID := uuid.New().String()
 	return &Signature{
 		UUID: fmt.Sprintf("task_%v", signatureID),
 		Name: name,

@@ -12,6 +12,8 @@
 - [github.com/RichardKnop/machinery/v1](https://godoc.org/github.com/RichardKnop/machinery/v1)
 - [github.com/RichardKnop/machinery/v1/config](https://godoc.org/github.com/RichardKnop/machinery/v1/config)
 - [github.com/RichardKnop/machinery/v1/tasks](https://godoc.org/github.com/RichardKnop/machinery/v1/tasks)
+- [github.com/carousell/Orion/utils/errors](./../errors)
+- [github.com/carousell/Orion/utils/log](./../log)
 - [github.com/carousell/Orion/utils/spanutils](./../spanutils)
 - [github.com/grpc-ecosystem/go-grpc-middleware/util/metautils](https://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware/util/metautils)
 - [github.com/opentracing/opentracing-go](https://godoc.org/github.com/opentracing/opentracing-go)
@@ -68,13 +70,13 @@ type ScheduleOption func(*ScheduleConfig)
 ```
 ScheduleOption represents different options available for Schedule
 
-### <a name="WithQueueName">func</a> [WithQueueName](./worker.go#L38)
+### <a name="WithQueueName">func</a> [WithQueueName](./worker.go#L39)
 ``` go
 func WithQueueName(queueName string) ScheduleOption
 ```
 WithQueueName sets the destination queue for this task
 
-### <a name="WithRetry">func</a> [WithRetry](./worker.go#L31)
+### <a name="WithRetry">func</a> [WithRetry](./worker.go#L32)
 ``` go
 func WithRetry(n int) ScheduleOption
 ```
@@ -97,7 +99,7 @@ type Worker interface {
 ```
 Worker is the interface for worker
 
-### <a name="NewWorker">func</a> [NewWorker](./worker.go#L16)
+### <a name="NewWorker">func</a> [NewWorker](./worker.go#L17)
 ``` go
 func NewWorker(config Config) Worker
 ```

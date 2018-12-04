@@ -98,3 +98,4 @@ package orion
 //go:generate godoc2ghmd -ex -file=README.md github.com/carousell/Orion/orion
 //go:generate godoc2ghmd -ex -file=handlers/README.md github.com/carousell/Orion/orion/handlers
 //go:generate godoc2ghmd -ex -file=modifiers/README.md github.com/carousell/Orion/orion/modifiers
+//go:generate godoc2ghmd -ex -file=helpers/README.md github.com/carousell/Orion/orion/helpers

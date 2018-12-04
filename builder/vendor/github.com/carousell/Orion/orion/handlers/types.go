@@ -14,8 +14,14 @@ type GRPCMethodHandler func(srv interface{}, ctx context.Context, dec func(inter
 
 //Interceptor interface when implemented by a service allows that service to provide custom interceptors
 type Interceptor interface {
-	// gets an array of Server Interceptors
+	// gets an array of Unary Server Interceptors
 	GetInterceptors() []grpc.UnaryServerInterceptor
+}
+
+//StreamInterceptor interface when implemented by a service allows that service to provide custom stream interceptors
+type StreamInterceptor interface {
+	// gets an array of Stream Server Interceptors
+	GetStreamInterceptors() []grpc.StreamServerInterceptor
 }
 
 //WhitelistedHeaders is the interface that needs to be implemented by clients that need request/response headers to be passed in through the context
@@ -44,6 +50,7 @@ type Decodable interface {
 	AddDefaultDecoder(serviceName string, decoder Decoder)
 }
 
+//Optionable interface that is implemented by a handler that support custom Orion options
 type Optionable interface {
 	AddOption(ServiceName, method, option string)
 }
