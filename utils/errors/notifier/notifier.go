@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -80,16 +81,31 @@ func convToRollbar(in []errors.StackFrame) rollbar.Stack {
 	return out
 }
 
-func convToSentry(in []errors.StackFrame) *raven.Stacktrace {
+func convToSentry(in errors.ErrorExt) *raven.Stacktrace {
 	out := new(raven.Stacktrace)
-	out.Frames = make([]*raven.StacktraceFrame, len(in))
-	for i, s := range in {
-		out.Frames[len(in)-i-1] = &raven.StacktraceFrame{
-			Filename: s.File,
-			Function: s.Func,
-			Lineno:   s.Line,
+	pcs := in.Callers()
+	frames := make([]*raven.StacktraceFrame, 0)
+
+	callersFrames := runtime.CallersFrames(pcs)
+
+	for {
+		fr, more := callersFrames.Next()
+		if fr.Func != nil {
+			frame := raven.NewStacktraceFrame(fr.PC, fr.Function, fr.File, fr.Line, 3, []string{})
+			if frame != nil {
+				frame.InApp = true
+				frames = append(frames, frame)
+			}
+		}
+		if !more {
+			break
 		}
 	}
+	for i := len(frames)/2 - 1; i >= 0; i-- {
+		opp := len(frames) - 1 - i
+		frames[i], frames[opp] = frames[opp], frames[i]
+	}
+	out.Frames = frames
 	return out
 }
 
@@ -216,7 +232,7 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		if level == "critical" {
 			defLevel = raven.FATAL
 		}
-		ravenExp := raven.NewException(errWithStack, convToSentry(errWithStack.StackFrame()))
+		ravenExp := raven.NewException(errWithStack, convToSentry(errWithStack))
 		packet := raven.NewPacketWithExtra(errWithStack.Error(), parsedData, ravenExp)
 		packet.Level = defLevel
 		raven.Capture(packet, nil)
@@ -281,7 +297,7 @@ func NotifyOnPanic(rawData ...interface{}) {
 			rollbar.ErrorWithStack(rollbar.CRIT, e, convToRollbar(e.StackFrame()), &rollbar.Field{Name: "panic", Data: r})
 		}
 		if sentryInited {
-			ravenExp := raven.NewException(e, convToSentry(e.StackFrame()))
+			ravenExp := raven.NewException(e, convToSentry(e))
 			packet := raven.NewPacketWithExtra(e.Error(), parsedData, ravenExp)
 			packet.Level = raven.FATAL
 			raven.Capture(packet, nil)

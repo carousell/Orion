@@ -611,10 +611,10 @@
 			"revisionTime": "2018-08-30T22:02:26Z"
 		},
 		{
-			"checksumSHA1": "hL8smC/vjdkuE1twM8TKpuTiOmw=",
+			"checksumSHA1": "ySB0bXviiKENg9oAqXth8zbBVVw=",
 			"path": "github.com/getsentry/raven-go",
-			"revision": "3033899c76deb3fb6570d9c4074d00443aeab88f",
-			"revisionTime": "2018-10-23T13:08:49Z"
+			"revision": "d5057ceb70caa73feca9ba5d75a8fc00c9dd0aae",
+			"revisionTime": "2019-01-05T14:45:42Z"
 		},
 		{
 			"checksumSHA1": "1MD5Dz5eVB6XZ24C3P8nlAD6ui0=",
