@@ -155,10 +155,10 @@
 			"revisionTime": "2018-10-21T07:06:34Z"
 		},
 		{
-			"checksumSHA1": "2b5IidghxHGB9Di2F/q1VexUwFk=",
+			"checksumSHA1": "VhQ76c7xOxFf2580c0GmTuIASBU=",
 			"path": "github.com/RichardKnop/machinery/v1/brokers/amqp",
-			"revision": "6a928be4346a98c42a511c27bf32458d8ccde684",
-			"revisionTime": "2018-10-21T07:06:34Z"
+			"revision": "b25a799bf62a7021f206d6f381578f16ea7b0a1e",
+			"revisionTime": "2019-01-25T10:22:47Z"
 		},
 		{
 			"checksumSHA1": "ErYl9mVzoRs25X2xli1OEJ7poh0=",

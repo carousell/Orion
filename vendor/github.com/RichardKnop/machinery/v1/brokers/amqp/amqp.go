@@ -46,12 +46,17 @@ func New(cnf *config.Config) iface.Broker {
 func (b *Broker) StartConsuming(consumerTag string, concurrency int, taskProcessor iface.TaskProcessor) (bool, error) {
 	b.Broker.StartConsuming(consumerTag, concurrency, taskProcessor)
 
+	queueName := taskProcessor.CustomQueue()
+	if queueName == "" {
+		queueName = b.GetConfig().DefaultQueue
+	}
+
 	conn, channel, queue, _, amqpCloseChan, err := b.Connect(
 		b.GetConfig().Broker,
 		b.GetConfig().TLSConfig,
 		b.GetConfig().AMQP.Exchange,     // exchange name
 		b.GetConfig().AMQP.ExchangeType, // exchange type
-		b.GetConfig().DefaultQueue,      // queue name
+		queueName,                       // queue name
 		true,                            // queue durable
 		false,                           // queue delete when unused
 		b.GetConfig().AMQP.BindingKey,   // queue binding key
@@ -346,17 +351,24 @@ func (b *Broker) delay(signature *tasks.Signature, delayMs int64) error {
 		// Time after that the queue will be deleted.
 		"x-expires": delayMs * 2,
 	}
-	connection, err := b.GetOrOpenConnection(queueName,
-		queueName,        // queue binding key
-		nil,              // exchange declare args
-		declareQueueArgs, // queue declare arghs
+	conn, channel, _, _, _, err := b.Connect(
+		b.GetConfig().Broker,
+		b.GetConfig().TLSConfig,
+		b.GetConfig().AMQP.Exchange,     // exchange name
+		b.GetConfig().AMQP.ExchangeType, // exchange type
+		queueName,                       // queue name
+		true,                            // queue durable
+		false,                           // queue delete when unused
+		queueName,                       // queue binding key
+		nil,                             // exchange declare args
+		declareQueueArgs,                // queue declare args
 		amqp.Table(b.GetConfig().AMQP.QueueBindingArgs), // queue binding args
 	)
 	if err != nil {
 		return err
 	}
 
-	channel := connection.channel
+	defer b.Close(channel, conn)
 
 	if err := channel.Publish(
 		b.GetConfig().AMQP.Exchange, // exchange
