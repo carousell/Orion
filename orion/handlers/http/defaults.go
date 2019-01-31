@@ -34,6 +34,9 @@ func DefaultEncoder(req *http.Request, r interface{}) error {
 		return err
 	}
 
+	if req.Method == http.MethodGet && len(data) == 0 {
+		return nil
+	}
 	return deserialize(req.Context(), data, r)
 }
 
