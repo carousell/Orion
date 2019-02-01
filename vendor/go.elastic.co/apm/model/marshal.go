@@ -1,3 +1,20 @@
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package model
 
 import (
@@ -14,7 +31,7 @@ import (
 	"go.elastic.co/fastjson"
 )
 
-//go:generate go run ../../fastjson/cmd/generate-fastjson/main.go -f -o marshal_fastjson.go .
+//go:generate sh generate.sh
 
 // MarshalFastJSON writes the JSON representation of t to w.
 func (t Time) MarshalFastJSON(w *fastjson.Writer) error {
@@ -35,7 +52,8 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 // UnmarshalJSON unmarshals the JSON data into v.
 func (v *HTTPSpanContext) UnmarshalJSON(data []byte) error {
 	var httpSpanContext struct {
-		URL string
+		URL        string
+		StatusCode int `json:"status_code"`
 	}
 	if err := json.Unmarshal(data, &httpSpanContext); err != nil {
 		return err
@@ -45,6 +63,7 @@ func (v *HTTPSpanContext) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	v.URL = u
+	v.StatusCode = httpSpanContext.StatusCode
 	return nil
 }
 
@@ -57,6 +76,10 @@ func (v *HTTPSpanContext) MarshalFastJSON(w *fastjson.Writer) error {
 		w.RawByte('"')
 	} else {
 		w.Rewind(beforeURL)
+	}
+	if v.StatusCode > 0 {
+		w.RawString(`,"status_code":`)
+		w.Int64(int64(v.StatusCode))
 	}
 	w.RawByte('}')
 	return nil
@@ -469,51 +492,6 @@ func (b *RequestBody) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (m IfaceMap) isZero() bool {
-	return len(m) == 0
-}
-
-// MarshalFastJSON writes the JSON representation of m to w.
-func (m IfaceMap) MarshalFastJSON(w *fastjson.Writer) (firstErr error) {
-	w.RawByte('{')
-	first := true
-	for _, item := range m {
-		if first {
-			first = false
-		} else {
-			w.RawByte(',')
-		}
-		w.String(item.Key)
-		w.RawByte(':')
-		if err := fastjson.Marshal(w, item.Value); err != nil && firstErr == nil {
-			firstErr = err
-		}
-	}
-	w.RawByte('}')
-	return nil
-}
-
-// UnmarshalJSON unmarshals the JSON data into m.
-func (m *IfaceMap) UnmarshalJSON(data []byte) error {
-	var mm map[string]interface{}
-	if err := json.Unmarshal(data, &mm); err != nil {
-		return err
-	}
-	*m = make(IfaceMap, 0, len(mm))
-	for k, v := range mm {
-		*m = append(*m, IfaceMapItem{Key: k, Value: v})
-	}
-	sort.Slice(*m, func(i, j int) bool {
-		return (*m)[i].Key < (*m)[j].Key
-	})
-	return nil
-}
-
-// MarshalFastJSON exists to prevent code generation for IfaceMapItem.
-func (*IfaceMapItem) MarshalFastJSON(*fastjson.Writer) error {
-	panic("unreachable")
-}
-
 func (m StringMap) isZero() bool {
 	return len(m) == 0
 }
@@ -593,6 +571,10 @@ func (id *SpanID) MarshalFastJSON(w *fastjson.Writer) error {
 	writeHex(w, id[:])
 	w.RawByte('"')
 	return nil
+}
+
+func (t *ErrorTransaction) isZero() bool {
+	return *t == ErrorTransaction{}
 }
 
 func writeHex(w *fastjson.Writer, v []byte) {

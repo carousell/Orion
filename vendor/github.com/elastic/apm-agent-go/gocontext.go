@@ -1,3 +1,20 @@
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package apm
 
 import (
@@ -43,11 +60,15 @@ func StartSpan(ctx context.Context, name, spanType string) (*Span, context.Conte
 // and parent span in the context, if any. If the span isn't dropped, it will be
 // stored in the resulting context.
 //
+// If opts.Parent is non-zero, its value will be used in preference to any parent
+// span in ctx.
+//
 // StartSpanOptions always returns a non-nil Span. Its End method must be called
 // when the span completes.
 func StartSpanOptions(ctx context.Context, name, spanType string, opts SpanOptions) (*Span, context.Context) {
 	tx := TransactionFromContext(ctx)
-	span := tx.StartSpan(name, spanType, SpanFromContext(ctx))
+	opts.parent = SpanFromContext(ctx)
+	span := tx.StartSpanOptions(name, spanType, opts)
 	if !span.Dropped() {
 		ctx = ContextWithSpan(ctx, span)
 	}
@@ -59,23 +80,40 @@ func StartSpanOptions(ctx context.Context, name, spanType string, opts SpanOptio
 // from err. The Error.Handled field will be set to true, and a stacktrace
 // set either from err, or from the caller.
 //
-// If there is no span or transaction in the context, or the transaction
-// is not being sampled, CaptureError returns nil. As a convenience, if
-// the provided error is nil, then CaptureError will also return nil.
+// If the provided error is nil, then CaptureError will also return nil;
+// otherwise a non-nil Error will always be returned. If there is no
+// transaction or span in the context, then the returned Error's Send
+// method will have no effect.
 func CaptureError(ctx context.Context, err error) *Error {
 	if err == nil {
 		return nil
 	}
-	var e *Error
-	if span := SpanFromContext(ctx); span != nil {
-		e = span.tracer.NewError(err)
-		e.SetSpan(span)
-	} else if tx := TransactionFromContext(ctx); tx != nil && tx.Sampled() {
-		e = tx.tracer.NewError(err)
-		e.SetTransaction(tx)
-	} else {
-		return nil
+
+	var tracer *Tracer
+	var txData *TransactionData
+	var spanData *SpanData
+	if tx := TransactionFromContext(ctx); tx != nil {
+		tx.mu.RLock()
+		defer tx.mu.RUnlock()
+		if !tx.ended() {
+			txData = tx.TransactionData
+			tracer = tx.tracer
+		}
 	}
+	if span := SpanFromContext(ctx); span != nil {
+		span.mu.RLock()
+		defer span.mu.RUnlock()
+		if !span.ended() {
+			spanData = span.SpanData
+			tracer = span.tracer
+		}
+	}
+	if tracer == nil {
+		return &Error{cause: err, err: err.Error()}
+	}
+
+	e := tracer.NewError(err)
 	e.Handled = true
+	e.setSpanData(txData, spanData)
 	return e
 }

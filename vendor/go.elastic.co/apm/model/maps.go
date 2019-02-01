@@ -1,35 +1,21 @@
-package model
-
-import (
-	"sort"
-)
-
-// IfaceMap is a slice-representation of map[string]interface{},
-// optimized for fast JSON encoding.
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-// Slice items are expected to be ordered by key.
-type IfaceMap []IfaceMapItem
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
-// IfaceMapItem holds a string key and arbitrary JSON-encodable value.
-type IfaceMapItem struct {
-	// Key is the map item's key.
-	Key string
-
-	// Value is an arbitrary JSON-encodable value.
-	Value interface{}
-}
-
-// Set sets the map item with given key and value.
-func (m *IfaceMap) Set(key string, value interface{}) {
-	i := sort.Search(len(*m), func(i int) bool {
-		return (*m)[i].Key >= key
-	})
-	if i < len(*m) && (*m)[i].Key == key {
-		(*m)[i].Value = value
-	} else {
-		*m = append(*m, IfaceMapItem{Key: key, Value: value})
-	}
-}
+package model
 
 // StringMap is a slice-representation of map[string]string,
 // optimized for fast JSON encoding.
@@ -44,16 +30,4 @@ type StringMapItem struct {
 
 	// Value is the map item's value.
 	Value string
-}
-
-// Set sets the map item with given key and value.
-func (m *StringMap) Set(key, value string) {
-	i := sort.Search(len(*m), func(i int) bool {
-		return (*m)[i].Key >= key
-	})
-	if i < len(*m) && (*m)[i].Key == key {
-		(*m)[i].Value = value
-	} else {
-		*m = append(*m, StringMapItem{Key: key, Value: value})
-	}
 }

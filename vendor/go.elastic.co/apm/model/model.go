@@ -1,3 +1,20 @@
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package model
 
 import (
@@ -82,6 +99,12 @@ type System struct {
 
 	// Platform is the system's platform, or operating system name.
 	Platform string `json:"platform,omitempty"`
+
+	// Container describes the container running the service.
+	Container *Container `json:"container,omitempty"`
+
+	// Kubernetes describes the kubernetes node and pod running the service.
+	Kubernetes *Kubernetes `json:"kubernetes,omitempty"`
 }
 
 // Process represents an operating system process.
@@ -97,6 +120,40 @@ type Process struct {
 
 	// Argv holds the command line arguments used to start the process.
 	Argv []string `json:"argv,omitempty"`
+}
+
+// Container represents the container (e.g. Docker) running the service.
+type Container struct {
+	// ID is the unique container ID.
+	ID string `json:"id"`
+}
+
+// Kubernetes describes properties of the Kubernetes node and pod in which
+// the service is running.
+type Kubernetes struct {
+	// Namespace names the Kubernetes namespace in which the pod exists.
+	Namespace string `json:"namespace,omitempty"`
+
+	// Node describes the Kubernetes node running the service's pod.
+	Node *KubernetesNode `json:"node,omitempty"`
+
+	// Pod describes the Kubernetes pod running the service.
+	Pod *KubernetesPod `json:"pod,omitempty"`
+}
+
+// KubernetesNode describes a Kubernetes node.
+type KubernetesNode struct {
+	// Name holds the node name.
+	Name string `json:"name,omitempty"`
+}
+
+// KubernetesPod describes a Kubernetes pod.
+type KubernetesPod struct {
+	// Name holds the pod name.
+	Name string `json:"name,omitempty"`
+
+	// UID holds the pod UID.
+	UID string `json:"uid,omitempty"`
 }
 
 // Transaction represents a transaction handled by the service.
@@ -159,15 +216,22 @@ type Span struct {
 	// Name holds the name of the span.
 	Name string `json:"name"`
 
-	// Timestamp holds the time at which the span's transaction started.
+	// Timestamp holds the time at which the span started.
 	Timestamp Time `json:"timestamp"`
 
 	// Duration holds the duration of the span, in milliseconds.
 	Duration float64 `json:"duration"`
 
-	// Type identifies the service-domain specific type of the span,
-	// e.g. "db.postgresql.query".
+	// Type identifies the overarching type of the span,
+	// e.g. "db" or "external".
 	Type string `json:"type"`
+
+	// Subtype identifies the subtype of the span,
+	// e.g. "mysql" or "http".
+	Subtype string `json:"subtype,omitempty"`
+
+	// Action identifies the action that is being undertaken, e.g. "query".
+	Action string `json:"action,omitempty"`
 
 	// ID holds the ID of the span.
 	ID SpanID `json:"id"`
@@ -198,7 +262,7 @@ type SpanContext struct {
 	HTTP *HTTPSpanContext `json:"http,omitempty"`
 
 	// Tags holds user-defined key/value pairs.
-	Tags map[string]string `json:"tags,omitempty"`
+	Tags StringMap `json:"tags,omitempty"`
 }
 
 // DatabaseSpanContext holds contextual information for database
@@ -223,6 +287,9 @@ type DatabaseSpanContext struct {
 type HTTPSpanContext struct {
 	// URL is the request URL.
 	URL *url.URL
+
+	// StatusCode holds the HTTP response status code.
+	StatusCode int `json:"status_code,omitempty"`
 }
 
 // Context holds contextual information relating to a transaction or error.
@@ -239,11 +306,8 @@ type Context struct {
 	// transaction or error, if relevant.
 	User *User `json:"user,omitempty"`
 
-	// Custom holds arbitrary additional metadata.
-	Custom IfaceMap `json:"custom,omitempty"`
-
 	// Tags holds user-defined key/value pairs.
-	Tags map[string]string `json:"tags,omitempty"`
+	Tags StringMap `json:"tags,omitempty"`
 
 	// Service holds values to overrides service-level metadata.
 	Service *Service `json:"service,omitempty"`
@@ -293,6 +357,18 @@ type Error struct {
 
 	// Log holds additional information added when logging the error.
 	Log Log `json:"log,omitempty"`
+
+	// Transaction holds information about the transaction within which the error occurred.
+	Transaction ErrorTransaction `json:"transaction,omitempty"`
+}
+
+// ErrorTransaction holds information about the transaction within which an error occurred.
+type ErrorTransaction struct {
+	// Sampled indicates that the transaction was sampled.
+	Sampled *bool `json:"sampled,omitempty"`
+
+	// Type holds the transaction type.
+	Type string `json:"type,omitempty"`
 }
 
 // Exception represents an exception: an error or panic.
@@ -508,7 +584,11 @@ type Metrics struct {
 
 	// Labels holds a set of labels associated with the metrics.
 	// The labels apply uniformly to all metric samples in the set.
-	Labels StringMap `json:"labels,omitempty"`
+	//
+	// NOTE(axw) the schema calls the field "tags", but we use
+	// "labels" for agent-internal consistency. Labels aligns better
+	// with the common schema, anyway.
+	Labels StringMap `json:"tags,omitempty"`
 
 	// Samples holds a map of metric samples, keyed by metric name.
 	Samples map[string]Metric `json:"samples"`

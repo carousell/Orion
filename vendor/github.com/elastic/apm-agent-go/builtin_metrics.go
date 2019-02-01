@@ -1,17 +1,34 @@
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package apm
 
 import (
 	"context"
 	"runtime"
 
-	"github.com/elastic/go-sysinfo"
+	sysinfo "github.com/elastic/go-sysinfo"
 	"github.com/elastic/go-sysinfo/types"
 )
 
 // builtinMetricsGatherer is an MetricsGatherer which gathers builtin metrics:
-//   - memstats (allocations, usage, GC, etc.)
 //   - goroutines
-//   - tracer stats (number of transactions/errors sent, dropped, etc.)
+//   - memstats (allocations, usage, GC, etc.)
+//   - system and process CPU and memory usage
 type builtinMetricsGatherer struct {
 	tracer         *Tracer
 	lastSysMetrics sysMetrics
@@ -30,7 +47,6 @@ func (g *builtinMetricsGatherer) GatherMetrics(ctx context.Context, m *Metrics) 
 	m.Add("golang.goroutines", nil, float64(runtime.NumGoroutine()))
 	g.gatherSystemMetrics(m)
 	g.gatherMemStatsMetrics(m)
-	g.gatherTracerStatsMetrics(m)
 	return nil
 }
 
@@ -77,19 +93,6 @@ func (g *builtinMetricsGatherer) gatherMemStatsMetrics(m *Metrics) {
 	add("golang.heap.gc.cpu_fraction", mem.GCCPUFraction)
 }
 
-func (g *builtinMetricsGatherer) gatherTracerStatsMetrics(m *Metrics) {
-	stats := g.tracer.Stats()
-
-	const p = "agent"
-	m.Add(p+".send_errors", nil, float64(stats.Errors.SendStream))
-	m.Add(p+".spans.sent", nil, float64(stats.SpansSent))
-	m.Add(p+".spans.dropped", nil, float64(stats.SpansDropped))
-	m.Add(p+".transactions.sent", nil, float64(stats.TransactionsSent))
-	m.Add(p+".transactions.dropped", nil, float64(stats.TransactionsDropped))
-	m.Add(p+".errors.sent", nil, float64(stats.ErrorsSent))
-	m.Add(p+".errors.dropped", nil, float64(stats.ErrorsDropped))
-}
-
 func calculateCPUUsage(current, last cpuMetrics) (systemUsage, processUsage float64) {
 	idleDelta := current.system.Idle + current.system.IOWait - last.system.Idle - last.system.IOWait
 	systemTotalDelta := current.system.Total() - last.system.Total()
@@ -97,11 +100,11 @@ func calculateCPUUsage(current, last cpuMetrics) (systemUsage, processUsage floa
 		return 0, 0
 	}
 
-	idlePercent := 100 * float64(idleDelta) / float64(systemTotalDelta)
-	systemUsage = 100 - idlePercent
+	idlePercent := float64(idleDelta) / float64(systemTotalDelta)
+	systemUsage = 1 - idlePercent
 
 	processTotalDelta := current.process.Total() - last.process.Total()
-	processUsage = 100 * float64(processTotalDelta) / float64(systemTotalDelta)
+	processUsage = float64(processTotalDelta) / float64(systemTotalDelta)
 
 	return systemUsage, processUsage
 }

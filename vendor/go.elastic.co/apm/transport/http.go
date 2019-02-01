@@ -1,9 +1,28 @@
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package transport
 
 import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -26,6 +45,7 @@ const (
 	envServerURLs       = "ELASTIC_APM_SERVER_URLS"
 	envServerURL        = "ELASTIC_APM_SERVER_URL"
 	envServerTimeout    = "ELASTIC_APM_SERVER_TIMEOUT"
+	envServerCert       = "ELASTIC_APM_SERVER_CERT"
 	envVerifyServerCert = "ELASTIC_APM_VERIFY_SERVER_CERT"
 )
 
@@ -66,6 +86,11 @@ type HTTPTransport struct {
 //
 // - ELASTIC_APM_SECRET_TOKEN: used to authenticate the agent.
 //
+// - ELASTIC_APM_SERVER_CERT: path to a PEM-encoded certificate that
+//   must match the APM Server-supplied certificate. This can be used
+//   to pin a self signed certificate. If this is set, then
+//   ELASTIC_APM_VERIFY_SERVER_CERT is ignored.
+//
 // - ELASTIC_APM_VERIFY_SERVER_CERT: if set to "false", the transport
 //   will not verify the APM Server's TLS certificate. Only relevant
 //   when using HTTPS. By default, the transport will verify server
@@ -90,6 +115,21 @@ func NewHTTPTransport() (*HTTPTransport, error) {
 		return nil, err
 	}
 
+	tlsConfig := &tls.Config{InsecureSkipVerify: !verifyServerCert}
+	serverCertPath := os.Getenv(envServerCert)
+	if serverCertPath != "" {
+		serverCert, err := loadCertificate(serverCertPath)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to load certificate from %s", serverCertPath)
+		}
+		// Disable standard verification, we'll check that the
+		// server supplies the exact certificate provided.
+		tlsConfig.InsecureSkipVerify = true
+		tlsConfig.VerifyPeerCertificate = func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+			return verifyPeerCertificate(rawCerts, serverCert)
+		}
+	}
+
 	client := &http.Client{
 		Timeout: serverTimeout,
 		Transport: &http.Transport{
@@ -99,9 +139,7 @@ func NewHTTPTransport() (*HTTPTransport, error) {
 			IdleConnTimeout:       defaultHTTPTransport.IdleConnTimeout,
 			TLSHandshakeTimeout:   defaultHTTPTransport.TLSHandshakeTimeout,
 			ExpectContinueTimeout: defaultHTTPTransport.ExpectContinueTimeout,
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: !verifyServerCert,
-			},
+			TLSClientConfig:       tlsConfig,
 		},
 	}
 
@@ -193,10 +231,16 @@ func (t *HTTPTransport) sendRequest(req *http.Request) error {
 	if err == nil {
 		resp.Body = ioutil.NopCloser(bytes.NewReader(bodyContents))
 	}
-	return &HTTPError{
+	result := &HTTPError{
 		Response: resp,
 		Message:  strings.TrimSpace(string(bodyContents)),
 	}
+	if resp.StatusCode == http.StatusNotFound && result.Message == "404 page not found" {
+		// This may be an old (pre-6.5) APM server
+		// that does not support the v2 intake API.
+		result.Message = fmt.Sprintf("%s not found (requires APM Server 6.5.0 or newer)", req.URL)
+	}
+	return result
 }
 
 func (t *HTTPTransport) newRequest(url *url.URL) *http.Request {
@@ -271,4 +315,35 @@ func requestWithContext(ctx context.Context, req *http.Request) *http.Request {
 	reqCopy.URL = url
 	req.URL = url
 	return reqCopy
+}
+
+func loadCertificate(path string) (*x509.Certificate, error) {
+	pemBytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	for {
+		var certBlock *pem.Block
+		certBlock, pemBytes = pem.Decode(pemBytes)
+		if certBlock == nil {
+			return nil, errors.New("missing or invalid certificate")
+		}
+		if certBlock.Type == "CERTIFICATE" {
+			return x509.ParseCertificate(certBlock.Bytes)
+		}
+	}
+}
+
+func verifyPeerCertificate(rawCerts [][]byte, trusted *x509.Certificate) error {
+	if len(rawCerts) == 0 {
+		return errors.New("missing leaf certificate")
+	}
+	cert, err := x509.ParseCertificate(rawCerts[0])
+	if err != nil {
+		return errors.Wrap(err, "failed to parse certificate from server")
+	}
+	if !cert.Equal(trusted) {
+		return errors.New("failed to verify server certificate")
+	}
+	return nil
 }

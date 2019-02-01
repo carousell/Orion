@@ -1,3 +1,20 @@
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package apm
 
 import (
@@ -8,10 +25,11 @@ import (
 	"log"
 	"math/rand"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"go.elastic.co/apm/internal/apmconfig"
-	"go.elastic.co/apm/internal/apmdebug"
+	"go.elastic.co/apm/internal/apmlog"
 	"go.elastic.co/apm/internal/iochan"
 	"go.elastic.co/apm/internal/ringbuffer"
 	"go.elastic.co/apm/internal/wildcard"
@@ -53,8 +71,11 @@ type options struct {
 	maxSpans              int
 	requestSize           int
 	bufferSize            int
+	metricsBufferSize     int
 	sampler               Sampler
 	sanitizedFieldNames   wildcard.Matchers
+	disabledMetrics       wildcard.Matchers
+	captureHeaders        bool
 	captureBody           CaptureBodyMode
 	spanFramesMinDuration time.Duration
 	serviceName           string
@@ -96,6 +117,12 @@ func (opts *options) init(continueOnError bool) error {
 		errs = append(errs, err)
 	}
 
+	metricsBufferSize, err := initialMetricsBufferSize()
+	if err != nil {
+		metricsBufferSize = int(defaultMetricsBufferSize)
+		errs = append(errs, err)
+	}
+
 	maxSpans, err := initialMaxSpans()
 	if failed(err) {
 		maxSpans = defaultMaxSpans
@@ -104,6 +131,11 @@ func (opts *options) init(continueOnError bool) error {
 	sampler, err := initialSampler()
 	if failed(err) {
 		sampler = nil
+	}
+
+	captureHeaders, err := initialCaptureHeaders()
+	if failed(err) {
+		captureHeaders = defaultCaptureHeaders
 	}
 
 	captureBody, err := initialCaptureBody()
@@ -132,9 +164,12 @@ func (opts *options) init(continueOnError bool) error {
 	opts.metricsInterval = metricsInterval
 	opts.requestSize = requestSize
 	opts.bufferSize = bufferSize
+	opts.metricsBufferSize = metricsBufferSize
 	opts.maxSpans = maxSpans
 	opts.sampler = sampler
 	opts.sanitizedFieldNames = initialSanitizedFieldNames()
+	opts.disabledMetrics = initialDisabledMetrics()
+	opts.captureHeaders = captureHeaders
 	opts.captureBody = captureBody
 	opts.spanFramesMinDuration = spanFramesMinDuration
 	opts.serviceName, opts.serviceVersion, opts.serviceEnvironment = initialService()
@@ -172,16 +207,17 @@ type Tracer struct {
 	process *model.Process
 	system  *model.System
 
-	active           bool
-	bufferSize       int
-	closing          chan struct{}
-	closed           chan struct{}
-	forceFlush       chan chan<- struct{}
-	forceSendMetrics chan chan<- struct{}
-	configCommands   chan tracerConfigCommand
-	transactions     chan *Transaction
-	spans            chan *Span
-	errors           chan *Error
+	active            int32
+	bufferSize        int
+	metricsBufferSize int
+	closing           chan struct{}
+	closed            chan struct{}
+	forceFlush        chan chan<- struct{}
+	forceSendMetrics  chan chan<- struct{}
+	configCommands    chan tracerConfigCommand
+	transactions      chan *TransactionData
+	spans             chan *SpanData
+	errors            chan *ErrorData
 
 	statsMu sync.Mutex
 	stats   TracerStats
@@ -195,12 +231,15 @@ type Tracer struct {
 	samplerMu sync.RWMutex
 	sampler   Sampler
 
+	captureHeadersMu sync.RWMutex
+	captureHeaders   bool
+
 	captureBodyMu sync.RWMutex
 	captureBody   CaptureBodyMode
 
-	errorPool       sync.Pool
-	spanPool        sync.Pool
-	transactionPool sync.Pool
+	errorDataPool       sync.Pool
+	spanDataPool        sync.Pool
+	transactionDataPool sync.Pool
 }
 
 // NewTracer returns a new Tracer, using the default transport,
@@ -235,21 +274,24 @@ func newTracer(opts options) *Tracer {
 		forceFlush:            make(chan chan<- struct{}),
 		forceSendMetrics:      make(chan chan<- struct{}),
 		configCommands:        make(chan tracerConfigCommand),
-		transactions:          make(chan *Transaction, transactionsChannelCap),
-		spans:                 make(chan *Span, spansChannelCap),
-		errors:                make(chan *Error, errorsChannelCap),
+		transactions:          make(chan *TransactionData, transactionsChannelCap),
+		spans:                 make(chan *SpanData, spansChannelCap),
+		errors:                make(chan *ErrorData, errorsChannelCap),
+		active:                1,
 		maxSpans:              opts.maxSpans,
 		sampler:               opts.sampler,
+		captureHeaders:        opts.captureHeaders,
 		captureBody:           opts.captureBody,
 		spanFramesMinDuration: opts.spanFramesMinDuration,
-		active:                opts.active,
 		bufferSize:            opts.bufferSize,
+		metricsBufferSize:     opts.metricsBufferSize,
 	}
 	t.Service.Name = opts.serviceName
 	t.Service.Version = opts.serviceVersion
 	t.Service.Environment = opts.serviceEnvironment
 
-	if !t.active {
+	if !opts.active {
+		t.active = 0
 		close(t.closed)
 		return t
 	}
@@ -260,11 +302,12 @@ func newTracer(opts options) *Tracer {
 		cfg.requestDuration = opts.requestDuration
 		cfg.requestSize = opts.requestSize
 		cfg.sanitizedFieldNames = opts.sanitizedFieldNames
+		cfg.disabledMetrics = opts.disabledMetrics
 		cfg.preContext = defaultPreContext
 		cfg.postContext = defaultPostContext
 		cfg.metricsGatherers = []MetricsGatherer{newBuiltinMetricsGatherer(t)}
-		if apmdebug.DebugLog {
-			cfg.logger = apmdebug.LogLogger{}
+		if apmlog.DefaultLogger != nil {
+			cfg.logger = apmlog.DefaultLogger
 		}
 	}
 	return t
@@ -281,6 +324,7 @@ type tracerConfig struct {
 	contextSetter           stacktrace.ContextSetter
 	preContext, postContext int
 	sanitizedFieldNames     wildcard.Matchers
+	disabledMetrics         wildcard.Matchers
 }
 
 type tracerConfigCommand func(*tracerConfig)
@@ -315,7 +359,7 @@ func (t *Tracer) Flush(abort <-chan struct{}) {
 // Active reports whether the tracer is active. If the tracer is inactive,
 // no transactions or errors will be sent to the Elastic APM server.
 func (t *Tracer) Active() bool {
-	return t.active
+	return atomic.LoadInt32(&t.active) == 1
 }
 
 // SetRequestDuration sets the maximum amount of time to keep a request open
@@ -346,14 +390,11 @@ func (t *Tracer) SetContextSetter(setter stacktrace.ContextSetter) {
 
 // SetLogger sets the Logger to be used for logging the operation of
 // the tracer.
+//
+// The tracer is initialized with a default logger configured with the
+// environment variables ELASTIC_APM_LOG_FILE and ELASTIC_APM_LOG_LEVEL.
+// Calling SetLogger will replace the default logger.
 func (t *Tracer) SetLogger(logger Logger) {
-	if apmdebug.DebugLog {
-		if logger == nil {
-			logger = apmdebug.LogLogger{}
-		} else {
-			logger = apmdebug.ChainedLogger{apmdebug.LogLogger{}, logger}
-		}
-	}
 	t.sendConfigCommand(func(cfg *tracerConfig) {
 		cfg.logger = logger
 	})
@@ -438,6 +479,13 @@ func (t *Tracer) SetSpanFramesMinDuration(d time.Duration) {
 	t.spanFramesMinDurationMu.Unlock()
 }
 
+// SetCaptureHeaders enables or disables capturing of HTTP headers.
+func (t *Tracer) SetCaptureHeaders(capture bool) {
+	t.captureHeadersMu.Lock()
+	t.captureHeaders = capture
+	t.captureHeadersMu.Unlock()
+}
+
 // SetCaptureBody sets the HTTP request body capture mode.
 func (t *Tracer) SetCaptureBody(mode CaptureBodyMode) {
 	t.captureBodyMu.Lock()
@@ -474,13 +522,14 @@ func (t *Tracer) loop() {
 	ctx, cancelContext := context.WithCancel(context.Background())
 	defer cancelContext()
 	defer close(t.closed)
+	defer atomic.StoreInt32(&t.active, 0)
 
 	var req iochan.ReadRequest
 	var requestBuf bytes.Buffer
 	var metadata []byte
 	var gracePeriod time.Duration = -1
 	var flushed chan<- struct{}
-	var requestBufTransactions, requestBufSpans, requestBufErrors, requestBufMetrics uint64
+	var requestBufTransactions, requestBufSpans, requestBufErrors, requestBufMetricsets uint64
 	zlibWriter, _ := zlib.NewWriterLevel(&requestBuf, zlib.BestSpeed)
 	zlibFlushed := true
 	zlibClosed := false
@@ -513,17 +562,18 @@ func (t *Tracer) loop() {
 		}
 	}()
 
+	var stats TracerStats
 	var metrics Metrics
 	var sentMetrics chan<- struct{}
 	var gatheringMetrics bool
+	var metricsTimerStart time.Time
+	metricsBuffer := ringbuffer.New(t.metricsBufferSize)
 	gatheredMetrics := make(chan struct{}, 1)
 	metricsTimer := time.NewTimer(0)
-	metricsTimerActive := false
 	if !metricsTimer.Stop() {
 		<-metricsTimer.C
 	}
 
-	var stats TracerStats
 	var cfg tracerConfig
 	buffer := ringbuffer.New(t.bufferSize)
 	buffer.Evicted = func(h ringbuffer.BlockHeader) {
@@ -537,23 +587,43 @@ func (t *Tracer) loop() {
 		}
 	}
 	modelWriter := modelWriter{
-		buffer: buffer,
-		cfg:    &cfg,
-		stats:  &stats,
+		buffer:        buffer,
+		metricsBuffer: metricsBuffer,
+		cfg:           &cfg,
+		stats:         &stats,
 	}
 
 	for {
 		var gatherMetrics bool
 		select {
 		case <-t.closing:
+			cancelContext() // informs transport that EOF is expected
 			iochanReader.CloseRead(io.EOF)
 			return
 		case cmd := <-t.configCommands:
 			oldMetricsInterval := cfg.metricsInterval
 			cmd(&cfg)
-			if !gatheringMetrics && oldMetricsInterval <= 0 && cfg.metricsInterval > 0 {
-				metricsTimer.Reset(cfg.metricsInterval)
-				metricsTimerActive = true
+			if !gatheringMetrics && cfg.metricsInterval != oldMetricsInterval {
+				if metricsTimerStart.IsZero() {
+					if cfg.metricsInterval > 0 {
+						metricsTimer.Reset(cfg.metricsInterval)
+						metricsTimerStart = time.Now()
+					}
+				} else {
+					if cfg.metricsInterval <= 0 {
+						metricsTimerStart = time.Time{}
+						if !metricsTimer.Stop() {
+							<-metricsTimer.C
+						}
+					} else {
+						alreadyPassed := time.Since(metricsTimerStart)
+						if alreadyPassed >= cfg.metricsInterval {
+							metricsTimer.Reset(0)
+						} else {
+							metricsTimer.Reset(cfg.metricsInterval - alreadyPassed)
+						}
+					}
+				}
 			}
 			continue
 		case tx := <-t.transactions:
@@ -568,22 +638,22 @@ func (t *Tracer) loop() {
 			requestTimerActive = false
 			closeRequest = true
 		case <-metricsTimer.C:
-			metricsTimerActive = false
+			metricsTimerStart = time.Time{}
 			gatherMetrics = !gatheringMetrics
 		case sentMetrics = <-t.forceSendMetrics:
-			if metricsTimerActive {
+			if !metricsTimerStart.IsZero() {
 				if !metricsTimer.Stop() {
 					<-metricsTimer.C
 				}
-				metricsTimerActive = false
+				metricsTimerStart = time.Time{}
 			}
 			gatherMetrics = !gatheringMetrics
 		case <-gatheredMetrics:
 			modelWriter.writeMetrics(&metrics)
 			gatheringMetrics = false
-			closeRequest = true
+			flushRequest = true
 			if cfg.metricsInterval > 0 {
-				metricsTimerActive = true
+				metricsTimerStart = time.Now()
 				metricsTimer.Reset(cfg.metricsInterval)
 			}
 		case flushed = <-t.forceFlush:
@@ -597,7 +667,7 @@ func (t *Tracer) loop() {
 			for n := len(t.errors); n > 0; n-- {
 				modelWriter.writeError(<-t.errors)
 			}
-			if !requestActive && buffer.Len() == 0 {
+			if !requestActive && buffer.Len() == 0 && metricsBuffer.Len() == 0 {
 				flushed <- struct{}{}
 				continue
 			}
@@ -608,7 +678,13 @@ func (t *Tracer) loop() {
 				stats.Errors.SendStream++
 				gracePeriod = nextGracePeriod(gracePeriod)
 				if cfg.logger != nil {
-					cfg.logger.Debugf("request failed: %s (next request in ~%s)", err, gracePeriod)
+					logf := cfg.logger.Debugf
+					if err, ok := err.(*transport.HTTPError); ok && err.Response.StatusCode == 404 {
+						// 404 typically means the server is too old, meaning
+						// the error is due to a misconfigured environment.
+						logf = cfg.logger.Errorf
+					}
+					logf("request failed: %s (next request in ~%s)", err, gracePeriod)
 				}
 			} else {
 				gracePeriod = -1 // Reset grace period after success.
@@ -623,11 +699,11 @@ func (t *Tracer) loop() {
 						return ""
 					}
 					cfg.logger.Debugf(
-						"sent request with %d transaction%s, %d span%s, %d error%s, %d metric%s",
+						"sent request with %d transaction%s, %d span%s, %d error%s, %d metricset%s",
 						requestBufTransactions, s(requestBufTransactions),
 						requestBufSpans, s(requestBufSpans),
 						requestBufErrors, s(requestBufErrors),
-						requestBufMetrics, s(requestBufMetrics),
+						requestBufMetricsets, s(requestBufMetricsets),
 					)
 				}
 			}
@@ -637,7 +713,7 @@ func (t *Tracer) loop() {
 				t.statsMu.Unlock()
 				stats = TracerStats{}
 			}
-			if sentMetrics != nil {
+			if sentMetrics != nil && requestBufMetricsets > 0 {
 				sentMetrics <- struct{}{}
 				sentMetrics = nil
 			}
@@ -659,7 +735,7 @@ func (t *Tracer) loop() {
 			requestBufTransactions = 0
 			requestBufSpans = 0
 			requestBufErrors = 0
-			requestBufMetrics = 0
+			requestBufMetricsets = 0
 			if requestTimerActive {
 				if !requestTimer.Stop() {
 					<-requestTimer.C
@@ -677,6 +753,7 @@ func (t *Tracer) loop() {
 
 		if gatherMetrics {
 			gatheringMetrics = true
+			metrics.disabled = cfg.disabledMetrics
 			t.gatherMetrics(ctx, cfg.metricsGatherers, &metrics, cfg.logger, gatheredMetrics)
 			if cfg.logger != nil {
 				cfg.logger.Debugf("gathering metrics")
@@ -684,7 +761,7 @@ func (t *Tracer) loop() {
 		}
 
 		if !requestActive {
-			if buffer.Len() == 0 {
+			if buffer.Len() == 0 && metricsBuffer.Len() == 0 {
 				continue
 			}
 			sendStreamRequest <- gracePeriod
@@ -701,7 +778,24 @@ func (t *Tracer) loop() {
 		}
 
 		if !closeRequest || !zlibClosed {
-			for requestBytesRead+requestBuf.Len() < cfg.requestSize && buffer.Len() > 0 {
+			for requestBytesRead+requestBuf.Len() < cfg.requestSize {
+				if metricsBuffer.Len() > 0 {
+					if _, _, err := metricsBuffer.WriteBlockTo(zlibWriter); err == nil {
+						requestBufMetricsets++
+						zlibWriter.Write([]byte("\n"))
+						zlibFlushed = false
+						if sentMetrics != nil {
+							// SendMetrics was called: close the request
+							// off so we can inform the user when the
+							// metrics have been processed.
+							closeRequest = true
+						}
+					}
+					continue
+				}
+				if buffer.Len() == 0 {
+					break
+				}
 				if h, _, err := buffer.WriteBlockTo(zlibWriter); err == nil {
 					switch h.Tag {
 					case transactionBlockTag:
@@ -710,8 +804,6 @@ func (t *Tracer) loop() {
 						requestBufSpans++
 					case errorBlockTag:
 						requestBufErrors++
-					case metricsBlockTag:
-						requestBufMetrics++
 					}
 					zlibWriter.Write([]byte("\n"))
 					zlibFlushed = false

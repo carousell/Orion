@@ -1,3 +1,20 @@
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package apm
 
 import (
@@ -11,6 +28,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"go.elastic.co/apm/internal/apmhostutil"
 	"go.elastic.co/apm/internal/apmstrings"
 	"go.elastic.co/apm/model"
 )
@@ -23,6 +41,7 @@ var (
 	localSystem    model.System
 
 	serviceNameInvalidRegexp = regexp.MustCompile("[^" + serviceNameValidClass + "]")
+	tagKeyReplacer           = strings.NewReplacer(`.`, `_`, `*`, `_`, `"`, `_`)
 )
 
 const (
@@ -73,11 +92,53 @@ func getLocalSystem() model.System {
 		}
 	}
 	system.Hostname = truncateString(system.Hostname)
+	if container, err := apmhostutil.Container(); err == nil {
+		system.Container = container
+	}
+	system.Kubernetes = getKubernetesMetadata()
 	return system
 }
 
-func validTagKey(k string) bool {
-	return !strings.ContainsAny(k, `.*"`)
+func getKubernetesMetadata() *model.Kubernetes {
+	kubernetes, err := apmhostutil.Kubernetes()
+	if err != nil {
+		kubernetes = nil
+	}
+	namespace := os.Getenv("KUBERNETES_NAMESPACE")
+	podName := os.Getenv("KUBERNETES_POD_NAME")
+	podUID := os.Getenv("KUBERNETES_POD_UID")
+	nodeName := os.Getenv("KUBERNETES_NODE_NAME")
+	if namespace == "" && podName == "" && podUID == "" && nodeName == "" {
+		return kubernetes
+	}
+	if kubernetes == nil {
+		kubernetes = &model.Kubernetes{}
+	}
+	if namespace != "" {
+		kubernetes.Namespace = namespace
+	}
+	if nodeName != "" {
+		if kubernetes.Node == nil {
+			kubernetes.Node = &model.KubernetesNode{}
+		}
+		kubernetes.Node.Name = nodeName
+	}
+	if podName != "" || podUID != "" {
+		if kubernetes.Pod == nil {
+			kubernetes.Pod = &model.KubernetesPod{}
+		}
+		if podName != "" {
+			kubernetes.Pod.Name = podName
+		}
+		if podUID != "" {
+			kubernetes.Pod.UID = podUID
+		}
+	}
+	return kubernetes
+}
+
+func cleanTagKey(k string) string {
+	return tagKeyReplacer.Replace(k)
 }
 
 func validateServiceName(name string) error {
