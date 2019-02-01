@@ -311,7 +311,7 @@ func (b *Backend) setExpirationTime(key string) error {
 	expiresIn := b.GetConfig().ResultsExpireIn
 	if expiresIn == 0 {
 		// // expire results after 1 hour by default
-		expiresIn = 3600
+		expiresIn = config.DefaultResultsExpireIn
 	}
 	expirationTimestamp := int32(time.Now().Unix() + int64(expiresIn))
 
@@ -329,7 +329,7 @@ func (b *Backend) setExpirationTime(key string) error {
 // open returns or creates instance of Redis connection
 func (b *Backend) open() redis.Conn {
 	if b.pool == nil {
-		b.pool = b.NewPool(b.socketPath, b.host, b.password, b.db, b.GetConfig().Redis)
+		b.pool = b.NewPool(b.socketPath, b.host, b.password, b.db, b.GetConfig().Redis, b.GetConfig().TLSConfig)
 	}
 	if b.redsync == nil {
 		var pools = []redsync.Pool{b.pool}

@@ -1,3 +1,20 @@
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package apm
 
 import (
@@ -19,9 +36,9 @@ func (t *Tracer) StartTransaction(name, transactionType string) *Transaction {
 // StartTransactionOptions returns a new Transaction with the
 // specified name, type, and options.
 func (t *Tracer) StartTransactionOptions(name, transactionType string, opts TransactionOptions) *Transaction {
-	tx, _ := t.transactionPool.Get().(*Transaction)
-	if tx == nil {
-		tx = &Transaction{
+	td, _ := t.transactionDataPool.Get().(*TransactionData)
+	if td == nil {
+		td = &TransactionData{
 			tracer:   t,
 			Duration: -1,
 			Context: Context{
@@ -32,8 +49,10 @@ func (t *Tracer) StartTransactionOptions(name, transactionType string, opts Tran
 		if err := binary.Read(cryptorand.Reader, binary.LittleEndian, &seed); err != nil {
 			seed = time.Now().UnixNano()
 		}
-		tx.rand = rand.New(rand.NewSource(seed))
+		td.rand = rand.New(rand.NewSource(seed))
 	}
+	tx := &Transaction{TransactionData: td}
+
 	tx.Name = name
 	tx.Type = transactionType
 
@@ -61,6 +80,10 @@ func (t *Tracer) StartTransactionOptions(name, transactionType string, opts Tran
 	tx.spanFramesMinDuration = t.spanFramesMinDuration
 	t.spanFramesMinDurationMu.RUnlock()
 
+	t.captureHeadersMu.RLock()
+	tx.Context.captureHeaders = t.captureHeaders
+	t.captureHeadersMu.RUnlock()
+
 	if root {
 		t.samplerMu.RLock()
 		sampler := t.sampler
@@ -84,80 +107,6 @@ func (t *Tracer) StartTransactionOptions(name, transactionType string, opts Tran
 	return tx
 }
 
-// Transaction describes an event occurring in the monitored service.
-type Transaction struct {
-	Name         string
-	Type         string
-	Duration     time.Duration
-	Context      Context
-	Result       string
-	traceContext TraceContext
-	parentSpan   SpanID
-	timestamp    time.Time
-
-	tracer                *Tracer
-	maxSpans              int
-	spanFramesMinDuration time.Duration
-
-	mu           sync.Mutex
-	spansCreated int
-	spansDropped int
-	rand         *rand.Rand // for ID generation
-}
-
-// reset resets the Transaction back to its zero state and places it back
-// into the transaction pool.
-func (tx *Transaction) reset() {
-	*tx = Transaction{
-		tracer:   tx.tracer,
-		Context:  tx.Context,
-		Duration: -1,
-		rand:     tx.rand,
-	}
-	tx.Context.reset()
-	tx.tracer.transactionPool.Put(tx)
-}
-
-// Discard discards a previously started transaction. The Transaction
-// must not be used after this.
-func (tx *Transaction) Discard() {
-	tx.reset()
-}
-
-// Sampled reports whether or not the transaction is sampled.
-func (tx *Transaction) Sampled() bool {
-	return tx.traceContext.Options.Recorded()
-}
-
-// TraceContext returns the transaction's TraceContext.
-func (tx *Transaction) TraceContext() TraceContext {
-	return tx.traceContext
-}
-
-// End enqueues tx for sending to the Elastic APM server; tx must not
-// be used after this.
-//
-// If tx.Duration has not been set, End will set it to the elapsed time
-// since the transaction's start time.
-func (tx *Transaction) End() {
-	if tx.Duration < 0 {
-		tx.Duration = time.Since(tx.timestamp)
-	}
-	tx.enqueue()
-}
-
-func (tx *Transaction) enqueue() {
-	select {
-	case tx.tracer.transactions <- tx:
-	default:
-		// Enqueuing a transaction should never block.
-		tx.tracer.statsMu.Lock()
-		tx.tracer.stats.TransactionsDropped++
-		tx.tracer.statsMu.Unlock()
-		tx.reset()
-	}
-}
-
 // TransactionOptions holds options for Tracer.StartTransactionOptions.
 type TransactionOptions struct {
 	// TraceContext holds the TraceContext for a new transaction. If this is
@@ -167,4 +116,171 @@ type TransactionOptions struct {
 	// Start is the start time of the transaction. If this has the
 	// zero value, time.Now() will be used instead.
 	Start time.Time
+}
+
+// Transaction describes an event occurring in the monitored service.
+type Transaction struct {
+	mu sync.RWMutex
+
+	// TransactionData holds the transaction data. This field is set to
+	// nil when either of the transaction's End or Discard methods are called.
+	*TransactionData
+}
+
+// Sampled reports whether or not the transaction is sampled.
+func (tx *Transaction) Sampled() bool {
+	if tx == nil {
+		return false
+	}
+	tx.mu.RLock()
+	defer tx.mu.RUnlock()
+	if tx.ended() {
+		return false
+	}
+	return tx.traceContext.Options.Recorded()
+}
+
+// TraceContext returns the transaction's TraceContext.
+//
+// The resulting TraceContext's Span field holds the transaction's ID.
+// If tx is nil, or has already been ended, a zero (invalid) TraceContext
+// is returned.
+func (tx *Transaction) TraceContext() TraceContext {
+	if tx == nil {
+		return TraceContext{}
+	}
+	tx.mu.RLock()
+	defer tx.mu.RUnlock()
+	if tx.ended() {
+		return TraceContext{}
+	}
+	return tx.traceContext
+}
+
+// EnsureParent returns the span ID for for tx's parent, generating a
+// parent span ID if one has not already been set. If tx is nil, a zero
+// (invalid) SpanID is returned.
+//
+// This method can be used for generating a span ID for the RUM
+// (Real User Monitoring) agent, where the RUM agent is initialized
+// after the backend service returns.
+func (tx *Transaction) EnsureParent() SpanID {
+	if tx == nil {
+		return SpanID{}
+	}
+	tx.TransactionData.mu.Lock()
+	if tx.parentSpan.isZero() {
+		// parentSpan can only be zero if tx is a root transaction
+		// for which GenerateParentTraceContext() has not previously
+		// been called. Reuse the latter half of the trace ID for
+		// the parent span ID; the first half is used for the
+		// transaction ID.
+		copy(tx.parentSpan[:], tx.traceContext.Trace[8:])
+	}
+	tx.TransactionData.mu.Unlock()
+	return tx.parentSpan
+}
+
+// Discard discards a previously started transaction.
+//
+// Calling Discard will set tx's TransactionData field to nil, so callers must
+// ensure tx is not updated after Discard returns.
+func (tx *Transaction) Discard() {
+	tx.mu.Lock()
+	defer tx.mu.Unlock()
+	if tx.ended() {
+		return
+	}
+	tx.TransactionData.reset()
+	tx.TransactionData = nil
+}
+
+// End enqueues tx for sending to the Elastic APM server.
+//
+// Calling End will set tx's TransactionData field to nil, so callers
+// must ensure tx is not updated after End returns.
+//
+// If tx.Duration has not been set, End will set it to the elapsed time
+// since the transaction's start time.
+func (tx *Transaction) End() {
+	tx.mu.Lock()
+	defer tx.mu.Unlock()
+	if tx.ended() {
+		return
+	}
+	if tx.Duration < 0 {
+		tx.Duration = time.Since(tx.timestamp)
+	}
+	tx.TransactionData.enqueue()
+	tx.TransactionData = nil
+}
+
+// ended reports whether or not End or Discard has been called.
+//
+// This must be called with tx.mu held for reading.
+func (tx *Transaction) ended() bool {
+	return tx.TransactionData == nil
+}
+
+// TransactionData holds the details for a transaction, and is embedded
+// inside Transaction. When a transaction is ended, its TransactionData
+// field will be set to nil.
+type TransactionData struct {
+	// Name holds the transaction name, initialized with the value
+	// passed to StartTransaction.
+	Name string
+
+	// Type holds the transaction type, initialized with the value
+	// passed to StartTransaction.
+	Type string
+
+	// Duration holds the transaction duration, initialized to -1.
+	//
+	// If you do not update Duration, calling Transaction.End will
+	// calculate the duration based on the elapsed time since the
+	// transaction's start time.
+	Duration time.Duration
+
+	// Context describes the context in which the transaction occurs.
+	Context Context
+
+	// Result holds the transaction result.
+	Result string
+
+	tracer                *Tracer
+	maxSpans              int
+	spanFramesMinDuration time.Duration
+	timestamp             time.Time
+	traceContext          TraceContext
+
+	mu           sync.Mutex
+	parentSpan   SpanID
+	spansCreated int
+	spansDropped int
+	rand         *rand.Rand // for ID generation
+}
+
+func (td *TransactionData) enqueue() {
+	select {
+	case td.tracer.transactions <- td:
+	default:
+		// Enqueuing a transaction should never block.
+		td.tracer.statsMu.Lock()
+		td.tracer.stats.TransactionsDropped++
+		td.tracer.statsMu.Unlock()
+		td.reset()
+	}
+}
+
+// reset resets the Transaction back to its zero state and places it back
+// into the transaction pool.
+func (td *TransactionData) reset() {
+	*td = TransactionData{
+		tracer:   td.tracer,
+		Context:  td.Context,
+		Duration: -1,
+		rand:     td.rand,
+	}
+	td.Context.reset()
+	td.tracer.transactionDataPool.Put(td)
 }

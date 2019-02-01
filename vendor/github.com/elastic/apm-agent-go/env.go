@@ -1,3 +1,20 @@
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package apm
 
 import (
@@ -19,6 +36,7 @@ const (
 	envMaxSpans              = "ELASTIC_APM_TRANSACTION_MAX_SPANS"
 	envTransactionSampleRate = "ELASTIC_APM_TRANSACTION_SAMPLE_RATE"
 	envSanitizeFieldNames    = "ELASTIC_APM_SANITIZE_FIELD_NAMES"
+	envCaptureHeaders        = "ELASTIC_APM_CAPTURE_HEADERS"
 	envCaptureBody           = "ELASTIC_APM_CAPTURE_BODY"
 	envServiceName           = "ELASTIC_APM_SERVICE_NAME"
 	envServiceVersion        = "ELASTIC_APM_SERVICE_VERSION"
@@ -28,19 +46,25 @@ const (
 	envAPIRequestSize        = "ELASTIC_APM_API_REQUEST_SIZE"
 	envAPIRequestTime        = "ELASTIC_APM_API_REQUEST_TIME"
 	envAPIBufferSize         = "ELASTIC_APM_API_BUFFER_SIZE"
+	envMetricsBufferSize     = "ELASTIC_APM_METRICS_BUFFER_SIZE"
+	envDisableMetrics        = "ELASTIC_APM_DISABLE_METRICS"
 
 	defaultAPIRequestSize        = 750 * apmconfig.KByte
 	defaultAPIRequestTime        = 10 * time.Second
-	defaultAPIBufferSize         = 10 * apmconfig.MByte
-	defaultMetricsInterval       = 0 // disabled by default
+	defaultAPIBufferSize         = 1 * apmconfig.MByte
+	defaultMetricsBufferSize     = 100 * apmconfig.KByte
+	defaultMetricsInterval       = 30 * time.Second
 	defaultMaxSpans              = 500
+	defaultCaptureHeaders        = true
 	defaultCaptureBody           = CaptureBodyOff
 	defaultSpanFramesMinDuration = 5 * time.Millisecond
 
-	minAPIBufferSize  = 10 * apmconfig.KByte
-	maxAPIBufferSize  = 100 * apmconfig.MByte
-	minAPIRequestSize = 1 * apmconfig.KByte
-	maxAPIRequestSize = 5 * apmconfig.MByte
+	minAPIBufferSize     = 10 * apmconfig.KByte
+	maxAPIBufferSize     = 100 * apmconfig.MByte
+	minAPIRequestSize    = 1 * apmconfig.KByte
+	maxAPIRequestSize    = 5 * apmconfig.MByte
+	minMetricsBufferSize = 10 * apmconfig.KByte
+	maxMetricsBufferSize = 100 * apmconfig.MByte
 )
 
 var (
@@ -65,6 +89,20 @@ func initialRequestDuration() (time.Duration, error) {
 
 func initialMetricsInterval() (time.Duration, error) {
 	return apmconfig.ParseDurationEnv(envMetricsInterval, defaultMetricsInterval)
+}
+
+func initialMetricsBufferSize() (int, error) {
+	size, err := apmconfig.ParseSizeEnv(envMetricsBufferSize, defaultMetricsBufferSize)
+	if err != nil {
+		return 0, err
+	}
+	if size < minMetricsBufferSize || size > maxMetricsBufferSize {
+		return 0, errors.Errorf(
+			"%s must be at least %s and less than %s, got %s",
+			envMetricsBufferSize, minMetricsBufferSize, maxMetricsBufferSize, size,
+		)
+	}
+	return int(size), nil
 }
 
 func initialAPIBufferSize() (int, error) {
@@ -130,6 +168,10 @@ func initialSanitizedFieldNames() wildcard.Matchers {
 	return apmconfig.ParseWildcardPatternsEnv(envSanitizeFieldNames, defaultSanitizedFieldNames)
 }
 
+func initialCaptureHeaders() (bool, error) {
+	return apmconfig.ParseBoolEnv(envCaptureHeaders, defaultCaptureHeaders)
+}
+
 func initialCaptureBody() (CaptureBodyMode, error) {
 	value := os.Getenv(envCaptureBody)
 	if value == "" {
@@ -168,4 +210,8 @@ func initialSpanFramesMinDuration() (time.Duration, error) {
 
 func initialActive() (bool, error) {
 	return apmconfig.ParseBoolEnv(envActive, true)
+}
+
+func initialDisabledMetrics() wildcard.Matchers {
+	return apmconfig.ParseWildcardPatternsEnv(envDisableMetrics, nil)
 }

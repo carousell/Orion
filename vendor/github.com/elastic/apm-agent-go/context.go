@@ -1,3 +1,20 @@
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package apm
 
 import (
@@ -18,6 +35,7 @@ type Context struct {
 	user             model.User
 	service          model.Service
 	serviceFramework model.Framework
+	captureHeaders   bool
 	captureBodyMask  CaptureBodyMode
 }
 
@@ -27,7 +45,6 @@ func (c *Context) build() *model.Context {
 	case c.model.Response != nil:
 	case c.model.User != nil:
 	case c.model.Service != nil:
-	case len(c.model.Custom) != 0:
 	case len(c.model.Tags) != 0:
 	default:
 		return nil
@@ -36,12 +53,10 @@ func (c *Context) build() *model.Context {
 }
 
 func (c *Context) reset() {
-	modelContext := model.Context{
-		// TODO(axw) reuse space for tags
-		Custom: c.model.Custom[:0],
-	}
 	*c = Context{
-		model:           modelContext,
+		model: model.Context{
+			Tags: c.model.Tags[:0],
+		},
 		captureBodyMask: c.captureBodyMask,
 		request: model.Request{
 			Headers: c.request.Headers[:0],
@@ -52,33 +67,17 @@ func (c *Context) reset() {
 	}
 }
 
-// SetCustom sets a custom context key/value pair. If the key is invalid
-// (contains '.', '*', or '"'), the call is a no-op. The value must be
-// JSON-encodable.
-//
-// If value implements interface{AppendJSON([]byte) []byte}, that will be
-// used to encode the value. Otherwise, value will be encoded using
-// json.Marshal. As a special case, values of type map[string]interface{}
-// will be traversed and values encoded according to the same rules.
-func (c *Context) SetCustom(key string, value interface{}) {
-	if !validTagKey(key) {
-		return
-	}
-	c.model.Custom.Set(key, value)
-}
-
-// SetTag sets a tag in the context. If the key is invalid
-// (contains '.', '*', or '"'), the call is a no-op.
+// SetTag sets a tag in the context. Invalid characters
+// ('.', '*', and '"') in the key will be replaced with
+// an underscore.
 func (c *Context) SetTag(key, value string) {
-	if !validTagKey(key) {
-		return
-	}
-	value = truncateString(value)
-	if c.model.Tags == nil {
-		c.model.Tags = map[string]string{key: value}
-	} else {
-		c.model.Tags[key] = value
-	}
+	// Note that we do not attempt to de-duplicate the keys.
+	// This is OK, since json.Unmarshal will always take the
+	// final instance.
+	c.model.Tags = append(c.model.Tags, model.StringMapItem{
+		Key:   cleanTagKey(key),
+		Value: truncateString(value),
+	})
 }
 
 // SetFramework sets the framework name and version in the context.
@@ -143,14 +142,16 @@ func (c *Context) SetHTTPRequest(req *http.Request) {
 	}
 	c.model.Request = &c.request
 
-	for k, values := range req.Header {
-		if k == "Cookie" {
-			// We capture cookies in the request structure.
-			continue
+	if c.captureHeaders {
+		for k, values := range req.Header {
+			if k == "Cookie" {
+				// We capture cookies in the request structure.
+				continue
+			}
+			c.request.Headers = append(c.request.Headers, model.Header{
+				Key: k, Values: values,
+			})
 		}
-		c.request.Headers = append(c.request.Headers, model.Header{
-			Key: k, Values: values,
-		})
 	}
 
 	c.requestSocket = model.RequestSocket{
@@ -184,6 +185,9 @@ func (c *Context) SetHTTPRequestBody(bc *BodyCapturer) {
 
 // SetHTTPResponseHeaders sets the HTTP response headers in the context.
 func (c *Context) SetHTTPResponseHeaders(h http.Header) {
+	if !c.captureHeaders {
+		return
+	}
 	for k, values := range h {
 		c.response.Headers = append(c.response.Headers, model.Header{
 			Key: k, Values: values,
