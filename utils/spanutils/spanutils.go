@@ -11,6 +11,7 @@ import (
 	newrelic "github.com/newrelic/go-agent"
 	opentracing "github.com/opentracing/opentracing-go"
 	otext "github.com/opentracing/opentracing-go/ext"
+	"go.elastic.co/apm"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -30,6 +31,7 @@ type tracingSpan struct {
 	dataSegment     newrelic.DatastoreSegment
 	externalSegment newrelic.ExternalSegment
 	segment         newrelic.Segment
+	elasticSpan     *apm.Span
 }
 
 func (span *tracingSpan) End() {
@@ -38,12 +40,17 @@ func (span *tracingSpan) End() {
 		return
 	}
 	span.openSpan.Finish()
+
 	if span.datastore {
 		span.dataSegment.End()
 	} else if span.external {
 		span.externalSegment.End()
 	} else {
 		span.segment.End()
+	}
+
+	if span.elasticSpan != nil {
+		span.elasticSpan.End()
 	}
 }
 
@@ -88,9 +95,11 @@ func NewInternalSpan(ctx context.Context, name string) (TracingSpan, context.Con
 		StartTime: newrelic.StartSegmentNow(txn),
 		Name:      name,
 	}
+	eSpan, ctx := apm.StartSpan(ctx, name, "internal")
 	return &tracingSpan{
-		openSpan: zip,
-		segment:  seg,
+		openSpan:    zip,
+		segment:     seg,
+		elasticSpan: eSpan,
 	}, ctx
 }
 
@@ -107,10 +116,12 @@ func NewDatastoreSpan(ctx context.Context, name string, datastore string) (Traci
 		Product:   newrelic.DatastoreProduct(datastore),
 		Operation: name,
 	}
+	eSpan, ctx := apm.StartSpan(ctx, name, "datastore")
 	return &tracingSpan{
 		openSpan:    zip,
 		dataSegment: seg,
 		datastore:   true,
+		elasticSpan: eSpan,
 	}, ctx
 }
 
@@ -122,10 +133,12 @@ func buildExternalSpan(ctx context.Context, name string, url string) (*tracingSp
 		StartTime: newrelic.StartSegmentNow(txn),
 		URL:       url,
 	}
+	eSpan, ctx := apm.StartSpan(ctx, name, "external")
 	return &tracingSpan{
 		openSpan:        zip,
 		externalSegment: seg,
 		external:        true,
+		elasticSpan:     eSpan,
 	}, ctx
 }
 

@@ -121,9 +121,9 @@ func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 
 		t := grpc_ctxtags.Extract(ctx)
 		if t != nil {
-			traceId := notifier.GetTraceId(ctx)
-			t.Set("trace", traceId)
-			ctx = loggers.AddToLogContext(ctx, "trace", traceId)
+			traceID := notifier.GetTraceId(ctx)
+			t.Set("trace", traceID)
+			ctx = loggers.AddToLogContext(ctx, "trace", traceID)
 		}
 		// dont log Error for HTTP request, let HTTP Handler manage it
 		if modifiers.IsHTTPRequest(ctx) {
