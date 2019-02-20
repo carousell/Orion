@@ -8,6 +8,7 @@ import (
 
 	"github.com/carousell/Orion/utils/log"
 	newrelic "github.com/newrelic/go-agent"
+	"go.elastic.co/apm"
 )
 
 const (
@@ -48,20 +49,25 @@ func StoreNewRelicTransactionToContext(ctx context.Context, t newrelic.Transacti
 
 //StartNRTransaction starts a new newrelic transaction
 func StartNRTransaction(path string, ctx context.Context, req *http.Request, w http.ResponseWriter) context.Context {
+	if req == nil {
+		if !strings.HasPrefix(path, "/") {
+			path = "/" + path
+		}
+		req, _ = http.NewRequest("", path, nil)
+	}
 	if NewRelicApp != nil {
 		// check if transaction has been initialized
 		t := GetNewRelicTransactionFromContext(ctx)
 		if t == nil {
-			if req == nil {
-				if !strings.HasPrefix(path, "/") {
-					path = "/" + path
-				}
-				req, _ = http.NewRequest("", path, nil)
-			}
 			t := NewRelicApp.StartTransaction(path, w, req)
 			ctx = StoreNewRelicTransactionToContext(ctx, t)
-			return ctx
 		}
+	}
+	// check if transaction has been initialized
+	tx := apm.TransactionFromContext(ctx)
+	if tx == nil {
+		tx := apm.DefaultTracer.StartTransaction(path, "request")
+		ctx = apm.ContextWithTransaction(ctx, tx)
 	}
 	return ctx
 }
@@ -72,6 +78,11 @@ func FinishNRTransaction(ctx context.Context, err error) {
 	if t != nil {
 		t.NoticeError(err)
 		t.End()
+	}
+	tx := apm.TransactionFromContext(ctx)
+	if tx != nil {
+		apm.CaptureError(ctx, err)
+		tx.End()
 	}
 }
 
