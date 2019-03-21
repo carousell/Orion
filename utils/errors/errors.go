@@ -171,7 +171,7 @@ func WrapWithSkipAndStatus(err error, msg string, skip int, status *grpcstatus.S
 
 	msg = strings.TrimSpace(msg)
 	if msg != "" {
-		msg = msg + " :"
+		msg = msg + ": "
 	}
 
 	if status == nil {
