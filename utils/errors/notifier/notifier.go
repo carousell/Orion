@@ -145,6 +145,10 @@ func NotifyWithLevelAndSkip(err error, skip int, level string, rawData ...interf
 		}
 		n.Notified(true)
 	}
+
+	if r, ok := err.(errors.RawExt); ok {
+		rawData = append(r.RawData(), rawData)
+	}
 	return doNotify(err, skip, level, rawData...)
 
 }
