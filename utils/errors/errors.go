@@ -173,8 +173,8 @@ func WrapWithSkip(err error, msg string, skip int) ErrorExt {
 	return WrapWithSkipAndStatus(err, msg, skip+1, nil)
 }
 
-//WrapWithSkip wraps an existing error and appends stack information if it does not exists skipping the number of function on the stack along with GRPC status
-func WrapWithSkipAndStatus(err error, msg string, skip int, status *grpcstatus.Status) ErrorExt {
+//WrapWithSkipAndStatus wraps an existing error and appends stack information if it does not exists skipping the number of function on the stack along with GRPC status
+func WrapWithSkipAndStatus(err error, msg string, skip int, status *grpcstatus.Status, rawData ...interface{}) ErrorExt {
 	if err == nil {
 		return nil
 	}
@@ -191,12 +191,17 @@ func WrapWithSkipAndStatus(err error, msg string, skip int, status *grpcstatus.S
 		}
 	}
 
+	if r, ok := err.(RawExt); ok {
+		rawData = append(r.RawData(), rawData...)
+	}
+
 	//if we have stack information reuse that
 	if e, ok := err.(ErrorExt); ok {
 		c := &customError{
-			Msg:    msg + e.Error(),
-			cause:  e.Cause(),
-			status: status,
+			Msg:     msg + e.Error(),
+			cause:   e.Cause(),
+			status:  status,
+			rawData: rawData,
 		}
 
 		c.stack = e.Callers()
@@ -204,6 +209,7 @@ func WrapWithSkipAndStatus(err error, msg string, skip int, status *grpcstatus.S
 		if n, ok := e.(NotifyExt); ok {
 			c.shouldNotify = n.ShouldNotify()
 		}
+
 		return c
 	}
 
@@ -212,6 +218,7 @@ func WrapWithSkipAndStatus(err error, msg string, skip int, status *grpcstatus.S
 		cause:        err,
 		shouldNotify: true,
 		status:       status,
+		rawData:      rawData,
 	}
 	c.generateStack(skip + 1)
 	return c
