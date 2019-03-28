@@ -37,6 +37,11 @@ type NotifyExt interface {
 	Notified(status bool)
 }
 
+// RawExt is the interface definition for raw data about an error
+type RawExt interface {
+	RawData() []interface{}
+}
+
 type customError struct {
 	Msg          string
 	stack        []uintptr
@@ -44,6 +49,7 @@ type customError struct {
 	cause        error
 	shouldNotify bool
 	status       *grpcstatus.Status
+	rawData      []interface{}
 }
 
 // implements notifier.NotifyExt
@@ -81,6 +87,10 @@ func (c customError) GRPCStatus() *grpcstatus.Status {
 		return grpcstatus.New(codes.Internal, c.Error())
 	}
 	return c.status
+}
+
+func (c customError) RawData() []interface{} {
+	return c.rawData
 }
 
 func (c *customError) generateStack(skip int) []StackFrame {
