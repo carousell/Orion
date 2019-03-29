@@ -20,6 +20,6 @@ migration-client -c mysvcPG up -v 201903290057
 
 ## Extending
 
-Please refer sample implementaion that extended `migratorcmdbase.go` in `samplemigrator.go`
+Please refer sample implementaion that extended `migratorcmdbase.go` in `example/migratorexample.go`
 
 Note: vendor drivers from golang-migrate/migrate based on your requirement of dbType i.e postgres, cassandra, mysql etc,.

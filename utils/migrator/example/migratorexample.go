@@ -1,4 +1,4 @@
-package migrator
+package main
 
 import (
 	"github.com/golang-migrate/migrate"
@@ -44,7 +44,6 @@ func getMigrationClient(cluster string) (*migrate.Migrate, error) {
 		//	fmt.Println("Error initializing postgres driver ", err)
 		//	return nil, err
 		//}
-		return nil, nil
 	default:
 		return nil, errors.New("unknown cluster")
 	}
