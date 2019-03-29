@@ -1,11 +1,11 @@
 package migrator
 
 import (
-	"github.com/spf13/cobra"
+	"errors"
 	"fmt"
 	"github.com/golang-migrate/migrate"
+	"github.com/spf13/cobra"
 	"os"
-	"errors"
 	"strings"
 )
 

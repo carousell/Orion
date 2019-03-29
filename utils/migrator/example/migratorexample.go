@@ -2,8 +2,9 @@ package main
 
 import (
 	"github.com/golang-migrate/migrate"
-	"github.com/pkg/errors"
 	"github.com/golang-migrate/migrate/database"
+	"github.com/pkg/errors"
+	"github.com/carousell/Orion/utils/migrator"
 )
 
 // sample only - can be customized based on use-case
@@ -73,5 +74,5 @@ func init() {
 }
 
 func main() {
-	Execute(getMigrationClient)
+	migrator.Execute(getMigrationClient)
 }
