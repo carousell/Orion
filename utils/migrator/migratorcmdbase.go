@@ -28,7 +28,7 @@ var rootCmd = &cobra.Command{
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		var dirty bool
 		// fetch cluster of migration being executed
-		cluster, err := cmd.PersistentFlags().GetString(clusterFlag)
+		cluster, err := cmd.Flags().GetString(clusterFlag)
 		if err != nil {
 			return err
 		} else if strings.TrimSpace(cluster) == "" {
