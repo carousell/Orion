@@ -5,6 +5,7 @@ import (
 	"github.com/golang-migrate/migrate/database"
 	"github.com/pkg/errors"
 	"github.com/carousell/Orion/utils/migrator"
+	//_ "github.com/golang-migrate/migrate/source/file"
 )
 
 // sample only - can be customized based on use-case
@@ -33,8 +34,8 @@ func getMigrationClient(cluster string) (*migrate.Migrate, error) {
 		//cData = clusterMap[cluster]
 		//pgConnectUrl = "postgres://%s:%s@%s/%s?sslmode=disable"
 		//dbType = cData.dbType
-		//dbUrl := fmt.Sprintf(pgConnectUrl, conf.dbUsername, conf.dbPassword,
-		//	conf.dbHostPort, conf.dbName)
+		//dbUrl := fmt.Sprintf(pgConnectUrl, cData.connectConfig.dbUsername, cData.connectConfig.dbPassword,
+		//	cData.connectConfig.dbHostPort, cData.connectConfig.dbName)
 		//dbConn, err := sql.Open(dbType, dbUrl)
 		//if err != nil {
 		//	fmt.Println("Error connecting", err)
@@ -56,7 +57,7 @@ func init() {
 
 	clusterDataArray := []clusterData{
 		{
-			name:       "media",
+			name:       "mycluster",
 			dbType:     "postgres",
 			sourcePath: "file://migrator/files/",
 			connConfig: connectConfig{ // Fetch config from config management, instead of hard-coded here

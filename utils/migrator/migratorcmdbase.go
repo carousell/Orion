@@ -21,7 +21,7 @@ var migrationClient *migrate.Migrate
 var currentVersion uint
 
 var rootCmd = &cobra.Command{
-	Use:   "migration-client",
+	Use:   "migration",
 	Short: "migration client",
 	Long: `A custom migration client built on top of 
 			https://github.com/golang-migrate/migrate`,
@@ -37,6 +37,9 @@ var rootCmd = &cobra.Command{
 
 		// get the initialized migrationClient based on cluster
 		migrationClient, err = mcf(strings.TrimSpace(cluster))
+		if err != nil {
+			return err
+		}
 
 		// print current version before execution
 		currentVersion, dirty, err = migrationClient.Version()
