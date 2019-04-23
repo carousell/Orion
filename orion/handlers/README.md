@@ -24,6 +24,7 @@
 * [func GetMethodInterceptors(svc interface{}, config CommonConfig, middlewares []string) []grpc.UnaryServerInterceptor](#GetMethodInterceptors)
 * [func GetStreamInterceptors(svc interface{}, config CommonConfig) grpc.StreamServerInterceptor](#GetStreamInterceptors)
 * [type CommonConfig](#CommonConfig)
+* [type CustomHTTPHandler](#CustomHTTPHandler)
 * [type Decodable](#Decodable)
 * [type Decoder](#Decoder)
 * [type Encodeable](#Encodeable)
@@ -70,15 +71,24 @@ func GetStreamInterceptors(svc interface{}, config CommonConfig) grpc.StreamServ
 ```
 GetStreamInterceptors fetches stream interceptors from a given GRPC service
 
-## <a name="CommonConfig">type</a> [CommonConfig](./types.go#L79-L81)
+## <a name="CommonConfig">type</a> [CommonConfig](./types.go#L84-L86)
 ``` go
 type CommonConfig struct {
     NoDefaultInterceptors bool
 }
+
 ```
 CommonConfig is the config that is common across both http and grpc handlers
 
-## <a name="Decodable">type</a> [Decodable](./types.go#L48-L51)
+## <a name="CustomHTTPHandler">type</a> [CustomHTTPHandler](./types.go#L28-L30)
+``` go
+type CustomHTTPHandler interface {
+    GetHTTPHandler(method string) HTTPHandler
+}
+```
+CustomHTTPHandler interface when implemented by service allows that service to provide custom http handlers for a method
+
+## <a name="Decodable">type</a> [Decodable](./types.go#L53-L56)
 ``` go
 type Decodable interface {
     AddDecoder(serviceName, method string, decoder Decoder)
@@ -87,13 +97,13 @@ type Decodable interface {
 ```
 Decodable interface that is implemented by a handler that supports custom HTTP decoder
 
-## <a name="Decoder">type</a> [Decoder](./types.go#L39)
+## <a name="Decoder">type</a> [Decoder](./types.go#L44)
 ``` go
 type Decoder func(ctx context.Context, w http.ResponseWriter, encodeError, endpointError error, respObject interface{})
 ```
 Decoder is the function type needed for response decoders
 
-## <a name="Encodeable">type</a> [Encodeable](./types.go#L42-L45)
+## <a name="Encodeable">type</a> [Encodeable](./types.go#L47-L50)
 ``` go
 type Encodeable interface {
     AddEncoder(serviceName, method string, httpMethod []string, path string, encoder Encoder)
@@ -102,7 +112,7 @@ type Encodeable interface {
 ```
 Encodeable interface that is implemented by a handler that supports custom HTTP encoder
 
-## <a name="Encoder">type</a> [Encoder](./types.go#L36)
+## <a name="Encoder">type</a> [Encoder](./types.go#L41)
 ``` go
 type Encoder func(req *http.Request, reqObject interface{}) error
 ```
@@ -114,13 +124,13 @@ type GRPCMethodHandler func(srv interface{}, ctx context.Context, dec func(inter
 ```
 GRPCMethodHandler is the method type as defined in grpc-go
 
-## <a name="HTTPHandler">type</a> [HTTPHandler](./types.go#L64)
+## <a name="HTTPHandler">type</a> [HTTPHandler](./types.go#L69)
 ``` go
 type HTTPHandler func(http.ResponseWriter, *http.Request) bool
 ```
 HTTPHandler is the function that handles HTTP request
 
-## <a name="HTTPInterceptor">type</a> [HTTPInterceptor](./types.go#L59-L61)
+## <a name="HTTPInterceptor">type</a> [HTTPInterceptor](./types.go#L64-L66)
 ``` go
 type HTTPInterceptor interface {
     AddHTTPHandler(serviceName, method string, path string, handler HTTPHandler)
@@ -128,7 +138,7 @@ type HTTPInterceptor interface {
 ```
 HTTPInterceptor allows intercepting an HTTP connection
 
-## <a name="Handler">type</a> [Handler](./types.go#L67-L71)
+## <a name="Handler">type</a> [Handler](./types.go#L72-L76)
 ``` go
 type Handler interface {
     Add(sd *grpc.ServiceDesc, ss interface{}) error
@@ -152,6 +162,7 @@ Interceptor interface when implemented by a service allows that service to provi
 type MiddlewareMapping struct {
     // contains filtered or unexported fields
 }
+
 ```
 MiddlewareMapping stores mapping between service,method and middlewares
 
@@ -179,7 +190,7 @@ func (m *MiddlewareMapping) GetMiddlewaresFromURL(url string) []string
 ```
 GetMiddlewaresFromURL fetches all middleware for a specific URL
 
-## <a name="Middlewareable">type</a> [Middlewareable](./types.go#L74-L76)
+## <a name="Middlewareable">type</a> [Middlewareable](./types.go#L79-L81)
 ``` go
 type Middlewareable interface {
     AddMiddleware(serviceName, method string, middleware ...string)
@@ -187,7 +198,7 @@ type Middlewareable interface {
 ```
 Middlewareable implemets support for method specific middleware
 
-## <a name="Optionable">type</a> [Optionable](./types.go#L54-L56)
+## <a name="Optionable">type</a> [Optionable](./types.go#L59-L61)
 ``` go
 type Optionable interface {
     AddOption(ServiceName, method, option string)
@@ -204,7 +215,7 @@ type StreamInterceptor interface {
 ```
 StreamInterceptor interface when implemented by a service allows that service to provide custom stream interceptors
 
-## <a name="WhitelistedHeaders">type</a> [WhitelistedHeaders](./types.go#L28-L33)
+## <a name="WhitelistedHeaders">type</a> [WhitelistedHeaders](./types.go#L33-L38)
 ``` go
 type WhitelistedHeaders interface {
     //GetRequestHeaders returns a list of all whitelisted request headers
