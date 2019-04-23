@@ -124,6 +124,13 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, ser
 				// short circuit if handler has handled request
 				return ctx, nil
 			}
+		} else if handlerFetcher, ok := info.svc.svc.(handlers.CustomHTTPHandler); ok {
+			h := handlerFetcher.GetHTTPHandler(strings.ToLower(info.methodName))
+			if h != nil {
+				if h(resp, req) {
+					return ctx, nil
+				}
+			}
 		}
 
 		// decoder func
