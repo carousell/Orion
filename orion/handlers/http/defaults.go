@@ -41,14 +41,20 @@ func DefaultEncoder(req *http.Request, r interface{}) error {
 }
 
 func deserialize(ctx context.Context, data []byte, r interface{}) error {
-	serType := ContentTypeFromHeaders(ctx)
+	serType := strings.TrimSpace(ContentTypeFromHeaders(ctx))
+	if strings.Index(serType, ";") > -1 {
+		// patch 1: to prevent cases like "application/json; charset=utf-8"
+		serType = strings.TrimSpace(strings.Split(serType, ";")[0])
+	}
+
 	switch serType {
 	case modifiers.ProtoBuf:
 		if protoReq, ok := r.(proto.Message); ok {
 			return proto.Unmarshal(data, protoReq)
 		}
 		fallthrough
-	case modifiers.JSONPB:
+	case modifiers.JSONPB, modifiers.JSON, "":
+		// path 2: "" for cases content-type is not passed properly
 		if protoReq, ok := r.(proto.Message); ok {
 			return jsonpb.UnmarshalString(string(data), protoReq)
 		}
