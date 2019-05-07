@@ -18,6 +18,7 @@ type Worker interface {
 type Config struct {
 	LocalMode    bool
 	RabbitConfig *RabbitMQConfig
+	RedisConfig  *RedisConfig
 }
 
 //RabbitMQConfig is the config used for scheduling tasks through rabbitmq
@@ -28,6 +29,15 @@ type RabbitMQConfig struct {
 	Host        string
 	Port        string
 	QueueName   string
+}
+
+//RedisConfig is the config used for scheduling tasks through rabbitmq
+type RedisConfig struct {
+	Host      string
+	Port      string
+	Password  string
+	DBNum     string
+	QueueName string
 }
 
 //Work is the type of task that can be exeucted by Worker

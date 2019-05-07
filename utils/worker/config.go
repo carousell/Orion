@@ -10,6 +10,14 @@ func getServerName(config Config) string {
 		config.RabbitConfig.Host, config.RabbitConfig.Port, config.RabbitConfig.BrokerVHost)
 }
 
+func getRedisServerName(config Config) string {
+	return fmt.Sprintf("redis://%s%s%s%s",
+		config.RedisConfig.Password,
+		config.RedisConfig.Host,
+		config.RedisConfig.Port,
+		config.RedisConfig.DBNum)
+}
+
 func buildRabbitConfig(cfg Config) *RabbitMQConfig {
 	if cfg.RabbitConfig != nil {
 		rabbitConfig := new(RabbitMQConfig)
@@ -61,9 +69,46 @@ func buildRabbitConfig(cfg Config) *RabbitMQConfig {
 	return nil
 }
 
+func buildRedisConfig(cfg Config) *RedisConfig {
+	if cfg.RedisConfig != nil {
+		redisConfig := new(RedisConfig)
+		if strings.TrimSpace(cfg.RedisConfig.Host) != "" {
+			redisConfig.Host = cfg.RedisConfig.Host
+		} else {
+			redisConfig.Host = "localhost"
+		}
+
+		if strings.TrimSpace(cfg.RedisConfig.Port) != "" {
+			redisConfig.Port = cfg.RedisConfig.Port
+		} else {
+			redisConfig.Port = "6379"
+		}
+
+		if strings.TrimSpace(cfg.RedisConfig.Password) != "" {
+			redisConfig.Password = cfg.RedisConfig.Password
+		} else {
+			redisConfig.Password = ""
+		}
+
+		if strings.TrimSpace(cfg.RedisConfig.DBNum) != "" {
+			redisConfig.DBNum = cfg.RedisConfig.DBNum
+		} else {
+			redisConfig.DBNum = ""
+		}
+
+		if strings.TrimSpace(cfg.RedisConfig.QueueName) != "" {
+			redisConfig.QueueName = cfg.RedisConfig.QueueName
+		} else {
+			redisConfig.QueueName = ""
+		}
+	}
+	return nil
+}
+
 func buildConfig(cfg Config) Config {
 	config := Config{}
 	config.RabbitConfig = buildRabbitConfig(cfg)
+	config.RedisConfig = buildRedisConfig(cfg)
 	config.LocalMode = cfg.LocalMode
 
 	return config

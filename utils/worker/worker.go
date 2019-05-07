@@ -150,6 +150,20 @@ func (w *worker) init(config Config) error {
 			return err
 		}
 		w.server.SetBackend(&fakeBackend{})
+	} else if config.RedisConfig != nil {
+		redisServer := getRedisServerName(config)
+
+		workerConfig := &machineryConfig.Config{
+			Broker:        redisServer,
+			DefaultQueue:  config.RedisConfig.QueueName,
+			ResultBackend: redisServer,
+		}
+
+		var err error
+		w.server, err = machinery.NewServer(workerConfig)
+		if err != nil {
+			panic(err)
+		}
 	}
 	return nil
 }
