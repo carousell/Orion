@@ -11,7 +11,7 @@ func getServerName(config Config) string {
 }
 
 func getRedisServerName(config Config) string {
-	return fmt.Sprintf("redis://%s%s%s%s",
+	return fmt.Sprintf("redis://%s@%s:%s/%s",
 		config.RedisConfig.Password,
 		config.RedisConfig.Host,
 		config.RedisConfig.Port,
