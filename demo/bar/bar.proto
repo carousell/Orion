@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package bar;
+
+service BarService {
+    rpc Bar(BarRequest) returns (BarResponse){
+    }
+}
+
+message Bar {
+    string id = 1;
+}
+
+message BarRequest {
+    string msg = 1;
+}
+
+message BarResponse {
+    string msg = 1;
+}
