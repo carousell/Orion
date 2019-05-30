@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package foo;
+
+import "bar/bar.proto";
+
+service FooService {
+    rpc Foo(FooRequest) returns (FooResponse){}
+}
+
+
+message FooRequest {
+    string msg = 1;
+}
+
+message FooResponse {
+    string msg = 1;
+    bar.Bar bar = 2;
+}
