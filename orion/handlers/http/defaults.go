@@ -18,8 +18,9 @@ import (
 
 // DefaultEncoder encodes a HTTP request if none are registered. This encoder
 // populates the proto message with URL route variables or fields from a JSON
-// body if either are available.
-func DefaultEncoder(req *http.Request, r interface{}) error {
+// body if either are available. If JSONPB is true, JSON requests are encoded
+// using the jsonpb package.
+func DefaultEncoder(req *http.Request, r interface{}, JSONPB bool) error {
 	// check and map url params to request
 	params := mux.Vars(req)
 	if len(params) > 0 {
@@ -37,25 +38,22 @@ func DefaultEncoder(req *http.Request, r interface{}) error {
 	if req.Method == http.MethodGet && len(data) == 0 {
 		return nil
 	}
-	return deserialize(req.Context(), data, r)
+	return deserialize(req.Context(), data, r, JSONPB)
 }
 
-func deserialize(ctx context.Context, data []byte, r interface{}) error {
+func deserialize(ctx context.Context, data []byte, r interface{}, JSONPB bool) error {
 	serType := ContentTypeFromHeaders(ctx)
-	switch serType {
-	case modifiers.ProtoBuf:
+	if serType == modifiers.ProtoBuf {
 		if protoReq, ok := r.(proto.Message); ok {
 			return proto.Unmarshal(data, protoReq)
 		}
-		fallthrough
-	case modifiers.JSONPB:
+	}
+	if serType == modifiers.JSONPB || JSONPB {
 		if protoReq, ok := r.(proto.Message); ok {
 			return jsonpb.UnmarshalString(string(data), protoReq)
 		}
-		fallthrough
-	default:
-		return json.Unmarshal(data, r)
 	}
+	return json.Unmarshal(data, r)
 }
 
 // DefaultWSUpgrader upgrades a websocket if none are registered.
