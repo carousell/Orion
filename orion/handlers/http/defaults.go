@@ -43,17 +43,26 @@ func DefaultEncoder(req *http.Request, r interface{}, JSONPB bool) error {
 
 func deserialize(ctx context.Context, data []byte, r interface{}, JSONPB bool) error {
 	serType := ContentTypeFromHeaders(ctx)
-	if serType == modifiers.ProtoBuf {
+	switch serType {
+	case modifiers.ProtoBuf:
 		if protoReq, ok := r.(proto.Message); ok {
 			return proto.Unmarshal(data, protoReq)
 		}
-	}
-	if serType == modifiers.JSONPB || JSONPB {
+		fallthrough
+	case modifiers.JSONPB:
 		if protoReq, ok := r.(proto.Message); ok {
 			return jsonpb.UnmarshalString(string(data), protoReq)
 		}
+		fallthrough
+	default:
+		// if server preference is JSONPB, JSONPB should be used instead of JSON for unmarshalling
+		if JSONPB {
+			if protoReq, ok := r.(proto.Message); ok {
+				return jsonpb.UnmarshalString(string(data), protoReq)
+			}
+		}
+		return json.Unmarshal(data, r)
 	}
-	return json.Unmarshal(data, r)
 }
 
 // DefaultWSUpgrader upgrades a websocket if none are registered.

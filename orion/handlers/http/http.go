@@ -203,16 +203,25 @@ func (h *httpHandler) serialize(ctx context.Context, msg proto.Message) ([]byte,
 				serType = modifiers.JSON
 			}
 		}
+		// if server preference is JSONPB, JSONPB should be used instead of JSON for marshalling
+		if serType == modifiers.JSON && h.config.DefaultJSONPB {
+			serType = modifiers.JSONPB
+		}
 	}
-	if serType == modifiers.ProtoBuf {
-		data, err := proto.Marshal(msg)
-		return data, ContentTypeProto, err
-	} else if serType == modifiers.JSONPB || h.config.DefaultJSONPB {
+	switch serType {
+	case modifiers.JSONPB:
 		sData, err := h.mar.MarshalToString(msg)
 		return []byte(sData), ContentTypeJSON, err
+	case modifiers.ProtoBuf:
+		data, err := proto.Marshal(msg)
+		return data, ContentTypeProto, err
+	case modifiers.JSON:
+		fallthrough
+	default:
+		// modifiers.JSON goes in here
+		data, err := json.Marshal(msg)
+		return data, ContentTypeJSON, err
 	}
-	data, err := json.Marshal(msg)
-	return data, ContentTypeJSON, err
 }
 
 func (h *httpHandler) serializeOut(ctx context.Context, resp http.ResponseWriter, msg proto.Message, responseHeaders http.Header) error {
