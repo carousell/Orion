@@ -143,7 +143,7 @@ func setConfigDefaults() {
 	viper.SetDefault("orion.EnablePrometheus", true)
 	viper.SetDefault("orion.EnablePrometheusHistogram", false)
 	viper.SetDefault("orion.Env", "development")
-	viper.SetDefault("orion.DefaultJSONPB", true)
+	viper.SetDefault("orion.DefaultJSONPB", false)
 }
 
 // sets up the config parser
