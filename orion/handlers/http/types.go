@@ -43,6 +43,7 @@ const (
 type Config struct {
 	handlers.CommonConfig
 	EnableProtoURL bool
+	DefaultJSONPB  bool
 }
 
 type serviceInfo struct {

@@ -49,6 +49,8 @@ type Config struct {
 	SentryDSN string
 	//Env is the environment this service is running in
 	Env string
+	// DefaultJSONPB sets jsonpb as the encoder/decoder for application/json request/response bodies
+	DefaultJSONPB bool
 }
 
 // HystrixConfig is configuration used by hystrix
@@ -96,6 +98,7 @@ func BuildDefaultConfig(name string) Config {
 		HystrixConfig:             BuildDefaultHystrixConfig(),
 		ZipkinConfig:              BuildDefaultZipkinConfig(),
 		NewRelicConfig:            BuildDefaultNewRelicConfig(),
+		DefaultJSONPB:             viper.GetBool("orion.DefaultJSONPB"),
 	}
 }
 
@@ -140,6 +143,7 @@ func setConfigDefaults() {
 	viper.SetDefault("orion.EnablePrometheus", true)
 	viper.SetDefault("orion.EnablePrometheusHistogram", false)
 	viper.SetDefault("orion.Env", "development")
+	viper.SetDefault("orion.DefaultJSONPB", false)
 }
 
 // sets up the config parser

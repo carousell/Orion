@@ -239,6 +239,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		log.Info(context.Background(), "HTTPListnerPort", httpPort)
 		config := http.Config{
 			EnableProtoURL: d.config.EnableProtoURL,
+			DefaultJSONPB:  d.config.DefaultJSONPB,
 		}
 		handler := http.NewHTTPHandler(config)
 		hlrs = append(hlrs, &handlerInfo{

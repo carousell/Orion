@@ -127,7 +127,7 @@ func (s *streamServer) RecvMsg(m interface{}) error {
 	case websocket.TextMessage:
 		fallthrough
 	case websocket.BinaryMessage:
-		return deserialize(s.Context(), data, m)
+		return deserialize(s.Context(), data, m, false)
 	case websocket.CloseMessage:
 		return io.EOF
 	}

@@ -142,7 +142,7 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, ser
 				// check for default encoder and invoke it
 				encErr = enc(req, r)
 			} else {
-				encErr = DefaultEncoder(req, r)
+				encErr = DefaultEncoder(req, r, h.config.DefaultJSONPB)
 			}
 			return encErr
 		}
@@ -202,6 +202,10 @@ func (h *httpHandler) serialize(ctx context.Context, msg proto.Message) ([]byte,
 			if serType == "" {
 				serType = modifiers.JSON
 			}
+		}
+		// if server preference is JSONPB, JSONPB should be used instead of JSON for marshalling
+		if serType == modifiers.JSON && h.config.DefaultJSONPB {
+			serType = modifiers.JSONPB
 		}
 	}
 	switch serType {
