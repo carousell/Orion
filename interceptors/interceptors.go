@@ -14,6 +14,7 @@ import (
 	"github.com/carousell/Orion/utils/log"
 	"github.com/carousell/Orion/utils/log/loggers"
 	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
@@ -44,6 +45,7 @@ func DefaultInterceptors() []grpc.UnaryServerInterceptor {
 		grpc_prometheus.UnaryServerInterceptor,
 		ServerErrorInterceptor(),
 		NewRelicInterceptor(),
+		GRPCRecoveryInterceptor(),
 	}
 }
 
@@ -135,6 +137,16 @@ func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 		}
 		return resp, err
 	}
+}
+
+//GRPCRecoveryInterceptor recover if server panic, return error with panic stack
+func GRPCRecoveryInterceptor() grpc.UnaryServerInterceptor {
+	opts := []grpc_recovery.Option{
+		grpc_recovery.WithRecoveryHandler(func(p interface{}) (err error) {
+			return errors.NewWithSkip(fmt.Sprintf("%v", p), 7)
+		}),
+	}
+	return grpc_recovery.UnaryServerInterceptor(opts...)
 }
 
 //NewRelicClientInterceptor intercepts all client actions and reports them to newrelic
