@@ -3,6 +3,7 @@ package interceptors
 import (
 	"context"
 	"fmt"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -13,8 +14,8 @@ import (
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/log"
 	"github.com/carousell/Orion/utils/log/loggers"
-	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	newrelic "github.com/newrelic/go-agent"
@@ -44,6 +45,7 @@ func DefaultInterceptors() []grpc.UnaryServerInterceptor {
 		grpc_prometheus.UnaryServerInterceptor,
 		ServerErrorInterceptor(),
 		NewRelicInterceptor(),
+		PanicRecoveryInterceptor(),
 	}
 }
 
@@ -133,6 +135,28 @@ func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 		if !modifiers.HasDontLogError(ctx) {
 			notifier.Notify(err, ctx)
 		}
+		return resp, err
+	}
+}
+
+func PanicRecoveryInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		defer func(ctx context.Context) {
+			// panic handler
+			if r := recover(); r != nil {
+				log.Error(ctx, "panic", r, "method", info.FullMethod)
+				log.Error(ctx, string(debug.Stack()))
+				if e, ok := r.(error); ok {
+					err = e
+				} else {
+					err = errors.New(fmt.Sprintf("panic: %s", r))
+				}
+				utils.FinishNRTransaction(ctx, err)
+				notifier.NotifyWithLevel(err, "critical", info.FullMethod, ctx)
+			}
+		}(ctx)
+
+		resp, err = handler(ctx, req)
 		return resp, err
 	}
 }
