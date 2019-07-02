@@ -13,13 +13,14 @@ import (
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/log"
 	"github.com/carousell/Orion/utils/log/loggers"
-	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	newrelic "github.com/newrelic/go-agent"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	grpcstatus "google.golang.org/grpc/status"
 )
 
 var (
@@ -141,12 +142,20 @@ func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 
 //GRPCRecoveryInterceptor recover if server panic, return error with panic stack
 func GRPCRecoveryInterceptor() grpc.UnaryServerInterceptor {
-	opts := []grpc_recovery.Option{
-		grpc_recovery.WithRecoveryHandler(func(p interface{}) (err error) {
-			return errors.NewWithSkip(fmt.Sprintf("%v", p), 7)
-		}),
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (_ interface{}, err error) {
+		// dont recover for HTTP request, let HTTP Handler manage it
+		if modifiers.IsHTTPRequest(ctx) {
+			return handler(ctx, req)
+		}
+		defer func() {
+			if r := recover(); r != nil {
+				errmsg := fmt.Sprintf("%v", r)
+				err = errors.NewWithSkipAndStatus(errmsg, 4, grpcstatus.New(codes.Internal, errmsg))
+			}
+		}()
+
+		return handler(ctx, req)
 	}
-	return grpc_recovery.UnaryServerInterceptor(opts...)
 }
 
 //NewRelicClientInterceptor intercepts all client actions and reports them to newrelic
