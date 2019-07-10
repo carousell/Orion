@@ -77,9 +77,6 @@ func (c customError) Cause() error {
 }
 
 func (c customError) GRPCStatus() *grpcstatus.Status {
-	if c.status == nil {
-		return grpcstatus.New(codes.Internal, c.Error())
-	}
 	return c.status
 }
 
@@ -178,6 +175,8 @@ func WrapWithSkipAndStatus(err error, msg string, skip int, status *grpcstatus.S
 		// try to get status from existing one from error
 		if s, ok := grpcstatus.FromError(err); ok {
 			status = s
+		} else {
+			status = grpcstatus.New(codes.Internal, msg+err.Error())
 		}
 	}
 
