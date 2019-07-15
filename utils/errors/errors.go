@@ -107,6 +107,10 @@ func (c *customError) generateStack(skip int) []StackFrame {
 	return stack
 }
 
+func (c customError) Unwrap() error {
+	return c.cause
+}
+
 func packageFuncName(pc uintptr) (string, string) {
 	f := runtime.FuncForPC(pc)
 	if f == nil {
