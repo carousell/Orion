@@ -1,4 +1,4 @@
-package plugins
+package hystrixprometheus
 
 import (
 	"github.com/afex/hystrix-go/hystrix/metric_collector"
