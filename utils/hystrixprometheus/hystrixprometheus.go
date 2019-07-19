@@ -7,6 +7,7 @@ import (
 )
 
 type PrometheusCollector struct {
+	circuitOpen             *prometheus.GaugeVec
 	attempts                *prometheus.CounterVec
 	errors                  *prometheus.CounterVec
 	successes               *prometheus.CounterVec
@@ -32,6 +33,11 @@ func NewPrometheusCollector(namespace string, reg prometheus.Registerer, duratio
 	}
 
 	pc := &PrometheusCollector{
+		circuitOpen: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "circuit_open",
+			Help:      "Status of the circuit. Zero value means a closed circuit.",
+		}, []string{"command"}),
 		attempts: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "attempts",
@@ -102,6 +108,7 @@ func NewPrometheusCollector(namespace string, reg prometheus.Registerer, duratio
 	}
 	if reg != nil {
 		reg.MustRegister(
+			pc.circuitOpen,
 			pc.attempts,
 			pc.errors,
 			pc.failures,
@@ -117,6 +124,7 @@ func NewPrometheusCollector(namespace string, reg prometheus.Registerer, duratio
 		)
 	} else {
 		prometheus.MustRegister(
+			pc.circuitOpen,
 			pc.attempts,
 			pc.errors,
 			pc.failures,
@@ -149,6 +157,7 @@ func (pc *PrometheusCollector) Collector(name string) metricCollector.MetricColl
 }
 
 func (c *cmdCollector) initCounters() {
+	c.metrics.circuitOpen.WithLabelValues(c.commandName).Set(0.0)
 	c.metrics.attempts.WithLabelValues(c.commandName).Add(0.0)
 	c.metrics.errors.WithLabelValues(c.commandName).Add(0.0)
 	c.metrics.successes.WithLabelValues(c.commandName).Add(0.0)
@@ -160,6 +169,10 @@ func (c *cmdCollector) initCounters() {
 	c.metrics.fallbackFailures.WithLabelValues(c.commandName).Add(0.0)
 	c.metrics.contextCanceled.WithLabelValues(c.commandName).Add(0.0)
 	c.metrics.contextDeadlineExceeded.WithLabelValues(c.commandName).Add(0.0)
+}
+
+func (c *cmdCollector) setGaugeMetric(pg *prometheus.GaugeVec, i float64) {
+	pg.WithLabelValues(c.commandName).Set(i)
 }
 
 func (c *cmdCollector) incrementCounterMetric(pc *prometheus.CounterVec, i float64) {
@@ -174,6 +187,12 @@ func (c *cmdCollector) updateTimerMetric(ph *prometheus.HistogramVec, dur time.D
 }
 
 func (c *cmdCollector) Update(r metricCollector.MetricResult) {
+	if r.Successes > 0 {
+		c.setGaugeMetric(c.metrics.circuitOpen, 0)
+	} else if r.ShortCircuits > 0 {
+		c.setGaugeMetric(c.metrics.circuitOpen, 1)
+	}
+
 	c.incrementCounterMetric(c.metrics.attempts, r.Attempts)
 	c.incrementCounterMetric(c.metrics.errors, r.Errors)
 	c.incrementCounterMetric(c.metrics.successes, r.Successes)
