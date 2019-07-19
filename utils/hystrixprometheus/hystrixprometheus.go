@@ -40,57 +40,57 @@ func NewPrometheusCollector(namespace string, reg prometheus.Registerer, duratio
 		}, []string{"command"}),
 		attempts: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "attempts",
+			Name:      "attempts_total",
 			Help:      "The number of requests.",
 		}, []string{"command"}),
 		errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "errors",
+			Name:      "errors_total",
 			Help:      "The number of unsuccessful attempts. Attempts minus Errors will equal successes within a time range. Errors are any result from an attempt that is not a success.",
 		}, []string{"command"}),
 		successes: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "successes",
+			Name:      "successes_total",
 			Help:      "The number of requests that succeed.",
 		}, []string{"command"}),
 		failures: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "failures",
+			Name:      "failures_total",
 			Help:      "The number of requests that fail.",
 		}, []string{"command"}),
 		rejects: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "rejects",
+			Name:      "rejects_total",
 			Help:      "The number of requests that are rejected.",
 		}, []string{"command"}),
 		shortCircuits: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "short_circuits",
+			Name:      "short_circuits_total",
 			Help:      "The number of requests that short circuited due to the circuit being open.",
 		}, []string{"command"}),
 		timeouts: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "timeouts",
+			Name:      "timeouts_total",
 			Help:      "The number of requests that are timeouted in the circuit breaker.",
 		}, []string{"command"}),
 		fallbackSuccesses: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "fallback_successes",
+			Name:      "fallback_successes_total",
 			Help:      "The number of successes that occurred during the execution of the fallback function.",
 		}, []string{"command"}),
 		fallbackFailures: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "fallback_failures",
+			Name:      "fallback_failures_total",
 			Help:      "The number of failures that occurred during the execution of the fallback function.",
 		}, []string{"command"}),
 		contextCanceled: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "context_canceled",
+			Name:      "context_canceled_total",
 			Help:      "The number of context canceled.",
 		}, []string{"command"}),
 		contextDeadlineExceeded: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "context_deadline_exceeded",
+			Name:      "context_deadline_exceeded_total",
 			Help:      "The number of context deadline exceeded.",
 		}, []string{"command"}),
 		totalDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
