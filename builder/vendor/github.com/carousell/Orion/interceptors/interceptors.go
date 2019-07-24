@@ -13,8 +13,8 @@ import (
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/log"
 	"github.com/carousell/Orion/utils/log/loggers"
-	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	newrelic "github.com/newrelic/go-agent"
@@ -59,9 +59,11 @@ func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 //DefaultStreamInterceptors are the set of default interceptors that should be applied to all Orion streams
 func DefaultStreamInterceptors() []grpc.StreamServerInterceptor {
 	return []grpc.StreamServerInterceptor{
+		ResponseTimeLoggingStreamInterceptor(),
 		grpc_ctxtags.StreamServerInterceptor(),
 		grpc_opentracing.StreamServerInterceptor(),
 		grpc_prometheus.StreamServerInterceptor,
+		ServerErrorStreamInterceptor(),
 	}
 }
 
@@ -121,9 +123,9 @@ func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 
 		t := grpc_ctxtags.Extract(ctx)
 		if t != nil {
-			traceId := notifier.GetTraceId(ctx)
-			t.Set("trace", traceId)
-			ctx = loggers.AddToLogContext(ctx, "trace", traceId)
+			traceID := notifier.GetTraceId(ctx)
+			t.Set("trace", traceID)
+			ctx = loggers.AddToLogContext(ctx, "trace", traceID)
 		}
 		// dont log Error for HTTP request, let HTTP Handler manage it
 		if modifiers.IsHTTPRequest(ctx) {
@@ -180,5 +182,37 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 			defer notifier.NotifyOnPanic(newCtx, method)
 			return invoker(newCtx, method, req, reply, cc, opts...)
 		}, nil)
+	}
+}
+
+// ResponseTimeLoggingStreamInterceptor logs response time for stream RPCs.
+func ResponseTimeLoggingStreamInterceptor() grpc.StreamServerInterceptor {
+	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
+		defer func(begin time.Time) {
+			log.Info(stream.Context(), "method", info.FullMethod, "error", err, "took", time.Since(begin))
+		}(time.Now())
+		err = handler(srv, stream)
+		return err
+	}
+}
+
+// ServerErrorStreamInterceptor intercepts server errors for stream RPCs and
+// reports them to the error notifier.
+func ServerErrorStreamInterceptor() grpc.StreamServerInterceptor {
+	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
+		ctx := stream.Context()
+		ctx = notifier.SetTraceId(ctx)
+		t := grpc_ctxtags.Extract(ctx)
+		if t != nil {
+			traceID := notifier.GetTraceId(ctx)
+			t.Set("trace", traceID)
+			ctx = loggers.AddToLogContext(ctx, "trace", traceID)
+		}
+		err = handler(srv, stream)
+		if !modifiers.HasDontLogError(ctx) {
+			notifier.Notify(err, ctx)
+		}
+		return err
+
 	}
 }
