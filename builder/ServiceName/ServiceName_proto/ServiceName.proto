@@ -12,8 +12,19 @@ service ServiceName{
     // ORION:URL: POST/PUT
     rpc UpperProxy (UpperRequest) returns (UpperResponse) {
     }
+
+    rpc TestStreamInterceptor(stream TestStreamInterceptorRequest) returns (TestStreamInterceptorResponse) {
+    }
 }
 
+message TestStreamInterceptorRequest {
+    bool should_return_error = 1;
+    int64 sleep_ms = 2;
+}
+
+message TestStreamInterceptorResponse {
+    bool success = 1;
+}
 
 message EchoRequest {
     string msg = 1;
