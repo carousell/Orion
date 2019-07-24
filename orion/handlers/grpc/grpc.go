@@ -3,7 +3,6 @@ package grpc
 import (
 	"context"
 	"net"
-	"reflect"
 	"sync"
 	"time"
 
@@ -94,7 +93,6 @@ func (g *grpcHandler) grpcInterceptor() grpc.UnaryServerInterceptor {
 func (g *grpcHandler) grpcStreamInterceptor() grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		interceptor := handlers.GetStreamInterceptors(srv, g.config.CommonConfig)
-		log.Info(context.Background(), "svr", srv, "type", reflect.TypeOf(srv))
 		return interceptor(srv, ss, info, handler)
 	}
 }
