@@ -4,6 +4,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -11,6 +12,7 @@ import (
 
 	proto "github.com/carousell/Orion/builder/ServiceName/ServiceName_proto"
 	"github.com/carousell/Orion/interceptors"
+	"github.com/carousell/Orion/utils/errors"
 	"github.com/carousell/Orion/utils/headers"
 	"github.com/carousell/Orion/utils/worker"
 	"github.com/gorilla/mux"
@@ -108,6 +110,31 @@ func (s *svc) Upper(ctx context.Context, req *proto.UpperRequest) (*proto.UpperR
 	*/
 	go s.worker.Schedule(ctx, "TestWorker", req.GetMsg())
 	return resp, nil
+}
+
+func (s *svc) TestStreamInterceptor(stream proto.ServiceName_TestStreamInterceptorServer) error {
+	resp := new(proto.TestStreamInterceptorResponse)
+	for {
+		req, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return errors.Wrap(err, "failed reading chunk from stream")
+		}
+		if req.GetSleepMs() > 0 {
+			time.Sleep(time.Duration(req.GetSleepMs()) * time.Millisecond)
+		}
+		if req.GetShouldReturnError() {
+			return errors.New("this is an error")
+		}
+	}
+	resp.Success = true
+	err := stream.SendAndClose(resp)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *svc) GetInterceptors() []grpc.UnaryServerInterceptor {
