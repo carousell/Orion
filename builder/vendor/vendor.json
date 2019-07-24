@@ -557,10 +557,10 @@
 			"revisionTime": "2018-10-28T08:31:28Z"
 		},
 		{
-			"checksumSHA1": "WS1TI4p3Rsd3iyLtuZhh3UO7FCA=",
+			"checksumSHA1": "nPTB+qnPU2YH3jawwTPlzsAreDw=",
 			"path": "github.com/carousell/Orion/orion/handlers/grpc",
-			"revision": "0ac82ead9b42fc77fb991f55c8331c6a5f0a4019",
-			"revisionTime": "2018-10-28T08:31:28Z"
+			"revision": "319dd6a5e88e0a4f107b7d899f19e26189dc8e0e",
+			"revisionTime": "2019-07-24T06:25:05Z"
 		},
 		{
 			"checksumSHA1": "zxygY3XCFZHEo8t4OtKMj0WAaKE=",
