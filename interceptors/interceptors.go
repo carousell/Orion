@@ -58,9 +58,10 @@ func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 
 // DefaultClientStreamInterceptors returns a set of default interceptors that
 // should be applied to all client stream RPC calls.
-func DefaultClientStreamInterceptors() []grpc.StreamClientInterceptor {
+func DefaultClientStreamInterceptors(address string) []grpc.StreamClientInterceptor {
 	return []grpc.StreamClientInterceptor{
 		grpc_opentracing.StreamClientInterceptor(),
+		NewRelicClientStreamInterceptor(address),
 		HystrixClientStreamInterceptor(),
 	}
 }
@@ -83,8 +84,8 @@ func DefaultClientInterceptor(address string) grpc.UnaryClientInterceptor {
 
 // DefaultClientStreamInterceptor chains the set of default stream client
 // interceptors into a single stream client interceptor.
-func DefaultClientStreamInterceptor() grpc.StreamClientInterceptor {
-	return grpc_middleware.ChainStreamClient(DefaultClientStreamInterceptors()...)
+func DefaultClientStreamInterceptor(address string) grpc.StreamClientInterceptor {
+	return grpc_middleware.ChainStreamClient(DefaultClientStreamInterceptors(address)...)
 }
 
 //DebugLoggingInterceptor is the interceptor that logs all request/response from a handler
@@ -164,6 +165,20 @@ func NewRelicClientInterceptor(address string) grpc.UnaryClientInterceptor {
 		}
 		defer seg.End()
 		return invoker(ctx, method, req, reply, cc, opts...)
+	}
+}
+
+// NewRelicClientStreamInterceptor intercepts all client actions from stream
+// client RPCs and reports them to NewRelic.
+func NewRelicClientStreamInterceptor(address string) grpc.StreamClientInterceptor {
+	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (resp grpc.ClientStream, err error) {
+		txn := utils.GetNewRelicTransactionFromContext(ctx)
+		seg := newrelic.ExternalSegment{
+			StartTime: newrelic.StartSegmentNow(txn),
+			URL:       "http://" + address + "/" + method,
+		}
+		defer seg.End()
+		return streamer(ctx, desc, cc, method, opts...)
 	}
 }
 
