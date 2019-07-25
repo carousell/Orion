@@ -56,6 +56,15 @@ func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 	}
 }
 
+// DefaultClientStreamInterceptors returns a set of default interceptors that
+// should be applied to all client stream RPC calls.
+func DefaultClientStreamInterceptors() []grpc.StreamClientInterceptor {
+	return []grpc.StreamClientInterceptor{
+		grpc_opentracing.StreamClientInterceptor(),
+		HystrixClientStreamInterceptor(),
+	}
+}
+
 //DefaultStreamInterceptors are the set of default interceptors that should be applied to all Orion streams
 func DefaultStreamInterceptors() []grpc.StreamServerInterceptor {
 	return []grpc.StreamServerInterceptor{
@@ -70,6 +79,12 @@ func DefaultStreamInterceptors() []grpc.StreamServerInterceptor {
 //DefaultClientInterceptor are the set of default interceptors that should be applied to all client calls
 func DefaultClientInterceptor(address string) grpc.UnaryClientInterceptor {
 	return grpc_middleware.ChainUnaryClient(DefaultClientInterceptors(address)...)
+}
+
+// DefaultClientStreamInterceptor chains the set of default stream client
+// interceptors into a single stream client interceptor.
+func DefaultClientStreamInterceptor() grpc.StreamClientInterceptor {
+	return grpc_middleware.ChainStreamClient(DefaultClientStreamInterceptors()...)
 }
 
 //DebugLoggingInterceptor is the interceptor that logs all request/response from a handler
@@ -182,6 +197,40 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 			defer notifier.NotifyOnPanic(newCtx, method)
 			return invoker(newCtx, method, req, reply, cc, opts...)
 		}, nil)
+	}
+}
+
+// HystrixClientStreamInterceptor is intercepts stream RPC client requests and
+// wraps them with Hystrix.
+func HystrixClientStreamInterceptor() grpc.StreamClientInterceptor {
+	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (resp grpc.ClientStream, err error) {
+		options := clientOptions{
+			hystrixName: method,
+		}
+		for _, opt := range opts {
+			if opt != nil {
+				if o, ok := opt.(clientOption); ok {
+					o.process(&options)
+				}
+			}
+		}
+		newCtx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		err = hystrix.Do(options.hystrixName, func() (err error) {
+			defer func() {
+				if r := recover(); r != nil {
+					err = errors.Wrap(fmt.Errorf("panic inside hystrix Method: %s", method), "Hystrix")
+					log.Error(ctx, "panic", r, "method", method, "req")
+				}
+			}()
+			defer notifier.NotifyOnPanic(newCtx, method)
+			resp, err = streamer(ctx, desc, cc, method, opts...)
+			return err
+		}, nil)
+		if err != nil {
+			return resp, err
+		}
+		return resp, nil
 	}
 }
 
