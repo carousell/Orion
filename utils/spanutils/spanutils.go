@@ -209,7 +209,9 @@ func GRPCTracingSpan(operationName string, ctx context.Context) context.Context 
 	tracer := opentracing.GlobalTracer()
 	// Retrieve gRPC metadata.
 	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
+	if ok {
+		md = md.Copy()
+	} else {
 		md = metadata.MD{}
 	}
 	if span := opentracing.SpanFromContext(ctx); span != nil {
