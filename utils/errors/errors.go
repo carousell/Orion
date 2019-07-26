@@ -155,7 +155,7 @@ func NewWithSkip(msg string, skip int) ErrorExt {
 
 //NewWithSkipAndStatus creates a new error skipping the number of function on the stack and GRPC status
 func NewWithSkipAndStatus(msg string, skip int, status *grpcstatus.Status) ErrorExt {
-	return wrapWithSkipAndStatus(fmt.Errorf(msg), "", skip+1, status)
+	return WrapWithSkipAndStatus(fmt.Errorf(msg), "", skip+1, status)
 }
 
 //Wrap wraps an existing error and appends stack information if it does not exists
@@ -165,21 +165,21 @@ func Wrap(err error, msg string) ErrorExt {
 
 //WrapWithRawData wraps an existing error and appends stack information if it does not exists
 func WrapWithRawData(err error, msg string, rawData ...interface{}) ErrorExt {
-	return wrapWithSkipAndStatus(err, msg, 2, nil, rawData)
+	return WrapWithSkipAndStatus(err, msg, 2, nil, rawData)
 }
 
 //WrapWithStatus wraps an existing error and appends stack information if it does not exists along with GRPC status
 func WrapWithStatus(err error, msg string, status *grpcstatus.Status) ErrorExt {
-	return wrapWithSkipAndStatus(err, msg, 1, status)
+	return WrapWithSkipAndStatus(err, msg, 1, status)
 }
 
 //WrapWithSkip wraps an existing error and appends stack information if it does not exists skipping the number of function on the stack
 func WrapWithSkip(err error, msg string, skip int) ErrorExt {
-	return wrapWithSkipAndStatus(err, msg, skip+1, nil)
+	return WrapWithSkipAndStatus(err, msg, skip+1, nil)
 }
 
-//wrapWithSkipAndStatus wraps an existing error and appends stack information if it does not exists skipping the number of function on the stack along with GRPC status
-func wrapWithSkipAndStatus(err error, msg string, skip int, status *grpcstatus.Status, rawData ...interface{}) ErrorExt {
+//WrapWithSkipAndStatus wraps an existing error and appends stack information if it does not exists skipping the number of function on the stack along with GRPC status
+func WrapWithSkipAndStatus(err error, msg string, skip int, status *grpcstatus.Status, rawData ...interface{}) ErrorExt {
 	if err == nil {
 		return nil
 	}
