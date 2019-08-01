@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"time"
 
 	"github.com/RichardKnop/machinery/v1/tasks"
 )
@@ -38,6 +39,7 @@ type wrappedWork func(payload string) error
 type ScheduleConfig struct {
 	retries   int
 	queueName string
+	eta       *time.Time
 }
 
 //ScheduleOption represents different options available for Schedule

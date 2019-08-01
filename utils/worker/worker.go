@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"time"
 
 	"github.com/RichardKnop/machinery/v1"
 	machineryConfig "github.com/RichardKnop/machinery/v1/config"
@@ -42,6 +43,13 @@ func WithQueueName(queueName string) ScheduleOption {
 	}
 }
 
+//WithETA allows you to delay a task by setting an ETA
+func WithETA(eta time.Time) ScheduleOption {
+	return func(c *ScheduleConfig) {
+		c.eta = &eta
+	}
+}
+
 func (w *worker) Schedule(ctx context.Context, name string, payload string, options ...ScheduleOption) error {
 	span, ctx := spanutils.NewInternalSpan(ctx, name+"Scheduled")
 	defer span.End()
@@ -67,6 +75,7 @@ func (w *worker) scheduleRemote(ctx context.Context, name string, payload string
 				Value: wi.String(),
 			},
 		},
+		ETA: c.eta,
 	}
 	signature.RetryCount = c.retries
 	signature.RoutingKey = c.queueName
