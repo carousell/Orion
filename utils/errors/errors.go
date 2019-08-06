@@ -52,6 +52,20 @@ type customError struct {
 	rawData      []interface{}
 }
 
+type Option func(*customError)
+
+func RawData(rawData ...interface{}) Option {
+	return func(args *customError) {
+		args.rawData = append(args.rawData, rawData...)
+	}
+}
+
+func Status(status *grpcstatus.Status) Option {
+	return func(args *customError) {
+		args.status = status
+	}
+}
+
 // implements notifier.NotifyExt
 func (c *customError) ShouldNotify() bool {
 	return c.shouldNotify
@@ -139,8 +153,12 @@ func packageFuncName(pc uintptr) (string, string) {
 }
 
 //New creates a new error with stack information
-func New(msg string, rawData ...interface{}) ErrorExt {
+func New(msg string) ErrorExt {
 	return NewWithSkip(msg, 1)
+}
+
+func NewWithSkipAndOptions(msg string, skip int, options ...Option) ErrorExt {
+	return wrapWithSkipAndOptions(fmt.Errorf(msg), "", skip, options...)
 }
 
 //NewWithStatus creates a new error with statck information and GRPC status
@@ -163,11 +181,6 @@ func Wrap(err error, msg string) ErrorExt {
 	return WrapWithSkip(err, msg, 1)
 }
 
-//WrapWithRawData wraps an existing error and appends stack information if it does not exists
-func WrapWithRawData(err error, msg string, rawData ...interface{}) ErrorExt {
-	return wrapWithSkipAndStatus(err, msg, 2, nil, rawData)
-}
-
 //WrapWithStatus wraps an existing error and appends stack information if it does not exists along with GRPC status
 func WrapWithStatus(err error, msg string, status *grpcstatus.Status) ErrorExt {
 	return wrapWithSkipAndStatus(err, msg, 1, status)
@@ -179,7 +192,14 @@ func WrapWithSkip(err error, msg string, skip int) ErrorExt {
 }
 
 //wrapWithSkipAndStatus wraps an existing error and appends stack information if it does not exists skipping the number of function on the stack along with GRPC status
-func wrapWithSkipAndStatus(err error, msg string, skip int, status *grpcstatus.Status, rawData ...interface{}) ErrorExt {
+func wrapWithSkipAndStatus(err error, msg string, skip int, status *grpcstatus.Status) ErrorExt {
+	return wrapWithSkipAndOptions(err, msg, skip, Status(status))
+}
+
+func wrapWithSkipAndOptions(err error, msg string, skip int, options ...Option) ErrorExt {
+	var (
+		c *customError
+	)
 	if err == nil {
 		return nil
 	}
@@ -188,46 +208,39 @@ func wrapWithSkipAndStatus(err error, msg string, skip int, status *grpcstatus.S
 	if msg != "" {
 		msg = msg + ": "
 	}
-
-	if status == nil {
-		// try to get status from existing one from error
-		if s, ok := grpcstatus.FromError(err); ok {
-			status = s
-		}
-	}
-
-	if r, ok := err.(RawExt); ok {
-		rawData = append(r.RawData(), rawData...)
-	}
-
-	//if we have stack information reuse that
-	if e, ok := err.(ErrorExt); ok {
-		c := &customError{
-			Msg:     msg + e.Error(),
-			cause:   e.Cause(),
-			status:  status,
-			rawData: rawData,
-		}
-
-		c.stack = e.Callers()
-		c.frame = e.StackFrame()
-		if n, ok := e.(NotifyExt); ok {
-			c.shouldNotify = n.ShouldNotify()
-		}
-
-		return c
-	}
-
-	c := &customError{
+	// Default customError
+	c = &customError{
 		Msg:          msg + err.Error(),
 		cause:        err,
 		shouldNotify: true,
-		status:       status,
-		rawData:      rawData,
 	}
-	c.generateStack(skip + 1)
-	return c
+	if r, ok := err.(RawExt); ok {
+		c.rawData = r.RawData()
+	}
+	if e, ok := err.(ErrorExt); ok {
+		c.cause = e.Cause()
+		c.status = e.GRPCStatus()
+		c.stack = e.Callers()
+		c.frame = e.StackFrame()
+	} else {
+		// generate stack and frame
+		c.generateStack(skip + 1)
+	}
+	if n, ok := err.(NotifyExt); ok {
+		c.shouldNotify = n.ShouldNotify()
+	}
+	if c.status == nil {
+		// try to get status from existing one from error
+		if s, ok := grpcstatus.FromError(err); ok {
+			c.status = s
+		}
+	}
 
+	for _, option := range options {
+		option(c)
+	}
+
+	return c
 }
 
 //SetBaseFilePath sets the base file path for linking source code with reported stack information
