@@ -158,7 +158,7 @@ func New(msg string) ErrorExt {
 }
 
 func NewWithSkipAndOptions(msg string, skip int, options ...Option) ErrorExt {
-	return wrapWithSkipAndOptions(fmt.Errorf(msg), "", skip, options...)
+	return WrapWithSkipAndOptions(fmt.Errorf(msg), "", skip, options...)
 }
 
 //NewWithStatus creates a new error with statck information and GRPC status
@@ -173,7 +173,7 @@ func NewWithSkip(msg string, skip int) ErrorExt {
 
 //NewWithSkipAndStatus creates a new error skipping the number of function on the stack and GRPC status
 func NewWithSkipAndStatus(msg string, skip int, status *grpcstatus.Status) ErrorExt {
-	return wrapWithSkipAndStatus(fmt.Errorf(msg), "", skip+1, status)
+	return WrapWithSkipAndStatus(fmt.Errorf(msg), "", skip+1, status)
 }
 
 //Wrap wraps an existing error and appends stack information if it does not exists
@@ -183,20 +183,20 @@ func Wrap(err error, msg string) ErrorExt {
 
 //WrapWithStatus wraps an existing error and appends stack information if it does not exists along with GRPC status
 func WrapWithStatus(err error, msg string, status *grpcstatus.Status) ErrorExt {
-	return wrapWithSkipAndStatus(err, msg, 1, status)
+	return WrapWithSkipAndStatus(err, msg, 1, status)
 }
 
 //WrapWithSkip wraps an existing error and appends stack information if it does not exists skipping the number of function on the stack
 func WrapWithSkip(err error, msg string, skip int) ErrorExt {
-	return wrapWithSkipAndStatus(err, msg, skip+1, nil)
+	return WrapWithSkipAndStatus(err, msg, skip+1, nil)
 }
 
 //wrapWithSkipAndStatus wraps an existing error and appends stack information if it does not exists skipping the number of function on the stack along with GRPC status
-func wrapWithSkipAndStatus(err error, msg string, skip int, status *grpcstatus.Status) ErrorExt {
-	return wrapWithSkipAndOptions(err, msg, skip, Status(status))
+func WrapWithSkipAndStatus(err error, msg string, skip int, status *grpcstatus.Status) ErrorExt {
+	return WrapWithSkipAndOptions(err, msg, skip, Status(status))
 }
 
-func wrapWithSkipAndOptions(err error, msg string, skip int, options ...Option) ErrorExt {
+func WrapWithSkipAndOptions(err error, msg string, skip int, options ...Option) ErrorExt {
 	var (
 		c *customError
 	)
