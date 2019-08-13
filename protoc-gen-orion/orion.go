@@ -194,15 +194,21 @@ func main() {
 	if len(request.FileToGenerate) == 0 {
 		logFail("no files to generate")
 	}
+	filesToGenerate := make(map[string]bool)
+	for _, v := range request.FileToGenerate {
+		filesToGenerate[v] = true
+	}
 
 	response := new(plugin.CodeGeneratorResponse)
 	response.File = make([]*plugin.CodeGeneratorResponse_File, 0)
 
 	for _, file := range request.GetProtoFile() {
-		// check if file has any service
-		if len(file.Service) > 0 {
-			f := generateFile(populate(file))
-			response.File = append(response.File, f)
+		if _, ok := filesToGenerate[file.GetName()]; ok {
+			// check if file has any service
+			if len(file.Service) > 0 {
+				f := generateFile(populate(file))
+				response.File = append(response.File, f)
+			}
 		}
 	}
 

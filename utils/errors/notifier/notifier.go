@@ -235,6 +235,8 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		defLevel := raven.ERROR
 		if level == "critical" {
 			defLevel = raven.FATAL
+		} else if level == "warning" {
+			defLevel = raven.WARNING
 		}
 		ravenExp := raven.NewException(errWithStack, convToSentry(errWithStack))
 		packet := raven.NewPacketWithExtra(errWithStack.Error(), parsedData, ravenExp)

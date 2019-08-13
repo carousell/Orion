@@ -24,6 +24,11 @@ type StreamInterceptor interface {
 	GetStreamInterceptors() []grpc.StreamServerInterceptor
 }
 
+//CustomHTTPHandler interface when implemented by service allows that service to provide custom http handlers for a method
+type CustomHTTPHandler interface {
+	GetHTTPHandler(method string) HTTPHandler
+}
+
 //WhitelistedHeaders is the interface that needs to be implemented by clients that need request/response headers to be passed in through the context
 type WhitelistedHeaders interface {
 	//GetRequestHeaders returns a list of all whitelisted request headers
