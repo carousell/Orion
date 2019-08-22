@@ -77,10 +77,12 @@ func (c customError) Cause() error {
 }
 
 func (c customError) GRPCStatus() *grpcstatus.Status {
-	if c.status == nil {
-		return grpcstatus.New(codes.Internal, c.Error())
+	statusCode := codes.Internal
+	if c.status != nil {
+		statusCode = c.status.Code()
 	}
-	return c.status
+
+	return grpcstatus.New(statusCode, c.Error()) // always return with latest error message
 }
 
 func (c *customError) generateStack(skip int) []StackFrame {

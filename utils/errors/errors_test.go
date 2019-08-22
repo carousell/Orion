@@ -3,6 +3,8 @@ package errors
 import (
 	"io"
 	"testing"
+
+	grpcstatus "google.golang.org/grpc/status"
 )
 
 func TestWrap(t *testing.T) {
@@ -31,6 +33,11 @@ func TestWrap(t *testing.T) {
 			err := Wrap(tt.err, tt.message)
 			if err.Error() != tt.expected {
 				t.Errorf("(%+v, %+v): expected %+v, got %+v", tt.err, tt.message, tt.expected, err)
+			}
+
+			// ensure GRPC status msg has wrapped content no matter you wrap how many times
+			if grpcstatus.Convert(err).Message() != tt.expected {
+				t.Errorf("GRPC status msg expected %+v, got %+v", tt.expected, grpcstatus.Convert(err).Message())
 			}
 
 		})
