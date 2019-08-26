@@ -3,7 +3,6 @@ package interceptors
 import (
 	"context"
 	"fmt"
-	"runtime/debug"
 	"strings"
 	"time"
 
@@ -145,7 +144,6 @@ func PanicRecoveryInterceptor() grpc.UnaryServerInterceptor {
 			// panic handler
 			if r := recover(); r != nil {
 				log.Error(ctx, "panic", r, "method", info.FullMethod)
-				log.Error(ctx, string(debug.Stack()))
 				if e, ok := r.(error); ok {
 					err = e
 				} else {
