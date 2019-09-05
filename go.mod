@@ -2,6 +2,8 @@ module github.com/carousell/Orion
 
 go 1.12
 
+replace git.apache.org/thrift.git => github.com/apache/thrift v0.0.0-20190131011427-2ec93c8a2da2
+
 require (
 	cloud.google.com/go v0.34.0
 	github.com/DataDog/datadog-go v0.0.0-20180822151419-281ae9f2d895 // indirect
