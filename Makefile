@@ -39,9 +39,14 @@ race:
 doc:
 	godoc -http=:6060
 
+list-updates:
+	go list -u -m all
+
 update:
-	govendor fetch -v +vendor
 	go get -u github.com/carousell/Orion/protoc-gen-orion
+	go get -u -m
+	go mod tidy
+	go mod vendor
 
 run:
 	exec ./run.sh
@@ -55,7 +60,6 @@ dockerclean:
 install: macinstall goinstall
 
 goinstall:
-	go get -u github.com/kardianos/govendor
 	go get -u github.com/shurcooL/Go-Package-Store/cmd/Go-Package-Store
 	go get -u github.com/golang/lint/golint
 	go get -u google.golang.org/grpc
