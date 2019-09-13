@@ -3,6 +3,8 @@ package orion
 import (
 	"context"
 	"errors"
+	"github.com/carousell/Orion/utils/hystrixprometheus"
+	"github.com/prometheus/client_golang/prometheus"
 	"net"
 	"net/http"
 	_ "net/http/pprof" // import pprof
@@ -93,6 +95,10 @@ func (h *hystrixInitializer) Init(svr Server) error {
 		}
 
 	}
+
+	promC := hystrixprometheus.NewPrometheusCollector("hystrix", nil, prometheus.DefBuckets)
+	metricCollector.Registry.Register(promC.Collector)
+
 	hystrixStreamHandler := hystrix.NewStreamHandler()
 	hystrixStreamHandler.Start()
 	port := config.HystrixConfig.Port
