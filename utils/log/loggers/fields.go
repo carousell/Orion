@@ -40,7 +40,21 @@ func AddToLogContext(ctx context.Context, key string, value interface{}) context
 	return ctx
 }
 
-//FromContext fetchs log fields from provided context
+//RemoveFromLogContext removes log fields from the context.
+func RemoveFromLogContext(ctx context.Context, key string) context.Context {
+	data := FromContext(ctx)
+	if data == nil {
+		ctx = context.WithValue(ctx, contextKey, make(LogFields))
+		data = FromContext(ctx)
+	}
+	m := ctx.Value(contextKey)
+	if data, ok := m.(LogFields); ok {
+		data.Del(key)
+	}
+	return ctx
+}
+
+//FromContext fetches log fields from provided context
 func FromContext(ctx context.Context) LogFields {
 	if ctx == nil {
 		return nil
