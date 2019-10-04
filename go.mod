@@ -10,7 +10,7 @@ require (
 	github.com/DataDog/zstd v0.0.0-20160706220725-2bf71ec48360 // indirect
 	github.com/RichardKnop/logging v0.0.0-20181101035820-b1d5d44c82d6 // indirect
 	github.com/RichardKnop/machinery v0.0.0-20190125102247-b25a799bf62a
-	github.com/Shopify/sarama v0.0.0-20190123165648-e775ee1118ac // indirect
+	github.com/Shopify/sarama v0.0.0-20190123165648-e775ee1118ac
 	github.com/Shopify/toxiproxy v2.1.4+incompatible // indirect
 	github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5
 	github.com/apache/thrift v0.0.0-20190131011427-2ec93c8a2da2 // indirect
@@ -18,6 +18,7 @@ require (
 	github.com/bugsnag/bugsnag-go v1.4.0
 	github.com/bugsnag/panicwrap v0.0.0-20180510051541-1d162ee1264c // indirect
 	github.com/cactus/go-statsd-client/statsd v0.0.0-20190805010426-5089fcbbe532 // indirect
+	github.com/carousell/go-utils v2.1.0+incompatible
 	github.com/certifi/gocertifi v0.0.0-20190105021004-abcd57078448 // indirect
 	github.com/eapache/go-resiliency v0.0.0-20181214162408-487be0453c7b // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
@@ -29,7 +30,8 @@ require (
 	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/golang-migrate/migrate v0.0.0-20180905021119-16f2b1736e65
-	github.com/golang/protobuf v1.2.0
+	github.com/golang/mock v1.3.1
+	github.com/golang/protobuf v1.3.2
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/google/uuid v1.1.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 // indirect
@@ -66,10 +68,8 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/stvp/rollbar v0.0.0-20171113052335-4a50daf855af
 	go.elastic.co/apm v1.4.0
-	golang.org/x/crypto v0.0.0-20190130090550-b01c7a725664 // indirect
-	golang.org/x/net v0.0.0-20190125091013-d26f9f9a57f3
+	golang.org/x/net v0.0.0-20190311183353-d8887717615a
 	golang.org/x/oauth2 v0.0.0-20190130055435-99b60b757ec1
-	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
 	golang.org/x/sys v0.0.0-20190825160603-fb81701db80f // indirect
 	golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2 // indirect
 	google.golang.org/api v0.1.0
