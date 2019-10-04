@@ -6,29 +6,12 @@ go:
 
 env:
   - GO111MODULE=on
-  global:
-    - ZOOKEEPER_PEERS=localhost:2181
-    - KAFKA_PEERS=localhost:9092
 
 install: true
-
-services:
-  - docker
-
-before_script:
-  - wget https://archive.apache.org/dist/kafka/0.11.0.2/kafka_2.11-0.11.0.2.tgz -O kafka.tgz
-  - mkdir -p kafka && tar xzf kafka.tgz -C kafka --strip-components 1
-  - nohup bash -c "cd kafka && bin/zookeeper-server-start.sh config/zookeeper.properties > /dev/null &"
-  - nohup bash -c "cd kafka && bin/kafka-server-start.sh config/server.properties > /dev/null &"
-  - sleep 3
 
 script:
   - GO111MODULE=auto go get -u golang.org/x/lint/golint
   - make ci
-
-after_script:
-  - ps ax | grep -i 'kafka.Kafka' | grep -v grep | awk '{print $1}' | xargs kill -SIGKILL
-  - ps ax | grep -i 'zookeeper' | grep -v grep | awk '{print $1}' | xargs kill -SIGKILL
 
 matrix:
   allow_failures:
