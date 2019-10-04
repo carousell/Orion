@@ -9,6 +9,7 @@ import (
 	"github.com/carousell/Orion/utils/log"
 )
 
+// ConsumerGroup is a wrapper interface around sarama ConsumerGroup
 type ConsumerGroup interface {
 	Consume()
 	Close() error
@@ -21,6 +22,7 @@ type consumerGroup struct {
 	done                 chan bool
 }
 
+// NewConsumerGroup creates and returns a new ConsumerGroup given a config and a handler
 func NewConsumerGroup(config ConsumerGroupConfig, cgHandler sarama.ConsumerGroupHandler) (ConsumerGroup, error) {
 	defaultConfig := sarama.NewConfig()
 	defaultConfig.ClientID = config.ClientID
@@ -42,6 +44,7 @@ func NewConsumerGroup(config ConsumerGroupConfig, cgHandler sarama.ConsumerGroup
 	return consumerGroup, nil
 }
 
+// Consume calls the sarama consumerGroup's Consume method
 func (c *consumerGroup) Consume() {
 	ctx := context.Background()
 	for {
@@ -60,6 +63,7 @@ func (c *consumerGroup) Consume() {
 	}
 }
 
+// Close closes sarama ConsumerGroup and any other resources that need to be closed
 func (c *consumerGroup) Close() error {
 	c.done <- true
 	if c.consumerGroup == nil {

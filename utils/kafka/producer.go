@@ -12,7 +12,7 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-//go:generate mock_gen.sh Producer
+// Producer is a wrapper interface around sarama SyncProducer
 type Producer interface {
 	Publish(ctx context.Context, topic string, key string, msg proto.Message) error
 	Close() error
@@ -22,6 +22,7 @@ type producer struct {
 	syncProducer sarama.SyncProducer
 }
 
+// NewProducer creates and returns a new Producer given config
 func NewProducer(config ProducerConfig) (Producer, error) {
 	defaultConfig := sarama.NewConfig()
 	defaultConfig.ClientID = config.ClientID
@@ -42,6 +43,7 @@ func NewProducer(config ProducerConfig) (Producer, error) {
 	return producer, nil
 }
 
+// Publish publishes a proto message to the provided topic
 func (p *producer) Publish(ctx context.Context, topic string, key string, msg proto.Message) error {
 	name := "KafkaPublish"
 	span, ctx := spanutils.NewDatastoreSpan(ctx, name, "Kafka")
@@ -73,6 +75,7 @@ func (p *producer) Publish(ctx context.Context, topic string, key string, msg pr
 	return nil
 }
 
+// Close closes sarama SyncProducer
 func (p *producer) Close() error {
 	if p.syncProducer == nil {
 		return nil

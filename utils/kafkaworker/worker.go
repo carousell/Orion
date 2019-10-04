@@ -33,14 +33,15 @@ type worker struct {
 	config           Config
 	consumerGroup    kafka.ConsumerGroup
 	sidelineProducer kafka.Producer
-
-	taskHandler TaskHandler
+	taskHandler      TaskHandler
 }
 
+// Consume calls the ConsumerGroup.Consume method
 func (w *worker) Consume() {
 	w.consumerGroup.Consume()
 }
 
+// Close closes kafka consumerGroup and sidelineProducer if configured
 func (w *worker) Close() error {
 	err := w.consumerGroup.Close()
 	if err != nil {
