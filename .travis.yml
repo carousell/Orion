@@ -5,9 +5,10 @@ go:
   - "1.12.x"
 
 env:
-  - GO111MODULE=on
-  - ZOOKEEPER_PEERS=localhost:2181
-  - KAFKA_PEERS=localhost:9092
+  global:
+    - GO111MODULE=on
+    - ZOOKEEPER_PEERS=localhost:2181
+    - KAFKA_PEERS=localhost:9092
 
 
 install: true
