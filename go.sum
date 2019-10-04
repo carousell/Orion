@@ -51,10 +51,6 @@ github.com/bugsnag/panicwrap v0.0.0-20180510051541-1d162ee1264c h1:bI/U3jQrl0VVy
 github.com/bugsnag/panicwrap v0.0.0-20180510051541-1d162ee1264c/go.mod h1:D/8v3kj0zr8ZAKg1AQ6crr+5VwKN5eIywRkfhyM/+dE=
 github.com/cactus/go-statsd-client/statsd v0.0.0-20190805010426-5089fcbbe532 h1:/Etyacb4vN0EH9edp+lNhcaSWOZBUOuURr6wvIXt5gI=
 github.com/cactus/go-statsd-client/statsd v0.0.0-20190805010426-5089fcbbe532/go.mod h1:3/sdo8I67TaOslRGJ6FqQC/ynu+wg7H6IE4WYtr51hk=
-github.com/carousell/go-utils v2.0.0+incompatible h1:mnKe/qC9Y0f+8QuNwrV/3Awqd/AmNuMiKAQ5aX0oRCA=
-github.com/carousell/go-utils v2.0.0+incompatible/go.mod h1:O6bseZ29TI51bZ4Jxkl4b3tBJyrojW2anLkSS05eJBM=
-github.com/carousell/go-utils v2.1.0+incompatible h1:7ujwwmnz4OzaE4aYYJKTyYkpOCatKncyTsXQdHyyY5I=
-github.com/carousell/go-utils v2.1.0+incompatible/go.mod h1:O6bseZ29TI51bZ4Jxkl4b3tBJyrojW2anLkSS05eJBM=
 github.com/certifi/gocertifi v0.0.0-20190105021004-abcd57078448 h1:8tNk6SPXzLDnATTrWoI5Bgw9s/x4uf0kmBpk21NZgI4=
 github.com/certifi/gocertifi v0.0.0-20190105021004-abcd57078448/go.mod h1:GJKEexRPVJrBSOjoqN5VNOIKJ5Q3RViH6eu3puDRwx4=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=

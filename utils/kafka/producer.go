@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/Shopify/sarama"
+	"github.com/afex/hystrix-go/hystrix"
 	"github.com/carousell/Orion/utils/errors"
 	"github.com/carousell/Orion/utils/log"
 	"github.com/carousell/Orion/utils/spanutils"
-	"github.com/carousell/go-utils/utils/hystrixwrapper"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -63,10 +63,10 @@ func (p *producer) Publish(ctx context.Context, topic string, key string, msg pr
 	var partition int32
 	var offset int64
 	var e error
-	err = hystrixwrapper.DoCWithOptions(ctx, name, func(ctx context.Context) error {
+	err = hystrix.DoC(ctx, name, func(ctx context.Context) error {
 		partition, offset, e = p.syncProducer.SendMessage(&saramaMsg)
 		return errors.Wrap(e, fmt.Sprintf("failed to send message %v", saramaMsg))
-	}, nil, hystrixwrapper.WithRecover())
+	}, nil)
 	if err != nil {
 		span.SetError(err.Error())
 		return err

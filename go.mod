@@ -18,7 +18,6 @@ require (
 	github.com/bugsnag/bugsnag-go v1.4.0
 	github.com/bugsnag/panicwrap v0.0.0-20180510051541-1d162ee1264c // indirect
 	github.com/cactus/go-statsd-client/statsd v0.0.0-20190805010426-5089fcbbe532 // indirect
-	github.com/carousell/go-utils v2.1.0+incompatible
 	github.com/certifi/gocertifi v0.0.0-20190105021004-abcd57078448 // indirect
 	github.com/eapache/go-resiliency v0.0.0-20181214162408-487be0453c7b // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
