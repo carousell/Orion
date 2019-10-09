@@ -9,8 +9,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -57,7 +55,6 @@ type service struct {
 	Encoders       []*encoder
 	Decoders       []*decoder
 	Handlers       []*handler
-	Methods        []*method // raw rpc method in the protofile
 	Options        []*orionOption
 	Middlewares    []*orionMiddleware
 	Streams        []*stream
@@ -77,11 +74,6 @@ type handler struct {
 	SvcName    string
 	MethodName string
 	Path       string
-}
-type method struct {
-	ApiID       string
-	ServiceName string
-	Name        string
 }
 type stream struct {
 	SvcName      string
@@ -117,13 +109,6 @@ import (
 var _ = orion.ProtoGenVersion1_0
 {{ end }}
 {{ range .Services -}}
-
-// Global ID of each API
-
-/*
-{{ range .Methods }}    "{{.ApiID}}" -> "{{.ServiceName}}.{{.Name}}"
-{{ end }}*/
-
 // Encoders
 {{ range .Encoders }}
 // Register{{.SvcName}}{{.MethodName}}Encoder registers the encoder for {{.MethodName}} method in {{.SvcName}}
@@ -285,30 +270,24 @@ func generate(d *data, file *descriptor.FileDescriptorProto) {
 		s.Streams = make([]*stream, 0)
 		s.ServiceDescVar = serviceDescVar
 		s.ServName = servName
-		s.Methods = make([]*method, 0)
 		d.Services = append(d.Services, s)
 
 		// ** --- START -- Find comments in grpc services
 		path := fmt.Sprintf("6,%d", index) // 6 means service.
-		for i, methodItem := range svc.GetMethod() {
-			s.Methods = append(s.Methods, &method{
-				ServiceName: s.ServName,
-				Name:        methodItem.GetName(),
-				ApiID:       getApiID(s.ServName, methodItem.GetName()),
-			})
-			commentPath := fmt.Sprintf("%s,2,%d", path, i) // 2 means methodItem in a service.
+		for i, method := range svc.GetMethod() {
+			commentPath := fmt.Sprintf("%s,2,%d", path, i) // 2 means method in a service.
 			if loc, ok := comments[commentPath]; ok {
 				text := strings.TrimSuffix(loc.GetLeadingComments(), "\n")
 				for _, line := range strings.Split(text, "\n") {
 					// ** --- END -- Find comments in grpc services
 
 					if option := parseComments(line); option != nil {
-						if methodItem.GetClientStreaming() || methodItem.GetServerStreaming() {
+						if method.GetClientStreaming() || method.GetServerStreaming() {
 							str := new(stream)
 							str.SvcName = svc.GetName()
-							str.MethodName = methodItem.GetName()
-							str.ClientStream = methodItem.GetClientStreaming()
-							str.ServerStream = methodItem.GetServerStreaming()
+							str.MethodName = method.GetName()
+							str.ClientStream = method.GetClientStreaming()
+							str.ServerStream = method.GetServerStreaming()
 							if option.Encoder || option.Decoder {
 								str.Path = option.Path
 								str.Methods = option.Method
@@ -327,7 +306,7 @@ func generate(d *data, file *descriptor.FileDescriptorProto) {
 								// populate encoder
 								enc := new(encoder)
 								enc.SvcName = svc.GetName()
-								enc.MethodName = methodItem.GetName()
+								enc.MethodName = method.GetName()
 								enc.Path = option.Path
 								enc.Methods = methodsString
 								s.Encoders = append(s.Encoders, enc)
@@ -335,7 +314,7 @@ func generate(d *data, file *descriptor.FileDescriptorProto) {
 								// popluate handler
 								han := new(handler)
 								han.SvcName = svc.GetName()
-								han.MethodName = methodItem.GetName()
+								han.MethodName = method.GetName()
 								han.Path = option.Path
 								s.Handlers = append(s.Handlers, han)
 							}
@@ -344,14 +323,14 @@ func generate(d *data, file *descriptor.FileDescriptorProto) {
 								// popluate decoder
 								dec := new(decoder)
 								dec.SvcName = svc.GetName()
-								dec.MethodName = methodItem.GetName()
+								dec.MethodName = method.GetName()
 								s.Decoders = append(s.Decoders, dec)
 							}
 
 							if option.Option {
 								opt := new(orionOption)
 								opt.SvcName = svc.GetName()
-								opt.MethodName = methodItem.GetName()
+								opt.MethodName = method.GetName()
 								opt.OptionType = strings.TrimSpace(option.Value)
 								s.Options = append(s.Options, opt)
 							}
@@ -359,7 +338,7 @@ func generate(d *data, file *descriptor.FileDescriptorProto) {
 							if option.Middleware {
 								mid := new(orionMiddleware)
 								mid.SvcName = svc.GetName()
-								mid.MethodName = methodItem.GetName()
+								mid.MethodName = method.GetName()
 								names := strings.Split(option.Value, ",")
 								for i := range names {
 									names[i] = "\"" + strings.TrimSpace(names[i]) + "\""
@@ -450,11 +429,4 @@ func extractComments(file *descriptor.FileDescriptorProto) map[string]*descripto
 		comments[strings.Join(p, ",")] = loc
 	}
 	return comments
-}
-
-func getApiID(serviceName string, methodName string) (apiID string) {
-	raw := serviceName + "." + methodName
-	hash := md5.Sum([]byte(raw))
-	apiID = hex.EncodeToString(hash[:])[0:8]
-	return
 }
