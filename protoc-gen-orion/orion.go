@@ -79,9 +79,9 @@ type handler struct {
 	Path       string
 }
 type method struct {
-	ApiID       string
-	ServiceName string
-	Name        string
+	ApiID   string
+	SvcName string
+	Name    string
 }
 type stream struct {
 	SvcName      string
@@ -121,7 +121,7 @@ var _ = orion.ProtoGenVersion1_0
 // Global ID of each API
 
 /*
-{{ range .Methods }}    "{{.ApiID}}" -> "{{.ServiceName}}.{{.Name}}"
+{{ range .Methods }}    "{{.ApiID}}" -> "{{.SvcName}}.{{.Name}}"
 {{ end }}*/
 
 // Encoders
@@ -292,9 +292,9 @@ func generate(d *data, file *descriptor.FileDescriptorProto) {
 		path := fmt.Sprintf("6,%d", index) // 6 means service.
 		for i, methodItem := range svc.GetMethod() {
 			s.Methods = append(s.Methods, &method{
-				ServiceName: s.ServName,
-				Name:        methodItem.GetName(),
-				ApiID:       getApiID(s.ServName, methodItem.GetName()),
+				SvcName: s.ServName,
+				Name:    methodItem.GetName(),
+				ApiID:   getApiID(s.ServName, methodItem.GetName()),
 			})
 			commentPath := fmt.Sprintf("%s,2,%d", path, i) // 2 means methodItem in a service.
 			if loc, ok := comments[commentPath]; ok {
