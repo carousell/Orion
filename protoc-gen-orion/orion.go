@@ -146,7 +146,7 @@ func Register{{.SvcName}}{{.MethodName}}Decoder(svr orion.Server, decoder orion.
 	orion.RegisterDecoder(svr, "{{.SvcName}}", "{{.MethodName}}", decoder)
 }
 {{ end }}
-//Streams
+// Streams
 {{ range .Streams }}
 // {{ . }}
 {{ end }}
