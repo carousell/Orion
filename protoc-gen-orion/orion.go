@@ -238,7 +238,7 @@ func generateFile(d *data) *plugin.CodeGeneratorResponse_File {
 
 	file := new(plugin.CodeGeneratorResponse_File)
 	file.Content = proto.String(buf.String())
-	file.Name = proto.String(strings.ToLower(d.FileName) + ".orion.pb.go")
+	file.Name = proto.String(d.FileName + ".orion.pb.go")
 	return file
 }
 
