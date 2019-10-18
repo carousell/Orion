@@ -44,6 +44,7 @@ func DefaultInterceptors() []grpc.UnaryServerInterceptor {
 		grpc_prometheus.UnaryServerInterceptor,
 		ServerErrorInterceptor(),
 		NewRelicInterceptor(),
+		PanicRecoveryInterceptor(),
 	}
 }
 
@@ -135,6 +136,27 @@ func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 		if !modifiers.HasDontLogError(ctx) {
 			notifier.Notify(err, ctx)
 		}
+		return resp, err
+	}
+}
+
+func PanicRecoveryInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		defer func(ctx context.Context) {
+			// panic handler
+			if r := recover(); r != nil {
+				log.Error(ctx, "panic", r, "method", info.FullMethod)
+				if e, ok := r.(error); ok {
+					err = e
+				} else {
+					err = errors.New(fmt.Sprintf("panic: %s", r))
+				}
+				utils.FinishNRTransaction(ctx, err)
+				notifier.NotifyWithLevel(err, "critical", info.FullMethod, ctx)
+			}
+		}(ctx)
+
+		resp, err = handler(ctx, req)
 		return resp, err
 	}
 }

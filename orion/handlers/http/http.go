@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"runtime/debug"
 	"strings"
 	"time"
 
@@ -33,24 +32,9 @@ func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, s
 	ctx := utils.StartNRTransaction(req.URL.Path, req.Context(), req, resp)
 	ctx = loggers.AddToLogContext(ctx, "transport", "http")
 	var err error
-	defer func(resp http.ResponseWriter, ctx context.Context, t time.Time) {
-		// panic handler
-		if r := recover(); r != nil {
-			writeResp(resp, http.StatusInternalServerError, []byte("Internal Server Error!"))
-			log.Error(ctx, "panic", r, "path", req.URL.String(), "method", req.Method, "took", time.Since(t))
-			log.Error(ctx, string(debug.Stack()))
-			var err error
-			if e, ok := r.(error); ok {
-				err = e
-			} else {
-				err = errors.New(fmt.Sprintf("panic: %s", r))
-			}
-			utils.FinishNRTransaction(ctx, err)
-			notifier.NotifyWithLevel(err, "critical", req.URL.String(), ctx)
-		} else {
-			log.Info(ctx, "path", req.URL.Path, "method", req.Method, "error", err, "took", time.Since(t))
-		}
-	}(resp, ctx, time.Now())
+	defer func(ctx context.Context, t time.Time) {
+		log.Info(ctx, "path", req.URL.Path, "method", req.Method, "error", err, "took", time.Since(t))
+	}(ctx, time.Now())
 	req = req.WithContext(ctx)
 	ctx, err = h.serveHTTP(resp, req, service, method)
 	if modifiers.HasDontLogError(ctx) {
