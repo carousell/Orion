@@ -25,16 +25,16 @@ require (
 	github.com/elastic/go-sysinfo v1.1.0 // indirect
 	github.com/fortytw2/leaktest v1.3.0
 	github.com/getsentry/raven-go v0.0.0-20190125112653-238ebd86338d
+	github.com/getsentry/sentry-go v0.3.1 // indirect
 	github.com/go-kit/kit v0.8.0
 	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/golang-migrate/migrate v0.0.0-20180905021119-16f2b1736e65
-	github.com/golang/protobuf v1.2.0
+	github.com/golang/protobuf v1.3.1
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/google/uuid v1.1.0 // indirect
-	github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 // indirect
 	github.com/gorilla/mux v1.7.0
-	github.com/gorilla/websocket v0.0.0-20181206070239-95ba29eb981b
+	github.com/gorilla/websocket v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware v0.0.0-20190118093823-f849b5445de4
 	github.com/grpc-ecosystem/go-grpc-prometheus v0.0.0-20181025070259-68e3a13e4117
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1 // indirect
@@ -58,7 +58,7 @@ require (
 	github.com/satori/go.uuid v0.0.0-20181028125025-b2ce2384e17b
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/afero v1.2.1 // indirect
-	github.com/spf13/cobra v0.0.4
+	github.com/spf13/cobra v0.0.5
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.3.2
 	github.com/streadway/amqp v0.0.0-20181205114330-a314942b2fd9 // indirect
@@ -66,8 +66,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/stvp/rollbar v0.0.0-20171113052335-4a50daf855af
 	go.elastic.co/apm v1.4.0
-	golang.org/x/crypto v0.0.0-20190130090550-b01c7a725664 // indirect
-	golang.org/x/net v0.0.0-20190125091013-d26f9f9a57f3
+	golang.org/x/net v0.0.0-20190827160401-ba9fcec4b297
 	golang.org/x/oauth2 v0.0.0-20190130055435-99b60b757ec1
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
 	golang.org/x/sys v0.0.0-20190825160603-fb81701db80f // indirect
