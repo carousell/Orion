@@ -260,7 +260,7 @@ func (e *errorLoggingInitializer) Init(svr Server) error {
 	//sentry
 	sToken := svr.GetOrionConfig().SentryDSN
 	if strings.TrimSpace(sToken) != "" {
-		notifier.InitSentry(sToken)
+		notifier.InitSentry(sToken, env)
 		log.Debug(context.Background(), "sentryDSN", rToken, "env", env)
 	}
 	return nil

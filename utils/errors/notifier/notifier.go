@@ -2,23 +2,27 @@ package notifier
 
 import (
 	"context"
-	"os"
+	"fmt"
+	"go/build"
+	"path/filepath"
 	"reflect"
-	"runtime"
 	"strconv"
 	"strings"
 
 	bugsnag "github.com/bugsnag/bugsnag-go"
 	"github.com/carousell/Orion/utils/errors"
-
 	"github.com/carousell/Orion/utils/log"
 	"github.com/carousell/Orion/utils/log/loggers"
 	"github.com/carousell/Orion/utils/options"
-	raven "github.com/getsentry/raven-go"
+	sentry "github.com/getsentry/sentry-go"
 	stdopentracing "github.com/opentracing/opentracing-go"
 	"github.com/pborman/uuid"
 	"github.com/stvp/rollbar"
 	gobrake "gopkg.in/airbrake/gobrake.v2"
+)
+
+const (
+	tracerID = "tracerId"
 )
 
 var (
@@ -28,11 +32,21 @@ var (
 	sentryInited  bool
 	serverRoot    string
 	hostname      string
+	// Used for populating a list of source directories
+	// to be compared against for trimming of filenames
+	trimPaths []string
 )
 
-const (
-	tracerID = "tracerId"
-)
+func init() {
+	// Collect all source directories, and make sure they
+	// end in a trailing "separator"
+	for _, prefix := range build.Default.SrcDirs() {
+		if prefix[len(prefix)-1] != filepath.Separator {
+			prefix += string(filepath.Separator)
+		}
+		trimPaths = append(trimPaths, prefix)
+	}
+}
 
 // InitAirbrake inits airbrake configuration
 func InitAirbrake(projectID int64, projectKey string) {
@@ -52,82 +66,63 @@ func InitRollbar(token, env string) {
 	rollbarInited = true
 }
 
-func InitSentry(dsn string) {
-	raven.SetDSN(dsn)
-	sentryInited = true
-}
-
-func convToGoBrake(in []errors.StackFrame) []gobrake.StackFrame {
-	out := make([]gobrake.StackFrame, 0)
-	for _, s := range in {
-		out = append(out, gobrake.StackFrame{
-			File: s.File,
-			Func: s.Func,
-			Line: s.Line,
-		})
-	}
-	return out
-}
-
-func convToRollbar(in []errors.StackFrame) rollbar.Stack {
-	out := rollbar.Stack{}
-	for _, s := range in {
-		out = append(out, rollbar.Frame{
-			Filename: s.File,
-			Method:   s.Func,
-			Line:     s.Line,
-		})
-	}
-	return out
-}
-
-func convToSentry(in errors.ErrorExt) *raven.Stacktrace {
-	out := new(raven.Stacktrace)
-	pcs := in.Callers()
-	frames := make([]*raven.StacktraceFrame, 0)
-
-	callersFrames := runtime.CallersFrames(pcs)
-
-	for {
-		fr, more := callersFrames.Next()
-		if fr.Func != nil {
-			frame := raven.NewStacktraceFrame(fr.PC, fr.Function, fr.File, fr.Line, 3, []string{})
-			if frame != nil {
-				frame.InApp = true
-				frames = append(frames, frame)
+// InitSentry inits sentry configuration
+func InitSentry(dsn, env string) {
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn:              dsn,
+		Debug:            true,
+		AttachStacktrace: true,
+		Environment:      env,
+		ServerName:       getHostname(),
+		MaxBreadcrumbs:   30,
+		// Remove modules integration from being inited
+		// Add more integrations here if required
+		Integrations: func(integrations []sentry.Integration) []sentry.Integration {
+			var filteredIntegrations []sentry.Integration
+			for _, integration := range integrations {
+				if integration.Name() == "Modules" {
+					continue
+				}
+				filteredIntegrations = append(filteredIntegrations, integration)
 			}
-		}
-		if !more {
-			break
-		}
-	}
-	for i := len(frames)/2 - 1; i >= 0; i-- {
-		opp := len(frames) - 1 - i
-		frames[i], frames[opp] = frames[opp], frames[i]
-	}
-	out.Frames = frames
-	return out
-}
+			return filteredIntegrations
+		},
+	})
 
-func parseRawData(ctx context.Context, rawData ...interface{}) map[string]interface{} {
-	m := make(map[string]interface{})
-	for pos := range rawData {
-		data := rawData[pos]
-		if _, ok := data.(context.Context); ok {
-			continue
-		}
-		m[reflect.TypeOf(data).String()+strconv.Itoa(pos)] = data
+	sentryInited = true
+	if err != nil {
+		fmt.Printf("Sentry initialization failed: %v\n", err)
+		sentryInited = false
 	}
-	if logFields := loggers.FromContext(ctx); logFields != nil {
-		for k, v := range logFields {
-			m[k] = v
-		}
-	}
-	return m
 }
 
 func Notify(err error, rawData ...interface{}) error {
-	return NotifyWithLevelAndSkip(err, 2, rollbar.ERR, rawData...)
+	return NotifyWithLevelAndSkip(err, 2, loggers.Level(loggers.ErrorLevel).String(), rawData...)
+}
+
+func NotifyWithExclude(err error, rawData ...interface{}) error {
+	if err == nil {
+		return nil
+	}
+
+	list := make([]interface{}, 0)
+	for pos := range rawData {
+		data := rawData[pos]
+		// if we find the error, return error and do not log it
+		if e, ok := data.(error); ok {
+			if er, ok := e.(errors.ErrorExt); ok {
+				if err == er.Cause() {
+					return err
+				} else if er == err {
+					return err
+				}
+			}
+		} else {
+			list = append(list, rawData[pos])
+		}
+	}
+	go Notify(err, list...)
+	return err
 }
 
 func NotifyWithLevel(err error, level string, rawData ...interface{}) error {
@@ -193,79 +188,22 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		}
 	}
 
-	if airbrake != nil {
-		var n *gobrake.Notice
-		n = gobrake.NewNotice(errWithStack, nil, 1)
-		n.Errors[0].Backtrace = convToGoBrake(errWithStack.StackFrame())
-		if len(list) > 0 {
-			m := parseRawData(ctx, list...)
-			for k, v := range m {
-				n.Context[k] = v
-			}
-		}
-		if traceID != "" {
-			n.Context["traceId"] = traceID
-		}
-		airbrake.SendNoticeAsync(n)
-	}
-
-	if bugsnagInited {
-		bugsnag.Notify(errWithStack, list...)
-	}
 	parsedData := parseRawData(ctx, list...)
-	if rollbarInited {
-		fields := []*rollbar.Field{}
-		if len(list) > 0 {
-			for k, v := range parsedData {
-				fields = append(fields, &rollbar.Field{Name: k, Data: v})
-			}
-		}
-		if traceID != "" {
-			fields = append(fields, &rollbar.Field{Name: "traceId", Data: traceID})
-		}
-		fields = append(fields, &rollbar.Field{Name: "server", Data: map[string]interface{}{"hostname": getHostname(), "root": getServerRoot()}})
-		rollbar.ErrorWithStack(level, errWithStack, convToRollbar(errWithStack.StackFrame()), fields...)
-	}
 
+	if airbrake != nil {
+		doNotifyAirbrake(ctx, errWithStack, traceID, list...)
+	}
+	if bugsnagInited {
+		doNotifyBugsnag(errWithStack, list...)
+	}
+	if rollbarInited {
+		doNotifyRollbar(errWithStack, level, parsedData, traceID, list...)
+	}
 	if sentryInited {
-		defLevel := raven.ERROR
-		if level == "critical" {
-			defLevel = raven.FATAL
-		} else if level == "warning" {
-			defLevel = raven.WARNING
-		}
-		ravenExp := raven.NewException(errWithStack, convToSentry(errWithStack))
-		packet := raven.NewPacketWithExtra(errWithStack.Error(), parsedData, ravenExp)
-		packet.Level = defLevel
-		raven.Capture(packet, nil)
+		doNotifySentry(errWithStack, level, parsedData)
 	}
 
 	log.GetLogger().Log(ctx, loggers.ErrorLevel, skip+1, "err", errWithStack, "stack", errWithStack.StackFrame())
-	return err
-}
-
-func NotifyWithExclude(err error, rawData ...interface{}) error {
-	if err == nil {
-		return nil
-	}
-
-	list := make([]interface{}, 0)
-	for pos := range rawData {
-		data := rawData[pos]
-		// if we find the error, return error and do not log it
-		if e, ok := data.(error); ok {
-			if er, ok := e.(errors.ErrorExt); ok {
-				if err == er.Cause() {
-					return err
-				} else if er == err {
-					return err
-				}
-			}
-		} else {
-			list = append(list, rawData[pos])
-		}
-	}
-	go Notify(err, list...)
 	return err
 }
 
@@ -295,14 +233,12 @@ func NotifyOnPanic(rawData ...interface{}) {
 			e = errors.NewWithSkip("Panic", 1)
 		}
 		parsedData := parseRawData(ctx, rawData...)
+
 		if rollbarInited {
 			rollbar.ErrorWithStack(rollbar.CRIT, e, convToRollbar(e.StackFrame()), &rollbar.Field{Name: "panic", Data: r})
 		}
 		if sentryInited {
-			ravenExp := raven.NewException(e, convToSentry(e))
-			packet := raven.NewPacketWithExtra(e.Error(), parsedData, ravenExp)
-			packet.Level = raven.FATAL
-			raven.Capture(packet, nil)
+			doNotifySentry(e, string(sentry.LevelFatal), parsedData)
 		}
 		panic(e)
 	}
@@ -322,7 +258,6 @@ func SetEnvironemnt(env string) {
 		})
 	}
 	rollbar.Environment = env
-	raven.SetEnvironment(env)
 }
 
 //SetTraceId updates the traceID based on context values
@@ -376,24 +311,20 @@ func SetHostname(name string) {
 	hostname = name
 }
 
-func getHostname() string {
-	if hostname != "" {
-		return hostname
+// parseRawData transforms rawData into parsed format
+func parseRawData(ctx context.Context, rawData ...interface{}) map[string]interface{} {
+	m := make(map[string]interface{})
+	for pos := range rawData {
+		data := rawData[pos]
+		if _, ok := data.(context.Context); ok {
+			continue
+		}
+		m[reflect.TypeOf(data).String()+strconv.Itoa(pos)] = data
 	}
-	name, err := os.Hostname()
-	if err == nil {
-		hostname = name
+	if logFields := loggers.FromContext(ctx); logFields != nil {
+		for k, v := range logFields {
+			m[k] = v
+		}
 	}
-	return hostname
-}
-
-func getServerRoot() string {
-	if serverRoot != "" {
-		return serverRoot
-	}
-	cwd, err := os.Getwd()
-	if err == nil {
-		serverRoot = cwd
-	}
-	return serverRoot
+	return m
 }
