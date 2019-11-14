@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"time"
 
 	"github.com/RichardKnop/machinery/v1"
 	machineryConfig "github.com/RichardKnop/machinery/v1/config"
@@ -39,6 +40,13 @@ func WithRetry(n int) ScheduleOption {
 func WithQueueName(queueName string) ScheduleOption {
 	return func(c *ScheduleConfig) {
 		c.queueName = queueName
+	}
+}
+
+//WithETA sets the delay for this task
+func WithETA(eta *time.Time) ScheduleOption {
+	return func(c *ScheduleConfig) {
+		c.eta = eta
 	}
 }
 
