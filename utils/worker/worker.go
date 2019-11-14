@@ -78,6 +78,7 @@ func (w *worker) scheduleRemote(ctx context.Context, name string, payload string
 	}
 	signature.RetryCount = c.retries
 	signature.RoutingKey = c.queueName
+	signature.ETA = c.eta
 	if w.server == nil {
 		return errors.New("Server not initialized")
 	}
