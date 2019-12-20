@@ -11,7 +11,6 @@ import (
 var (
 	defaultLogger Logger
 	mu            sync.Mutex
-	once          sync.Once
 )
 
 func init() {
