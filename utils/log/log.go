@@ -14,6 +14,10 @@ var (
 	once          sync.Once
 )
 
+func init() {
+	defaultLogger = NewLogger(gokit.NewLogger())
+}
+
 type logger struct {
 	baseLog loggers.BaseLogger
 }
@@ -60,11 +64,6 @@ func NewLogger(log loggers.BaseLogger) Logger {
 
 //GetLogger returns the global logger
 func GetLogger() Logger {
-	if defaultLogger == nil {
-		once.Do(func() {
-			defaultLogger = NewLogger(gokit.NewLogger())
-		})
-	}
 	return defaultLogger
 }
 
