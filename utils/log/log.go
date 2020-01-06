@@ -11,11 +11,8 @@ import (
 var (
 	defaultLogger Logger
 	mu            sync.Mutex
+	once          sync.Once
 )
-
-func init() {
-	defaultLogger = NewLogger(gokit.NewLogger())
-}
 
 type logger struct {
 	baseLog loggers.BaseLogger
@@ -63,6 +60,11 @@ func NewLogger(log loggers.BaseLogger) Logger {
 
 //GetLogger returns the global logger
 func GetLogger() Logger {
+	once.Do(func() {
+		if defaultLogger == nil {
+			defaultLogger = NewLogger(gokit.NewLogger())
+		}
+	})
 	return defaultLogger
 }
 
