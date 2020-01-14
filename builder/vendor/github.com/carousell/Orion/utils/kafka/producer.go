@@ -13,8 +13,7 @@ import (
 // Producer is a Kafka producer based on Sarama
 type Producer struct {
 	asyncProducer sarama.AsyncProducer
-	config        *Config
-	channel       chan *sarama.ProducerMessage
+	open          bool
 }
 
 // NewProducer creates a Kafka producer
@@ -34,31 +33,22 @@ func NewProducer(c Config) (*Producer, error) {
 
 	return &Producer{
 		asyncProducer: asyncProducer,
-		config:        &c,
-		channel:       make(chan *sarama.ProducerMessage, c.QueueBufferSize),
 	}, nil
 }
 
 // Run tells the producer to start accepting messages to publish to Kafka
 func (p *Producer) Run() {
+	p.open = true
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				notifier.NotifyWithLevel(errors.Wrap(fmt.Errorf("%v", r), "panic in Kafka producer"), "critical")
+				notifier.NotifyWithLevel(errors.Wrap(fmt.Errorf("%v", r), "panic in Kafka producer error handler"), "critical")
 			}
 		}()
-
 		for {
 			select {
-			case msg, ok := <-p.channel:
-				if !ok {
-					// producer has been stopped at user level
-					return
-				}
-				p.asyncProducer.Input() <- msg
 			case err, ok := <-p.asyncProducer.Errors():
 				if !ok {
-					// producer has been stopped at Sarama level
 					return
 				}
 				notifier.Notify(errors.Wrap(err, "failed to produce Kafka message"))
@@ -69,23 +59,21 @@ func (p *Producer) Run() {
 
 // Produce sends a message to a particular Kafka topic
 func (p *Producer) Produce(ctx context.Context, topic string, key string, msg []byte) error {
-	if p.channel == nil {
-		return errors.New("message discarded because producer has not been started")
+	if !p.open || p.asyncProducer != nil {
+		return errors.New("producer is closed")
 	}
-
-	p.channel <- &sarama.ProducerMessage{
+	saramaMsg := &sarama.ProducerMessage{
 		Topic: topic,
 		Key:   sarama.StringEncoder(key),
 		Value: sarama.ByteEncoder(msg),
 	}
+	p.asyncProducer.Input() <- saramaMsg
 	return nil
 }
 
 // Close stops the producer from accepting and sending any new messages
 func (p *Producer) Close() error {
-	if p.channel != nil {
-		close(p.channel)
-	}
+	p.open = false
 	err := p.asyncProducer.Close()
 	if err != nil {
 		return errors.Wrap(err, "failed to close Kafka async producer")
