@@ -14,25 +14,33 @@ import (
 type Producer struct {
 	asyncProducer sarama.AsyncProducer
 	open          bool
+	errorHandler  func(error)
 }
 
 // NewProducer creates a Kafka producer
-func NewProducer(c Config) (*Producer, error) {
-	saramaConfig := sarama.NewConfig()
-	saramaConfig.Producer.Flush.Frequency = c.FlushInterval
-	saramaConfig.Producer.Retry.Max = c.MaxRetries
+func NewProducer(config Config) (*Producer, error) {
 
-	if len(c.Brokers) == 0 {
+	saramaConfig := sarama.NewConfig()
+	saramaConfig.Producer.Flush.Frequency = config.FlushInterval
+	saramaConfig.Producer.Retry.Max = config.MaxRetries
+
+	if len(config.Brokers) == 0 {
 		return nil, errors.New("must provide at least one Kafka broker")
 	}
 
-	asyncProducer, err := sarama.NewAsyncProducer(c.Brokers, saramaConfig)
+	asyncProducer, err := sarama.NewAsyncProducer(config.Brokers, saramaConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "error creating async producer")
 	}
 
+	errorHandler := defaultErrorHandler
+	if config.ErrorHandler != nil {
+		errorHandler = config.ErrorHandler
+	}
+
 	return &Producer{
 		asyncProducer: asyncProducer,
+		errorHandler:  errorHandler,
 	}, nil
 }
 
@@ -51,7 +59,7 @@ func (p *Producer) Run() {
 				if !ok {
 					return
 				}
-				notifier.Notify(errors.Wrap(err, "failed to produce Kafka message"))
+				p.errorHandler(err)
 			}
 		}
 	}()
@@ -59,7 +67,7 @@ func (p *Producer) Run() {
 
 // Produce sends a message to a particular Kafka topic
 func (p *Producer) Produce(ctx context.Context, topic string, key string, msg []byte) error {
-	if !p.open || p.asyncProducer != nil {
+	if !p.open || p.asyncProducer == nil {
 		return errors.New("producer is closed")
 	}
 	saramaMsg := &sarama.ProducerMessage{
@@ -87,4 +95,11 @@ type Config struct {
 	FlushInterval   time.Duration
 	MaxRetries      int
 	QueueBufferSize int
+	// You can specify custom error handling behaviour here;
+	// the default error handler simply calls notifier.Notify
+	ErrorHandler func(error)
+}
+
+func defaultErrorHandler(err error) {
+	notifier.Notify(errors.Wrap(err, "failed to produce Kafka message"))
 }
