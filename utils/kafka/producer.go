@@ -18,29 +18,24 @@ type Producer struct {
 }
 
 // NewProducer creates a Kafka producer
-func NewProducer(config Config) (*Producer, error) {
+func NewProducer(brokers []string, opts ...Option) (*Producer, error) {
+	cfg := newConfig()
+	for _, opt := range opts {
+		opt.apply(&cfg)
+	}
 
-	saramaConfig := sarama.NewConfig()
-	saramaConfig.Producer.Flush.Frequency = config.FlushInterval
-	saramaConfig.Producer.Retry.Max = config.MaxRetries
-
-	if len(config.Brokers) == 0 {
+	if len(brokers) == 0 {
 		return nil, errors.New("must provide at least one Kafka broker")
 	}
 
-	asyncProducer, err := sarama.NewAsyncProducer(config.Brokers, saramaConfig)
+	asyncProducer, err := sarama.NewAsyncProducer(brokers, cfg.saramaConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "error creating async producer")
 	}
 
-	errorHandler := defaultErrorHandler
-	if config.ErrorHandler != nil {
-		errorHandler = config.ErrorHandler
-	}
-
 	return &Producer{
 		asyncProducer: asyncProducer,
-		errorHandler:  errorHandler,
+		errorHandler:  cfg.errorHandler,
 	}, nil
 }
 
@@ -91,10 +86,9 @@ func (p *Producer) Close() error {
 
 // Config contains Kafka connection parameters
 type Config struct {
-	Brokers         []string
-	FlushInterval   time.Duration
-	MaxRetries      int
-	QueueBufferSize int
+	Brokers       []string
+	FlushInterval *time.Duration
+	MaxRetries    *int
 	// You can specify custom error handling behaviour here;
 	// the default error handler simply calls notifier.Notify
 	ErrorHandler func(error)
