@@ -29,12 +29,12 @@ func TestProducer(t *testing.T) {
 
 		err := producer.Produce(ctx, "test-topic", "test-key", []byte("test-payload"))
 		if err != nil {
-			t.Errorf("expected no error, got %v", err)
+			t.Fatalf("expected no error, got %v", err)
 		}
 		resp := <-asyncProducer.Successes()
 		val, _ := resp.Value.Encode()
 		if string(val) != "test-payload" {
-			t.Errorf("expected value sent to Kafka to be %v, got %v", "test-payload", string(val))
+			t.Fatalf("expected value sent to Kafka to be %v, got %v", "test-payload", string(val))
 		}
 	})
 
@@ -57,12 +57,12 @@ func TestProducer(t *testing.T) {
 
 		err := producer.Produce(ctx, "test-topic", "test-key", []byte("test-payload"))
 		if err != nil {
-			t.Errorf("expected no error, got %v", err)
+			t.Fatalf("expected no error, got %v", err)
 		}
 
 		producerErr := <-errCh
 		if !strings.Contains(producerErr.Error(), testErr.Error()) {
-			t.Errorf("expected error handler to receive %v, got %v", testErr, producerErr)
+			t.Fatalf("expected error handler to receive %v, got %v", testErr, producerErr)
 		}
 	})
 
@@ -70,7 +70,7 @@ func TestProducer(t *testing.T) {
 		producer := Producer{}
 		err := producer.Produce(ctx, "test-topic", "test-key", []byte("test-payload"))
 		if err == nil {
-			t.Error("expected error, got nil")
+			t.Fatal("expected error, got nil")
 		}
 	})
 
@@ -84,7 +84,7 @@ func TestProducer(t *testing.T) {
 
 		err := producer.Produce(ctx, "test-topic", "test-key", []byte("test-payload"))
 		if err == nil {
-			t.Error("expected error, got nil")
+			t.Fatal("expected error, got nil")
 		}
 	})
 }

@@ -45,7 +45,7 @@ func (p *Producer) Run() {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				notifier.NotifyWithLevel(errors.Wrap(fmt.Errorf("%v", r), "panic in Kafka producer error handler"), "critical")
+				notifier.NotifyWithLevel(errors.Wrap(fmt.Errorf("%v", r), "panic in Kafka producer"), "critical")
 			}
 		}()
 		for {
