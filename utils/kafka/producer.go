@@ -3,7 +3,6 @@ package kafka
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/Shopify/sarama"
 	"github.com/carousell/Orion/utils/errors"
@@ -82,16 +81,6 @@ func (p *Producer) Close() error {
 		return errors.Wrap(err, "failed to close Kafka async producer")
 	}
 	return nil
-}
-
-// Config contains Kafka connection parameters
-type Config struct {
-	Brokers       []string
-	FlushInterval *time.Duration
-	MaxRetries    *int
-	// You can specify custom error handling behaviour here;
-	// the default error handler simply calls notifier.Notify
-	ErrorHandler func(error)
 }
 
 func defaultErrorHandler(err error) {
