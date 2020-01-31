@@ -60,13 +60,17 @@ func (p *Producer) Run() {
 }
 
 // Produce sends a message to a particular Kafka topic
-func (p *Producer) Produce(ctx context.Context, topic string, key string, msg []byte) error {
+func (p *Producer) Produce(ctx context.Context, topic string, key []byte, msg []byte) error {
 	if !p.open || p.asyncProducer == nil {
 		return errors.New("producer is closed")
 	}
+	var keyEncoder sarama.Encoder
+	if key != nil {
+		keyEncoder = sarama.ByteEncoder(key)
+	}
 	saramaMsg := &sarama.ProducerMessage{
 		Topic: topic,
-		Key:   sarama.StringEncoder(key),
+		Key:   keyEncoder,
 		Value: sarama.ByteEncoder(msg),
 	}
 	p.asyncProducer.Input() <- saramaMsg
