@@ -27,7 +27,7 @@ func TestProducer(t *testing.T) {
 		producer.Run()
 		defer producer.Close()
 
-		err := producer.Produce(ctx, "test-topic", "test-key", []byte("test-payload"))
+		err := producer.Produce(ctx, "test-topic", []byte("test-key"), []byte("test-payload"))
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -55,7 +55,7 @@ func TestProducer(t *testing.T) {
 		producer.Run()
 		defer producer.Close()
 
-		err := producer.Produce(ctx, "test-topic", "test-key", []byte("test-payload"))
+		err := producer.Produce(ctx, "test-topic", []byte("test-key"), []byte("test-payload"))
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -68,7 +68,7 @@ func TestProducer(t *testing.T) {
 
 	t.Run("uninitialized producer does not accept messages", func(t *testing.T) {
 		producer := Producer{}
-		err := producer.Produce(ctx, "test-topic", "test-key", []byte("test-payload"))
+		err := producer.Produce(ctx, "test-topic", []byte("test-key"), []byte("test-payload"))
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
@@ -82,7 +82,7 @@ func TestProducer(t *testing.T) {
 		producer.Run()
 		producer.Close()
 
-		err := producer.Produce(ctx, "test-topic", "test-key", []byte("test-payload"))
+		err := producer.Produce(ctx, "test-topic", []byte("test-key"), []byte("test-payload"))
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
