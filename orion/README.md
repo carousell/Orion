@@ -89,7 +89,7 @@ This contains:
 	An interface type for servers to implement, also with the methods defined in the SimpleService (simple.pb.go)
 	Registration function for Orion (simple.proto.orion.pb.go)
 
-### Whats Incuded
+### What's Included
 Orion comes included with.
 
 	Hystrix (<a href="http://github.com/afex/hystrix-go">http://github.com/afex/hystrix-go</a>)
