@@ -22,14 +22,15 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 )
 
-func (h *httpHandler) getHTTPHandler(serviceName, methodName string) http.HandlerFunc {
+func (h *httpHandler) getHTTPHandler(serviceName, methodName string, routeURL string) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
-		h.httpHandler(resp, req, serviceName, methodName)
+		h.httpHandler(resp, req, serviceName, methodName, routeURL)
 	}
 }
 
-func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, service, method string) {
-	ctx := utils.StartNRTransaction(req.URL.Path, req.Context(), req, resp)
+func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, service, method string, routeURL string) {
+	nrTxName := fmt.Sprintf("%v %v", req.Method, routeURL)
+	ctx := utils.StartNRTransaction(nrTxName, req.Context(), req, resp)
 	ctx = loggers.AddToLogContext(ctx, "transport", "http")
 	var err error
 	defer func(ctx context.Context, t time.Time) {
