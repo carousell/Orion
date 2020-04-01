@@ -29,7 +29,15 @@ func (h *httpHandler) getHTTPHandler(serviceName, methodName string, routeURL st
 }
 
 func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, service, method string, routeURL string) {
-	nrTxName := fmt.Sprintf("%v %v", req.Method, routeURL)
+	nrTxName := method
+	switch h.config.NRHttpTxName {
+	case NRTxNameFullMethod:
+		nrTxName = fmt.Sprintf("%v/%v", service, method)
+	case NRTxNameURL:
+		nrTxName = fmt.Sprintf("%v %v", req.Method, req.URL)
+	case NRTxNameRoute:
+		nrTxName = fmt.Sprintf("%v %v", req.Method, routeURL)
+	}
 	ctx := utils.StartNRTransaction(nrTxName, req.Context(), req, resp)
 	ctx = loggers.AddToLogContext(ctx, "transport", "http")
 	var err error

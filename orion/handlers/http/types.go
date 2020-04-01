@@ -39,11 +39,19 @@ const (
 	ContentTypeProto = "application/octet-stream"
 )
 
+const (
+	NRTxNameMethod = "method"
+	NRTxNameFullMethod = "fullmethod"
+	NRTxNameURL = "url"
+	NRTxNameRoute = "route"
+)
+
 //Config is the configuration for HTTP Handler
 type Config struct {
 	handlers.CommonConfig
 	EnableProtoURL bool
 	DefaultJSONPB  bool
+	NRHttpTxName string
 }
 
 type serviceInfo struct {
