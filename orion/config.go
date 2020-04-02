@@ -73,6 +73,8 @@ type ZipkinConfig struct {
 type NewRelicConfig struct {
 	APIKey            string
 	ServiceName       string
+	//HttpTxNameType decides the transaction name logged in NR. Options are "method" (default), "fullmethod", "url", "route". Default is "method"
+	HttpTxNameType 	  string
 	IncludeAttributes []string
 	ExcludeAttributes []string
 }
@@ -123,6 +125,7 @@ func BuildDefaultNewRelicConfig() NewRelicConfig {
 	return NewRelicConfig{
 		ServiceName:       viper.GetString("orion.NewRelicServiceName"),
 		APIKey:            viper.GetString("orion.NewRelicApiKey"),
+		HttpTxNameType:    viper.GetString("orion.NewRelicHttpTxNameType"),
 		ExcludeAttributes: viper.GetStringSlice("orion.NewRelicExclude"),
 		IncludeAttributes: viper.GetStringSlice("orion.NewRelicInclude"),
 	}

@@ -22,14 +22,15 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 )
 
-func (h *httpHandler) getHTTPHandler(serviceName, methodName string) http.HandlerFunc {
+func (h *httpHandler) getHTTPHandler(serviceName, methodName, routeURL string) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
-		h.httpHandler(resp, req, serviceName, methodName)
+		h.httpHandler(resp, req, serviceName, methodName, routeURL)
 	}
 }
 
-func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, service, method string) {
-	ctx := utils.StartNRTransaction(req.URL.Path, req.Context(), req, resp)
+func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, service, method, routeURL string) {
+	nrTxName := h.getNRTxName(req, service, method, routeURL)
+	ctx := utils.StartNRTransaction(nrTxName, req.Context(), req, resp)
 	ctx = loggers.AddToLogContext(ctx, "transport", "http")
 	var err error
 	defer func(ctx context.Context, t time.Time) {
@@ -43,6 +44,19 @@ func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, s
 		notifier.Notify(err, req.URL.String(), ctx)
 		utils.FinishNRTransaction(req.Context(), err)
 	}
+}
+
+func (h *httpHandler)  getNRTxName(req *http.Request, service, method, routeURL string) string {
+	nrTxName := method
+	switch h.config.NRHttpTxNameType {
+	case NRTxNameTypeFullMethod:
+		nrTxName = fmt.Sprintf("%v/%v", service, method)
+	case NRTxNameTypeURL:
+		nrTxName = fmt.Sprintf("%v %v", req.Method, req.URL)
+	case NRTxNameTypeRoute:
+		nrTxName = fmt.Sprintf("%v %v", req.Method, routeURL)
+	}
+	return nrTxName
 }
 
 func prepareContext(req *http.Request, info *methodInfo) context.Context {
