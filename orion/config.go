@@ -73,7 +73,7 @@ type ZipkinConfig struct {
 type NewRelicConfig struct {
 	APIKey            string
 	ServiceName       string
-	//HttpTxNameType decides the transaction name logged in NR. Options are "method" (default), "fullmethod", "url", "route". Default is "method"
+	//HttpTxNameType decides the transaction name logged in NR. Options are "fullmethod" (default), "method" , "route".
 	HttpTxNameType 	  string
 	IncludeAttributes []string
 	ExcludeAttributes []string
