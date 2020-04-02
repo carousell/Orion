@@ -48,12 +48,12 @@ func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, s
 
 func (h *httpHandler)  getNRTxName(req *http.Request, service, method, routeURL string) string {
 	nrTxName := method
-	switch h.config.NRHttpTxName {
-	case NRTxNameFullMethod:
+	switch h.config.NRHttpTxNameType {
+	case NRTxNameTypeFullMethod:
 		nrTxName = fmt.Sprintf("%v/%v", service, method)
-	case NRTxNameURL:
+	case NRTxNameTypeURL:
 		nrTxName = fmt.Sprintf("%v %v", req.Method, req.URL)
-	case NRTxNameRoute:
+	case NRTxNameTypeRoute:
 		nrTxName = fmt.Sprintf("%v %v", req.Method, routeURL)
 	}
 	return nrTxName
