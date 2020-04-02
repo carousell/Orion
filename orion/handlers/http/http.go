@@ -51,8 +51,6 @@ func (h *httpHandler)  getNRTxName(req *http.Request, service, method, routeURL 
 	switch h.config.NRHttpTxNameType {
 	case NRTxNameTypeMethod:
 		nrTxName = method
-	case NRTxNameTypeURL:
-		nrTxName = fmt.Sprintf("%v %v", req.Method, req.URL)
 	case NRTxNameTypeRoute:
 		nrTxName = fmt.Sprintf("%v %v", req.Method, routeURL)
 	default:

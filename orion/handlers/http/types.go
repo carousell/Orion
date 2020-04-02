@@ -42,7 +42,6 @@ const (
 const (
 	NRTxNameTypeMethod = "method"
 	NRTxNameTypeFullMethod = "fullmethod"
-	NRTxNameTypeURL = "url"
 	NRTxNameTypeRoute = "route"
 )
 
