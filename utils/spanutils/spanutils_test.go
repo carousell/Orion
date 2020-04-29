@@ -54,6 +54,11 @@ func TestTracingSpan_SetTag(t *testing.T) {
 			assertTagSet(t, span, "key", tt.given, tt.given)
 		})
 	}
+
+	t.Run("no panic when called against nil span", func(t *testing.T) {
+		var ts *tracingSpan
+		ts.SetTag("k", "v")
+	})
 }
 
 func TestTracingSpan_SetQuery(t *testing.T) {
@@ -76,6 +81,10 @@ func TestTracingSpan_SetQuery(t *testing.T) {
 			assertTagSet(t, span, "query", tt.given, tt.given)
 		})
 	}
+	t.Run("no panic when called against nil span", func(t *testing.T) {
+		var ts *tracingSpan
+		ts.SetQuery("v")
+	})
 }
 
 func assertTagSet(t *testing.T, span *testSpan, key, givenValue, expectedValue string) {
