@@ -3,6 +3,7 @@ package spanutils
 import (
 	"testing"
 
+	newrelic "github.com/newrelic/go-agent"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 )
@@ -64,6 +65,33 @@ func TestTracingSpan_SetQuery(t *testing.T) {
 		var ts *tracingSpan
 		ts.SetQuery("v")
 	})
+	t.Run("newrelic datastore segment", func(t *testing.T) {
+		t.Run("is set if not a datastore span", func(t *testing.T) {
+			span := &testSpan{}
+			tracingSpan := &tracingSpan{
+				openSpan:    span,
+				dataSegment: newrelic.DatastoreSegment{},
+				datastore:   false,
+			}
+			tracingSpan.SetQuery("v")
+			if tracingSpan.dataSegment.ParameterizedQuery != "" {
+				t.Error("newrelic.DatastoreSegment should not be set")
+			}
+		})
+		t.Run("is not set if not a datastore span", func(t *testing.T) {
+			span := &testSpan{}
+			given := "SELECT * from tbl"
+			tracingSpan := &tracingSpan{
+				openSpan:    span,
+				dataSegment: newrelic.DatastoreSegment{},
+				datastore:   true,
+			}
+			tracingSpan.SetQuery(given)
+			if tracingSpan.dataSegment.ParameterizedQuery != given {
+				t.Errorf("expected newrelic.DatastoreSegment to be set to %+v, got %+v", given, tracingSpan.dataSegment.ParameterizedQuery)
+			}
+		})
+	})
 }
 
 func TestTracingSpan_SetError(t *testing.T) {
@@ -77,7 +105,7 @@ func TestTracingSpan_SetError(t *testing.T) {
 	})
 	t.Run("no panic when called against nil span", func(t *testing.T) {
 		var ts *tracingSpan
-		ts.SetQuery("v")
+		ts.SetError("v")
 	})
 }
 
