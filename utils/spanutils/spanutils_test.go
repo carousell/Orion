@@ -37,25 +37,14 @@ func (n *testSpan) LogEventWithPayload(event string, payload interface{})  {}
 func (n *testSpan) Log(data opentracing.LogData)                           {}
 
 func TestTracingSpan_SetTag(t *testing.T) {
-	var tests = []struct {
-		name  string
-		given string
-	}{
-		{
-			"tag is set on embedded opentracing.Span",
-			"value_1",
-		},
-	}
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			span := &testSpan{}
-			tracingSpan := &tracingSpan{openSpan: span}
-			tracingSpan.SetTag("key", tt.given)
-			assertTagSet(t, span, "key", tt.given, tt.given)
-		})
-	}
+	t.Run(`tag is set on embedded opentracing.Span`, func(t *testing.T) {
+		span := &testSpan{}
+		given := "v"
+		tracingSpan := &tracingSpan{openSpan: span}
+		tracingSpan.SetTag("key", given)
 
+		assertTagSet(t, span, "key", given, given)
+	})
 	t.Run("no panic when called against nil span", func(t *testing.T) {
 		var ts *tracingSpan
 		ts.SetTag("k", "v")
@@ -63,25 +52,14 @@ func TestTracingSpan_SetTag(t *testing.T) {
 }
 
 func TestTracingSpan_SetQuery(t *testing.T) {
-	var tests = []struct {
-		name  string
-		given string
-	}{
-		{
-			`value is set with tag="query"`,
-			"SELECT * FROM tbl",
-		},
-	}
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			span := &testSpan{}
-			tracingSpan := &tracingSpan{openSpan: span}
-			tracingSpan.SetQuery(tt.given)
+	t.Run(`value is set with tag="query"`, func(t *testing.T) {
+		span := &testSpan{}
+		given := "SELECT * from tbl"
+		tracingSpan := &tracingSpan{openSpan: span}
+		tracingSpan.SetQuery(given)
 
-			assertTagSet(t, span, "query", tt.given, tt.given)
-		})
-	}
+		assertTagSet(t, span, "query", given, given)
+	})
 	t.Run("no panic when called against nil span", func(t *testing.T) {
 		var ts *tracingSpan
 		ts.SetQuery("v")
@@ -89,25 +67,14 @@ func TestTracingSpan_SetQuery(t *testing.T) {
 }
 
 func TestTracingSpan_SetError(t *testing.T) {
-	var tests = []struct {
-		name  string
-		given string
-	}{
-		{
-			`error message is set with tag="error"`,
-			"EOF",
-		},
-	}
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			span := &testSpan{}
-			tracingSpan := &tracingSpan{openSpan: span}
-			tracingSpan.SetError(tt.given)
+	t.Run(`error message is set with tag="error"`, func(t *testing.T) {
+		span := &testSpan{}
+		given := "EOF"
+		tracingSpan := &tracingSpan{openSpan: span}
+		tracingSpan.SetError(given)
 
-			assertTagSet(t, span, "error", tt.given, tt.given)
-		})
-	}
+		assertTagSet(t, span, "error", given, given)
+	})
 	t.Run("no panic when called against nil span", func(t *testing.T) {
 		var ts *tracingSpan
 		ts.SetQuery("v")
