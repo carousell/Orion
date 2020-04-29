@@ -37,13 +37,11 @@ func (n *testSpan) Log(data opentracing.LogData)                           {}
 
 func TestTracingSpan_SetTag(t *testing.T) {
 	var tests = []struct {
-		name     string
-		given    string
-		expected string
+		name  string
+		given string
 	}{
 		{
 			"tag is set on embedded opentracing.Span",
-			"value_1",
 			"value_1",
 		},
 	}
@@ -53,19 +51,44 @@ func TestTracingSpan_SetTag(t *testing.T) {
 			span := &testSpan{}
 			tracingSpan := &tracingSpan{openSpan: span}
 			tracingSpan.SetTag("key", tt.given)
-
-			if setValue, ok := span.tags["key"]; ok {
-				if v, ok := setValue.(string); ok {
-					if v != tt.given {
-						t.Errorf("SetTag(key, %+v): expected %+v, got %+v", tt.given, tt.expected, v)
-					}
-				} else {
-					t.Errorf("SetTag(key, %+v): set value is not a string", tt.given)
-				}
-			} else {
-				t.Errorf("SetTag(key, %+v): SetTag not called on embedded opentracing.Span", tt.given)
-			}
-
+			assertTagSet(t, span, "key", tt.given, tt.given)
 		})
+	}
+}
+
+func TestTracingSpan_SetQuery(t *testing.T) {
+	var tests = []struct {
+		name  string
+		given string
+	}{
+		{
+			`value is set with tag="query"`,
+			"SELECT * FROM tbl",
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			span := &testSpan{}
+			tracingSpan := &tracingSpan{openSpan: span}
+			tracingSpan.SetQuery(tt.given)
+
+			assertTagSet(t, span, "query", tt.given, tt.given)
+		})
+	}
+}
+
+func assertTagSet(t *testing.T, span *testSpan, key, givenValue, expectedValue string) {
+	t.Helper()
+	if setValue, ok := span.tags[key]; ok {
+		if v, ok := setValue.(string); ok {
+			if v != expectedValue {
+				t.Errorf("(key=%+v, value=%+v): expected value %+v to be set, got %+v", key, givenValue, expectedValue, v)
+			}
+		} else {
+			t.Errorf("key=%+v: set value %+v is not a string ", key, v)
+		}
+	} else {
+		t.Errorf("key=%+v: value not set for key", key)
 	}
 }
