@@ -7,6 +7,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 )
 
+// testSpan implements opentracing.Span
 type testSpan struct {
 	// spanContext testSpanContext
 	// OperationName string
@@ -79,6 +80,32 @@ func TestTracingSpan_SetQuery(t *testing.T) {
 			tracingSpan.SetQuery(tt.given)
 
 			assertTagSet(t, span, "query", tt.given, tt.given)
+		})
+	}
+	t.Run("no panic when called against nil span", func(t *testing.T) {
+		var ts *tracingSpan
+		ts.SetQuery("v")
+	})
+}
+
+func TestTracingSpan_SetError(t *testing.T) {
+	var tests = []struct {
+		name  string
+		given string
+	}{
+		{
+			`error message is set with tag="error"`,
+			"EOF",
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			span := &testSpan{}
+			tracingSpan := &tracingSpan{openSpan: span}
+			tracingSpan.SetError(tt.given)
+
+			assertTagSet(t, span, "error", tt.given, tt.given)
 		})
 	}
 	t.Run("no panic when called against nil span", func(t *testing.T) {
