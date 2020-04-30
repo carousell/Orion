@@ -66,7 +66,7 @@ func TestTracingSpan_SetQuery(t *testing.T) {
 		ts.SetQuery("v")
 	})
 	t.Run("newrelic datastore segment", func(t *testing.T) {
-		t.Run("is set if not a datastore span", func(t *testing.T) {
+		t.Run("is not set if not a datastore span", func(t *testing.T) {
 			span := &testSpan{}
 			tracingSpan := &tracingSpan{
 				openSpan:    span,
@@ -78,7 +78,7 @@ func TestTracingSpan_SetQuery(t *testing.T) {
 				t.Error("newrelic.DatastoreSegment should not be set")
 			}
 		})
-		t.Run("is not set if not a datastore span", func(t *testing.T) {
+		t.Run("is set if not a datastore span", func(t *testing.T) {
 			span := &testSpan{}
 			given := "SELECT * from tbl"
 			tracingSpan := &tracingSpan{
