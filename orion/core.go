@@ -276,6 +276,7 @@ func (d *DefaultServerImpl) signalWatcher() {
 		if sig == syscall.SIGHUP { // only reload config for sighup
 			if !d.config.HotReload {
 				log.Warn(context.Background(), "signal", "config reload SKIPPED (Hot reload disabled) on "+sig.String())
+				continue
 			}
 			d.version++
 			log.Info(context.Background(), "signal", "config reloaded on "+sig.String())
