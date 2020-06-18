@@ -271,7 +271,7 @@ func (d *DefaultServerImpl) initHandlers() {
 func (d *DefaultServerImpl) signalWatcher() {
 	// Setup interrupt handler.
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGHUP, syscall.SIGTERM)
+	signal.Notify(c, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
 	for sig := range c {
 		if sig == syscall.SIGHUP { // only reload config for sighup
 			if !d.config.HotReload {
@@ -311,7 +311,7 @@ func (d *DefaultServerImpl) signalWatcher() {
 				}
 				info.sf.DisposeService(info.ss, params)
 			}
-		} else if sig == syscall.SIGTERM {
+		} else if sig == syscall.SIGTERM || sig == syscall.SIGINT {
 			log.Info(context.Background(), "signal", "starting shutdown on "+sig.String())
 			d.Stop(30 * time.Second)
 			break
