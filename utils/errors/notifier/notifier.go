@@ -22,17 +22,20 @@ import (
 )
 
 var (
-	airbrake      *gobrake.Notifier
-	bugsnagInited bool
-	rollbarInited bool
-	sentryInited  bool
-	serverRoot    string
-	hostname      string
+	airbrake         *gobrake.Notifier
+	bugsnagInited    bool
+	rollbarInited    bool
+	sentryInited     bool
+	sentryTagEnabled bool
+	serverRoot       string
+	hostname         string
 )
 
 const (
 	tracerID = "tracerId"
 )
+
+type Tags map[string]string
 
 // InitAirbrake inits airbrake configuration
 func InitAirbrake(projectID int64, projectKey string) {
@@ -55,6 +58,11 @@ func InitRollbar(token, env string) {
 func InitSentry(dsn string) {
 	raven.SetDSN(dsn)
 	sentryInited = true
+}
+
+func InitSentryWithTagEnabled(dsn string) {
+	InitSentry(dsn)
+	sentryTagEnabled = true
 }
 
 func convToGoBrake(in []errors.StackFrame) []gobrake.StackFrame {
@@ -109,12 +117,18 @@ func convToSentry(in errors.ErrorExt) *raven.Stacktrace {
 	return out
 }
 
-func parseRawData(ctx context.Context, rawData ...interface{}) map[string]interface{} {
+func parseRawData(ctx context.Context, rawData ...interface{}) (map[string]interface{}, map[string]string) {
 	m := make(map[string]interface{})
+	t := make(map[string]string)
 	for pos := range rawData {
 		data := rawData[pos]
 		if _, ok := data.(context.Context); ok {
 			continue
+		}
+		if sentryTags, ok := data.(Tags); ok {
+			for k, v := range sentryTags {
+				t[k] = v
+			}
 		}
 		m[reflect.TypeOf(data).String()+strconv.Itoa(pos)] = data
 	}
@@ -123,7 +137,7 @@ func parseRawData(ctx context.Context, rawData ...interface{}) map[string]interf
 			m[k] = v
 		}
 	}
-	return m
+	return m, t
 }
 
 func Notify(err error, rawData ...interface{}) error {
@@ -198,7 +212,7 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		n = gobrake.NewNotice(errWithStack, nil, 1)
 		n.Errors[0].Backtrace = convToGoBrake(errWithStack.StackFrame())
 		if len(list) > 0 {
-			m := parseRawData(ctx, list...)
+			m, _ := parseRawData(ctx, list...)
 			for k, v := range m {
 				n.Context[k] = v
 			}
@@ -212,7 +226,7 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 	if bugsnagInited {
 		bugsnag.Notify(errWithStack, list...)
 	}
-	parsedData := parseRawData(ctx, list...)
+	parsedData, tagData := parseRawData(ctx, list...)
 	if rollbarInited {
 		fields := []*rollbar.Field{}
 		if len(list) > 0 {
@@ -236,6 +250,9 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		}
 		ravenExp := raven.NewException(errWithStack, convToSentry(errWithStack))
 		packet := raven.NewPacketWithExtra(errWithStack.Error(), parsedData, ravenExp)
+		if sentryTagEnabled {
+			packet.AddTags(tagData)
+		}
 		packet.Level = defLevel
 		raven.Capture(packet, nil)
 	}
@@ -294,13 +311,16 @@ func NotifyOnPanic(rawData ...interface{}) {
 		default:
 			e = errors.NewWithSkip("Panic", 1)
 		}
-		parsedData := parseRawData(ctx, rawData...)
+		parsedData, tagData := parseRawData(ctx, rawData...)
 		if rollbarInited {
 			rollbar.ErrorWithStack(rollbar.CRIT, e, convToRollbar(e.StackFrame()), &rollbar.Field{Name: "panic", Data: r})
 		}
 		if sentryInited {
 			ravenExp := raven.NewException(e, convToSentry(e))
 			packet := raven.NewPacketWithExtra(e.Error(), parsedData, ravenExp)
+			if sentryTagEnabled {
+				packet.AddTags(tagData)
+			}
 			packet.Level = raven.FATAL
 			raven.Capture(packet, nil)
 		}
