@@ -35,7 +35,24 @@ const (
 	tracerID = "tracerId"
 )
 
-type Tags map[string]string
+type isTags interface {
+	isTags()
+}
+
+type isSentryTags interface {
+	isSentryTags()
+	Value() map[string]string
+}
+
+type SentryTags map[string]string
+
+func (tags SentryTags) isTags() {}
+
+func (tags SentryTags) isSentryTags() {}
+
+func (tags SentryTags) Value() map[string]string {
+	return map[string]string(tags)
+}
 
 // InitAirbrake inits airbrake configuration
 func InitAirbrake(projectID int64, projectKey string) {
@@ -117,18 +134,16 @@ func convToSentry(in errors.ErrorExt) *raven.Stacktrace {
 	return out
 }
 
-func parseRawData(ctx context.Context, rawData ...interface{}) (map[string]interface{}, map[string]string) {
+func parseRawData(ctx context.Context, rawData ...interface{}) (map[string]interface{}, []interface{}) {
 	m := make(map[string]interface{})
-	t := make(map[string]string)
+	var t []interface{}
 	for pos := range rawData {
 		data := rawData[pos]
 		if _, ok := data.(context.Context); ok {
 			continue
 		}
-		if sentryTags, ok := data.(Tags); ok {
-			for k, v := range sentryTags {
-				t[k] = v
-			}
+		if tags, ok := data.(isTags); ok {
+			t = append(t, tags)
 		}
 		m[reflect.TypeOf(data).String()+strconv.Itoa(pos)] = data
 	}
@@ -251,7 +266,11 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		ravenExp := raven.NewException(errWithStack, convToSentry(errWithStack))
 		packet := raven.NewPacketWithExtra(errWithStack.Error(), parsedData, ravenExp)
 		if sentryTagEnabled {
-			packet.AddTags(tagData)
+			for _, tags := range tagData {
+				if sentryTags, ok := tags.(isSentryTags); ok {
+					packet.AddTags(sentryTags.Value())
+				}
+			}
 		}
 		packet.Level = defLevel
 		raven.Capture(packet, nil)
@@ -319,7 +338,11 @@ func NotifyOnPanic(rawData ...interface{}) {
 			ravenExp := raven.NewException(e, convToSentry(e))
 			packet := raven.NewPacketWithExtra(e.Error(), parsedData, ravenExp)
 			if sentryTagEnabled {
-				packet.AddTags(tagData)
+				for _, tags := range tagData {
+					if sentryTags, ok := tags.(isSentryTags); ok {
+						packet.AddTags(sentryTags.Value())
+					}
+				}
 			}
 			packet.Level = raven.FATAL
 			raven.Capture(packet, nil)
