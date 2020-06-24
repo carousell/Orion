@@ -22,13 +22,12 @@ import (
 )
 
 var (
-	airbrake         *gobrake.Notifier
-	bugsnagInited    bool
-	rollbarInited    bool
-	sentryInited     bool
-	sentryTagEnabled bool
-	serverRoot       string
-	hostname         string
+	airbrake      *gobrake.Notifier
+	bugsnagInited bool
+	rollbarInited bool
+	sentryInited  bool
+	serverRoot    string
+	hostname      string
 )
 
 const (
@@ -75,11 +74,6 @@ func InitRollbar(token, env string) {
 func InitSentry(dsn string) {
 	raven.SetDSN(dsn)
 	sentryInited = true
-}
-
-func InitSentryWithTagEnabled(dsn string) {
-	InitSentry(dsn)
-	sentryTagEnabled = true
 }
 
 func convToGoBrake(in []errors.StackFrame) []gobrake.StackFrame {
@@ -265,13 +259,13 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		}
 		ravenExp := raven.NewException(errWithStack, convToSentry(errWithStack))
 		packet := raven.NewPacketWithExtra(errWithStack.Error(), parsedData, ravenExp)
-		if sentryTagEnabled {
-			for _, tags := range tagData {
-				if sentryTags, ok := tags.(isSentryTags); ok {
-					packet.AddTags(sentryTags.Value())
-				}
+
+		for _, tags := range tagData {
+			if sentryTags, ok := tags.(isSentryTags); ok {
+				packet.AddTags(sentryTags.Value())
 			}
 		}
+
 		packet.Level = defLevel
 		raven.Capture(packet, nil)
 	}
@@ -337,13 +331,13 @@ func NotifyOnPanic(rawData ...interface{}) {
 		if sentryInited {
 			ravenExp := raven.NewException(e, convToSentry(e))
 			packet := raven.NewPacketWithExtra(e.Error(), parsedData, ravenExp)
-			if sentryTagEnabled {
-				for _, tags := range tagData {
-					if sentryTags, ok := tags.(isSentryTags); ok {
-						packet.AddTags(sentryTags.Value())
-					}
+
+			for _, tags := range tagData {
+				if sentryTags, ok := tags.(isSentryTags); ok {
+					packet.AddTags(sentryTags.Value())
 				}
 			}
+
 			packet.Level = raven.FATAL
 			raven.Capture(packet, nil)
 		}
