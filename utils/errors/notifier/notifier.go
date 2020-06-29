@@ -36,20 +36,14 @@ const (
 
 type isTags interface {
 	isTags()
+	value() map[string]string
 }
 
-type isSentryTags interface {
-	isSentryTags()
-	Value() map[string]string
-}
+type Tags map[string]string
 
-type SentryTags map[string]string
+func (tags Tags) isTags() {}
 
-func (tags SentryTags) isTags() {}
-
-func (tags SentryTags) isSentryTags() {}
-
-func (tags SentryTags) Value() map[string]string {
+func (tags Tags) value() map[string]string {
 	return map[string]string(tags)
 }
 
@@ -128,25 +122,25 @@ func convToSentry(in errors.ErrorExt) *raven.Stacktrace {
 	return out
 }
 
-func parseRawData(ctx context.Context, rawData ...interface{}) (map[string]interface{}, []interface{}) {
-	m := make(map[string]interface{})
-	var t []interface{}
+func parseRawData(ctx context.Context, rawData ...interface{}) (extraData map[string]interface{}, tagData []map[string]string) {
+	extraData = make(map[string]interface{})
+
 	for pos := range rawData {
 		data := rawData[pos]
 		if _, ok := data.(context.Context); ok {
 			continue
 		}
 		if tags, ok := data.(isTags); ok {
-			t = append(t, tags)
+			tagData = append(tagData, tags.value())
 		}
-		m[reflect.TypeOf(data).String()+strconv.Itoa(pos)] = data
+		extraData[reflect.TypeOf(data).String()+strconv.Itoa(pos)] = data
 	}
 	if logFields := loggers.FromContext(ctx); logFields != nil {
 		for k, v := range logFields {
-			m[k] = v
+			extraData[k] = v
 		}
 	}
-	return m, t
+	return
 }
 
 func Notify(err error, rawData ...interface{}) error {
@@ -261,9 +255,7 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		packet := raven.NewPacketWithExtra(errWithStack.Error(), parsedData, ravenExp)
 
 		for _, tags := range tagData {
-			if sentryTags, ok := tags.(isSentryTags); ok {
-				packet.AddTags(sentryTags.Value())
-			}
+			packet.AddTags(tags)
 		}
 
 		packet.Level = defLevel
@@ -333,9 +325,7 @@ func NotifyOnPanic(rawData ...interface{}) {
 			packet := raven.NewPacketWithExtra(e.Error(), parsedData, ravenExp)
 
 			for _, tags := range tagData {
-				if sentryTags, ok := tags.(isSentryTags); ok {
-					packet.AddTags(sentryTags.Value())
-				}
+				packet.AddTags(tags)
 			}
 
 			packet.Level = raven.FATAL
