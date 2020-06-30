@@ -34,6 +34,19 @@ const (
 	tracerID = "tracerId"
 )
 
+type isTags interface {
+	isTags()
+	value() map[string]string
+}
+
+type Tags map[string]string
+
+func (tags Tags) isTags() {}
+
+func (tags Tags) value() map[string]string {
+	return map[string]string(tags)
+}
+
 // InitAirbrake inits airbrake configuration
 func InitAirbrake(projectID int64, projectKey string) {
 	airbrake = gobrake.NewNotifier(projectID, projectKey)
@@ -109,21 +122,26 @@ func convToSentry(in errors.ErrorExt) *raven.Stacktrace {
 	return out
 }
 
-func parseRawData(ctx context.Context, rawData ...interface{}) map[string]interface{} {
-	m := make(map[string]interface{})
+func parseRawData(ctx context.Context, rawData ...interface{}) (extraData map[string]interface{}, tagData []map[string]string) {
+	extraData = make(map[string]interface{})
+
 	for pos := range rawData {
 		data := rawData[pos]
 		if _, ok := data.(context.Context); ok {
 			continue
 		}
-		m[reflect.TypeOf(data).String()+strconv.Itoa(pos)] = data
+		if tags, ok := data.(isTags); ok {
+			tagData = append(tagData, tags.value())
+		} else {
+			extraData[reflect.TypeOf(data).String()+strconv.Itoa(pos)] = data
+		}
 	}
 	if logFields := loggers.FromContext(ctx); logFields != nil {
 		for k, v := range logFields {
-			m[k] = v
+			extraData[k] = v
 		}
 	}
-	return m
+	return
 }
 
 func Notify(err error, rawData ...interface{}) error {
@@ -198,7 +216,7 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		n = gobrake.NewNotice(errWithStack, nil, 1)
 		n.Errors[0].Backtrace = convToGoBrake(errWithStack.StackFrame())
 		if len(list) > 0 {
-			m := parseRawData(ctx, list...)
+			m, _ := parseRawData(ctx, list...)
 			for k, v := range m {
 				n.Context[k] = v
 			}
@@ -212,7 +230,7 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 	if bugsnagInited {
 		bugsnag.Notify(errWithStack, list...)
 	}
-	parsedData := parseRawData(ctx, list...)
+	parsedData, tagData := parseRawData(ctx, list...)
 	if rollbarInited {
 		fields := []*rollbar.Field{}
 		if len(list) > 0 {
@@ -236,6 +254,11 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		}
 		ravenExp := raven.NewException(errWithStack, convToSentry(errWithStack))
 		packet := raven.NewPacketWithExtra(errWithStack.Error(), parsedData, ravenExp)
+
+		for _, tags := range tagData {
+			packet.AddTags(tags)
+		}
+
 		packet.Level = defLevel
 		raven.Capture(packet, nil)
 	}
@@ -294,13 +317,18 @@ func NotifyOnPanic(rawData ...interface{}) {
 		default:
 			e = errors.NewWithSkip("Panic", 1)
 		}
-		parsedData := parseRawData(ctx, rawData...)
+		parsedData, tagData := parseRawData(ctx, rawData...)
 		if rollbarInited {
 			rollbar.ErrorWithStack(rollbar.CRIT, e, convToRollbar(e.StackFrame()), &rollbar.Field{Name: "panic", Data: r})
 		}
 		if sentryInited {
 			ravenExp := raven.NewException(e, convToSentry(e))
 			packet := raven.NewPacketWithExtra(e.Error(), parsedData, ravenExp)
+
+			for _, tags := range tagData {
+				packet.AddTags(tags)
+			}
+
 			packet.Level = raven.FATAL
 			raven.Capture(packet, nil)
 		}
