@@ -132,8 +132,9 @@ func parseRawData(ctx context.Context, rawData ...interface{}) (extraData map[st
 		}
 		if tags, ok := data.(isTags); ok {
 			tagData = append(tagData, tags.value())
+		} else {
+			extraData[reflect.TypeOf(data).String()+strconv.Itoa(pos)] = data
 		}
-		extraData[reflect.TypeOf(data).String()+strconv.Itoa(pos)] = data
 	}
 	if logFields := loggers.FromContext(ctx); logFields != nil {
 		for k, v := range logFields {
