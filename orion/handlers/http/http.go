@@ -20,7 +20,29 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	opentracing "github.com/opentracing/opentracing-go"
+	"google.golang.org/grpc/metadata"
 )
+
+// grpcMetadataCarrier satisfies both opentracing.TextMapWriter and opentracing.TextMapReader.
+type grpcMetadataCarrier metadata.MD
+
+// ForeachKey conforms to the opentracing.TextMapReader interface.
+func (mc grpcMetadataCarrier) ForeachKey(handler func(string, string) error) (err error) {
+	for key, values := range mc {
+		for _, value := range values {
+			if err = handler(key, value); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// Set conforms to the opentracing.TextMapWriter interface.
+func (mc grpcMetadataCarrier) Set(key, value string) {
+	k := strings.ToLower(key)
+	mc[k] = append(mc[k], value)
+}
 
 func (h *httpHandler) getHTTPHandler(serviceName, methodName, routeURL string) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
@@ -46,7 +68,7 @@ func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, s
 	}
 }
 
-func (h *httpHandler)  getNRTxName(req *http.Request, service, method, routeURL string) string {
+func (h *httpHandler) getNRTxName(req *http.Request, service, method, routeURL string) string {
 	var nrTxName string
 	switch h.config.NRHttpTxNameType {
 	case NRTxNameTypeMethod:
@@ -92,7 +114,7 @@ func prepareContext(req *http.Request, info *methodInfo) context.Context {
 		opentracing.HTTPHeadersCarrier(req.Header))
 	if err == nil {
 		md := metautils.ExtractIncoming(ctx)
-		opentracing.GlobalTracer().Inject(wireContext, opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(md))
+		opentracing.GlobalTracer().Inject(wireContext, opentracing.HTTPHeaders, grpcMetadataCarrier(md))
 		ctx = md.ToIncoming(ctx)
 	}
 	return ctx
