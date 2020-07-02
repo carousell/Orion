@@ -39,6 +39,8 @@ func (mc grpcMetadataCarrier) ForeachKey(handler func(string, string) error) (er
 }
 
 // Set conforms to the opentracing.TextMapWriter interface.
+// Using this carrier ensures metadata keys are lowercased to conform to the
+// HTTP/2 spec.
 func (mc grpcMetadataCarrier) Set(key, value string) {
 	k := strings.ToLower(key)
 	mc[k] = append(mc[k], value)
