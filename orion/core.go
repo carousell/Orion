@@ -477,6 +477,7 @@ func (d *DefaultServerImpl) GetConfig() map[string]interface{} {
 func (d *DefaultServerImpl) Stop(timeout time.Duration) error {
 	var wg sync.WaitGroup
 	for _, h := range d.handlers {
+		h.listener.CanClose(true)
 		wg.Add(1)
 		go func(h *handlerInfo, timeout time.Duration) {
 			defer wg.Done()
