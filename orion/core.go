@@ -466,6 +466,13 @@ func (d *DefaultServerImpl) AddInitializers(ins ...Initializer) {
 		d.initializers = append(d.initializers, ins...)
 	}
 
+	// If initializers are added after the service has already been
+	// initialized, do an initial initialization on the initializer.
+	if d.inited {
+		for _, initializer := range ins {
+			initializer.Init(d)
+		}
+	}
 }
 
 //GetConfig returns current config as parsed from the file/defaults
