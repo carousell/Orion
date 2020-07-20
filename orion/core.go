@@ -459,6 +459,8 @@ func (d *DefaultServerImpl) registerService(sd *grpc.ServiceDesc, sf ServiceFact
 
 //AddInitializers adds the initializers to orion server
 func (d *DefaultServerImpl) AddInitializers(ins ...Initializer) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	if d.initializers == nil {
 		d.initializers = make([]Initializer, 0)
 	}
