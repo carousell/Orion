@@ -238,8 +238,9 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		}
 		log.Info(context.Background(), "HTTPListnerPort", httpPort)
 		config := http.Config{
-			EnableProtoURL: d.config.EnableProtoURL,
-			DefaultJSONPB:  d.config.DefaultJSONPB,
+			EnableProtoURL:   d.config.EnableProtoURL,
+			DefaultJSONPB:    d.config.DefaultJSONPB,
+			NRHttpTxNameType: d.config.NewRelicConfig.HttpTxNameType,
 		}
 		handler := http.NewHTTPHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
@@ -270,9 +271,13 @@ func (d *DefaultServerImpl) initHandlers() {
 func (d *DefaultServerImpl) signalWatcher() {
 	// Setup interrupt handler.
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGHUP)
+	signal.Notify(c, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
 	for sig := range c {
 		if sig == syscall.SIGHUP { // only reload config for sighup
+			if !d.config.HotReload {
+				log.Warn(context.Background(), "signal", "config reload SKIPPED (Hot reload disabled) on "+sig.String())
+				continue
+			}
 			d.version++
 			log.Info(context.Background(), "signal", "config reloaded on "+sig.String())
 			// relaod config
@@ -306,6 +311,10 @@ func (d *DefaultServerImpl) signalWatcher() {
 				}
 				info.sf.DisposeService(info.ss, params)
 			}
+		} else if sig == syscall.SIGTERM || sig == syscall.SIGINT {
+			log.Info(context.Background(), "signal", "starting shutdown on "+sig.String())
+			d.Stop(30 * time.Second)
+			break
 		} else {
 			// should not happen!
 			for _, h := range d.handlers {
@@ -328,9 +337,7 @@ func (d *DefaultServerImpl) Start() {
 	for _, h := range d.handlers {
 		d.startHandler(h, false)
 	}
-	if d.config.HotReload {
-		go d.signalWatcher()
-	}
+	go d.signalWatcher()
 }
 
 func (d *DefaultServerImpl) startHandler(h *handlerInfo, reload bool) {
@@ -470,6 +477,7 @@ func (d *DefaultServerImpl) GetConfig() map[string]interface{} {
 func (d *DefaultServerImpl) Stop(timeout time.Duration) error {
 	var wg sync.WaitGroup
 	for _, h := range d.handlers {
+		h.listener.CanClose(true)
 		wg.Add(1)
 		go func(h *handlerInfo, timeout time.Duration) {
 			defer wg.Done()

@@ -177,7 +177,7 @@ func (h *httpHandler) Run(httpListener net.Listener) error {
 					methodClassifier = append(methodClassifier, "SERVER_STREAMING")
 				}
 			} else {
-				handler = h.getHTTPHandler(info.serviceName, info.methodName)
+				handler = h.getHTTPHandler(info.serviceName, info.methodName, routeURL)
 				methodClassifier = append(methodClassifier, "NON_STREAMING")
 			}
 			r.Methods(info.httpMethod...).Path(url).Handler(handler)

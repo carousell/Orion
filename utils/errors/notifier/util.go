@@ -19,7 +19,7 @@ func doNotifyAirbrake(ctx context.Context, errWithStack errors.ErrorExt, traceID
 	n = gobrake.NewNotice(errWithStack, nil, 1)
 	n.Errors[0].Backtrace = convToGoBrake(errWithStack.StackFrame())
 	if len(list) > 0 {
-		m := parseRawData(ctx, list...)
+		m, _ := parseRawData(ctx, list...)
 		for k, v := range m {
 			n.Context[k] = v
 		}
@@ -48,7 +48,7 @@ func doNotifyRollbar(errWithStack errors.ErrorExt, level string, parsedData map[
 	rollbar.ErrorWithStack(level, errWithStack, convToRollbar(errWithStack.StackFrame()), fields...)
 }
 
-func doNotifySentry(errWithStack errors.ErrorExt, level string, parsedData map[string]interface{}) {
+func doNotifySentry(errWithStack errors.ErrorExt, level string, parsedData map[string]interface{}, tagData []map[string]string) {
 	sentryLevel := sentry.LevelError
 	if level == "critical" {
 		sentryLevel = sentry.LevelFatal
@@ -77,11 +77,13 @@ func doNotifySentry(errWithStack errors.ErrorExt, level string, parsedData map[s
 		if u := extractSentryUserFromParsedData(parsedData); u != nil {
 			scope.SetUser(*u)
 		}
-		if r := extractSentryRequestFromParsedData(parsedData); r != nil {
-			scope.SetRequest(*r)
+
+		for _, tags := range tagData {
+			scope.SetTags(tags)
 		}
 		scope.SetExtras(parsedData)
 		scope.SetLevel(sentryLevel)
+
 	})
 	hub.CaptureEvent(event)
 }
@@ -190,17 +192,6 @@ func extractSentryUserFromParsedData(parsedData map[string]interface{}) *sentry.
 	for pos := range parsedData {
 		data := parsedData[pos]
 		if u, ok := data.(sentry.User); ok {
-			return &u
-		}
-	}
-	return nil
-}
-
-// extractRequestFromParsedData returns the first sentry.Request object found in the parsedData
-func extractSentryRequestFromParsedData(parsedData map[string]interface{}) *sentry.Request {
-	for pos := range parsedData {
-		data := parsedData[pos]
-		if u, ok := data.(sentry.Request); ok {
 			return &u
 		}
 	}

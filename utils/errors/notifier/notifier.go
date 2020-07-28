@@ -48,6 +48,19 @@ func init() {
 	}
 }
 
+type isTags interface {
+	isTags()
+	value() map[string]string
+}
+
+type Tags map[string]string
+
+func (tags Tags) isTags() {}
+
+func (tags Tags) value() map[string]string {
+	return map[string]string(tags)
+}
+
 // InitAirbrake inits airbrake configuration
 func InitAirbrake(projectID int64, projectKey string) {
 	airbrake = gobrake.NewNotifier(projectID, projectKey)
@@ -188,7 +201,7 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		}
 	}
 
-	parsedData := parseRawData(ctx, list...)
+	parsedData, tagData := parseRawData(ctx, list...)
 
 	if airbrake != nil {
 		doNotifyAirbrake(ctx, errWithStack, traceID, list...)
@@ -200,7 +213,7 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		doNotifyRollbar(errWithStack, level, parsedData, traceID, list...)
 	}
 	if sentryInited {
-		doNotifySentry(errWithStack, level, parsedData)
+		doNotifySentry(errWithStack, level, parsedData, tagData)
 	}
 
 	log.GetLogger().Log(ctx, loggers.ErrorLevel, skip+1, "err", errWithStack, "stack", errWithStack.StackFrame())
@@ -232,13 +245,12 @@ func NotifyOnPanic(rawData ...interface{}) {
 		default:
 			e = errors.NewWithSkip("Panic", 1)
 		}
-		parsedData := parseRawData(ctx, rawData...)
-
+		parsedData, tagData := parseRawData(ctx, rawData...)
 		if rollbarInited {
 			rollbar.ErrorWithStack(rollbar.CRIT, e, convToRollbar(e.StackFrame()), &rollbar.Field{Name: "panic", Data: r})
 		}
 		if sentryInited {
-			doNotifySentry(e, string(sentry.LevelFatal), parsedData)
+			doNotifySentry(e, string(sentry.LevelFatal), parsedData, tagData)
 		}
 		panic(e)
 	}
@@ -311,20 +323,24 @@ func SetHostname(name string) {
 	hostname = name
 }
 
-// parseRawData transforms rawData into parsed format
-func parseRawData(ctx context.Context, rawData ...interface{}) map[string]interface{} {
-	m := make(map[string]interface{})
+func parseRawData(ctx context.Context, rawData ...interface{}) (extraData map[string]interface{}, tagData []map[string]string) {
+	extraData = make(map[string]interface{})
+
 	for pos := range rawData {
 		data := rawData[pos]
 		if _, ok := data.(context.Context); ok {
 			continue
 		}
-		m[reflect.TypeOf(data).String()+strconv.Itoa(pos)] = data
+		if tags, ok := data.(isTags); ok {
+			tagData = append(tagData, tags.value())
+		} else {
+			extraData[reflect.TypeOf(data).String()+strconv.Itoa(pos)] = data
+		}
 	}
 	if logFields := loggers.FromContext(ctx); logFields != nil {
 		for k, v := range logFields {
-			m[k] = v
+			extraData[k] = v
 		}
 	}
-	return m
+	return
 }

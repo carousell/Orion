@@ -51,7 +51,7 @@ git clone git@github.com:carousell/Orion.git $GOPATH/src/github.com/carousell/Or
 
 You need the following tools to better develop for go
 ```
-go get -u github.com/golang/lint/golint
+go get -u golang.org/x/lint/golint
 ```
 
 now you can build the package by using `make build`

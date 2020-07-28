@@ -10,7 +10,7 @@ require (
 	github.com/DataDog/zstd v0.0.0-20160706220725-2bf71ec48360 // indirect
 	github.com/RichardKnop/logging v0.0.0-20181101035820-b1d5d44c82d6 // indirect
 	github.com/RichardKnop/machinery v0.0.0-20190125102247-b25a799bf62a
-	github.com/Shopify/sarama v0.0.0-20190123165648-e775ee1118ac // indirect
+	github.com/Shopify/sarama v0.0.0-20190123165648-e775ee1118ac
 	github.com/Shopify/toxiproxy v2.1.4+incompatible // indirect
 	github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5
 	github.com/apache/thrift v0.0.0-20190131011427-2ec93c8a2da2 // indirect
@@ -25,7 +25,7 @@ require (
 	github.com/elastic/go-sysinfo v1.1.0 // indirect
 	github.com/fortytw2/leaktest v1.3.0
 	github.com/getsentry/raven-go v0.0.0-20190125112653-238ebd86338d
-	github.com/getsentry/sentry-go v0.7.0 // indirect
+	github.com/getsentry/sentry-go v0.7.0
 	github.com/go-kit/kit v0.8.0
 	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
