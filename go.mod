@@ -25,13 +25,12 @@ require (
 	github.com/elastic/go-sysinfo v1.1.0 // indirect
 	github.com/fortytw2/leaktest v1.3.0
 	github.com/getsentry/raven-go v0.0.0-20190125112653-238ebd86338d
-	github.com/getsentry/sentry-go v0.3.1 // indirect
+	github.com/getsentry/sentry-go v0.7.0 // indirect
 	github.com/go-kit/kit v0.8.0
 	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/golang-migrate/migrate v0.0.0-20180905021119-16f2b1736e65
 	github.com/golang/protobuf v1.3.1
-	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/google/uuid v1.1.0 // indirect
 	github.com/gorilla/mux v1.7.0
 	github.com/gorilla/websocket v1.4.0
