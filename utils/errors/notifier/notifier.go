@@ -90,16 +90,16 @@ func InitSentry(dsn, env string) {
 		MaxBreadcrumbs:   30,
 		// Remove modules integration from being inited
 		// Add more integrations here if required
-		// Integrations: func(integrations []sentry.Integration) []sentry.Integration {
-		// var filteredIntegrations []sentry.Integration
-		// for _, integration := range integrations {
-		// if integration.Name() == "Modules" {
-		// continue
-		// }
-		// filteredIntegrations = append(filteredIntegrations, integration)
-		// }
-		// return filteredIntegrations
-		// },
+		Integrations: func(integrations []sentry.Integration) []sentry.Integration {
+			var filteredIntegrations []sentry.Integration
+			for _, integration := range integrations {
+				if integration.Name() == "Modules" {
+					continue
+				}
+				filteredIntegrations = append(filteredIntegrations, integration)
+			}
+			return filteredIntegrations
+		},
 	})
 
 	sentryInited = true
