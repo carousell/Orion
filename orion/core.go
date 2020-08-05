@@ -238,6 +238,9 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		}
 		log.Info(context.Background(), "HTTPListnerPort", httpPort)
 		config := http.Config{
+			CommonConfig: handlers.CommonConfig{
+				NoDefaultInterceptors: d.config.NoDefaultInterceptors,
+			},
 			EnableProtoURL:   d.config.EnableProtoURL,
 			DefaultJSONPB:    d.config.DefaultJSONPB,
 			NRHttpTxNameType: d.config.NewRelicConfig.HttpTxNameType,
@@ -255,7 +258,12 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			log.Info(context.Background(), "grpcListener", "could not create listener", "error", err)
 		}
 		log.Info(context.Background(), "gRPCListnerPort", grpcPort)
-		handler := grpcHandler.NewGRPCHandler(grpcHandler.Config{})
+		config := grpcHandler.Config{
+			handlers.CommonConfig{
+				NoDefaultInterceptors: d.config.NoDefaultInterceptors,
+			},
+		}
+		handler := grpcHandler.NewGRPCHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,
 			listener: grpcListener,

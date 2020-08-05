@@ -51,6 +51,8 @@ type Config struct {
 	Env string
 	// DefaultJSONPB sets jsonpb as the encoder/decoder for application/json request/response bodies
 	DefaultJSONPB bool
+	// NoDefaultInterceptors disables all default interceptors on all handlers
+	NoDefaultInterceptors bool
 }
 
 // HystrixConfig is configuration used by hystrix
