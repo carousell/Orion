@@ -103,6 +103,7 @@ func BuildDefaultConfig(name string) Config {
 		ZipkinConfig:              BuildDefaultZipkinConfig(),
 		NewRelicConfig:            BuildDefaultNewRelicConfig(),
 		DefaultJSONPB:             viper.GetBool("orion.DefaultJSONPB"),
+		NoDefaultInterceptors: 	   viper.GetBool("orion.NoDefaultInterceptors"),
 	}
 }
 
