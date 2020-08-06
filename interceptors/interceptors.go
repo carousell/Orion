@@ -23,7 +23,7 @@ import (
 
 var (
 	//FilterMethods is the list of methods that are filtered by default
-	FilterMethods = []string{"Healthcheck"}
+	FilterMethods = []string{"Healthcheck", "HealthCheck"}
 )
 
 func filterFromZipkin(ctx context.Context, fullMethodName string) bool {
