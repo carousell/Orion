@@ -1,7 +1,5 @@
 module google.golang.org/grpc
 
-go 1.14
-
 require (
 	cloud.google.com/go v0.26.0 // indirect
 	github.com/client9/misspell v0.3.4
