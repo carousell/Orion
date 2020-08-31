@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -65,7 +66,17 @@ func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, s
 	if modifiers.HasDontLogError(ctx) {
 		utils.FinishNRTransaction(req.Context(), nil)
 	} else {
-		notifier.Notify(err, req.URL.String(), ctx)
+
+		// Add HTTP response code as tag
+		var tags notifier.Tags
+		if err != nil {
+			httpCode, _ := GrpcErrorToHTTP(err, http.StatusInternalServerError, "Internal Server Error!")
+			tags = notifier.Tags{
+				"http_code": strconv.FormatInt(int64(httpCode), 10),
+			}
+		}
+
+		notifier.Notify(err, req.URL.String(), ctx, tags)
 		utils.FinishNRTransaction(req.Context(), err)
 	}
 }
