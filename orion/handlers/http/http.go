@@ -72,7 +72,7 @@ func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, s
 		if err != nil {
 			httpCode, _ := GrpcErrorToHTTP(err, http.StatusInternalServerError, "Internal Server Error!")
 			tags = notifier.Tags{
-				"http_code": strconv.FormatInt(int64(httpCode), 10),
+				"http_code": strconv.Itoa(httpCode),
 			}
 		}
 
