@@ -62,12 +62,25 @@ func (g *grpcHandler) Run(grpcListener net.Listener) error {
 	return g.grpcServer.Serve(grpcListener)
 }
 
+func timedCall(f func(), timeout time.Duration) {
+	done := make(chan struct{})
+	go func() {
+		f()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(timeout):
+	}
+}
+
 func (g *grpcHandler) Stop(timeout time.Duration) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	log.Info(context.Background(), "GRPC", "stopping server")
-	g.grpcServer.GracefulStop()
-	time.Sleep(timeout)
+
+	timedCall(g.grpcServer.GracefulStop, timeout)
 	g.grpcServer.Stop()
 	g.grpcServer = nil
 	g.middlewares = nil
