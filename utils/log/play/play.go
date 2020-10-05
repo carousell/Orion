@@ -3,18 +3,19 @@ package main
 import (
 	"context"
 	"fmt"
-
 	"github.com/carousell/Orion/utils/errors"
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/log"
 	"github.com/carousell/Orion/utils/log/loggers"
+	"github.com/carousell/Orion/utils/log/loggers/logrus"
 )
 
 func main() {
 	ctx := context.Background()
 	ctx = loggers.AddToLogContext(ctx, "hello", "world")
-	logger := log.GetLogger()
+	//logger := log.GetLogger()
 	//logger := log.NewLogger(stdlog.NewLogger())
+	logger := log.NewLogger(logrus.NewLogger(loggers.WithJSONLogs(true)))
 	logger.SetLevel(loggers.InfoLevel)
 	logger.Error(ctx, "error")
 	logger.Warn(ctx, "warning")

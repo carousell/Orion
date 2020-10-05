@@ -47,6 +47,7 @@ func ParseLevel(lvl string) (Level, error) {
 
 //AllLevels A constant exposing all logging levels
 var AllLevels = []Level{
+	FatalLevel,
 	ErrorLevel,
 	WarnLevel,
 	InfoLevel,
@@ -56,9 +57,11 @@ var AllLevels = []Level{
 // These are the different logging levels. You can set the logging level to log
 // on your instance of logger, obtained with `logs.New()`.
 const (
+	// Disabled. All logs disabled.
+	FatalLevel = iota
 	// ErrorLevel level. Logs. Used for errors that should definitely be noted.
 	// Commonly used for hooks to send errors to an error tracking service.
-	ErrorLevel = iota
+	ErrorLevel
 	// WarnLevel level. Non-critical entries that deserve eyes.
 	WarnLevel
 	// InfoLevel level. General operational entries about what's going on inside the

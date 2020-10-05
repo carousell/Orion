@@ -8,31 +8,33 @@ import (
 	"os"
 
 	"github.com/carousell/Orion/utils/log/loggers"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 type logger struct {
-	logger *log.Logger
+	logger *logrus.Logger
 	opt    loggers.Options
 }
 
-func toLogrusLogLevel(level loggers.Level) log.Level {
+func toLogrusLogLevel(level loggers.Level) logrus.Level {
 	switch level {
 	case loggers.DebugLevel:
-		return log.DebugLevel
+		return logrus.DebugLevel
 	case loggers.InfoLevel:
-		return log.InfoLevel
+		return logrus.InfoLevel
 	case loggers.WarnLevel:
-		return log.WarnLevel
+		return logrus.WarnLevel
 	case loggers.ErrorLevel:
-		return log.ErrorLevel
+		return logrus.ErrorLevel
+	case loggers.FatalLevel:
+		return logrus.FatalLevel
 	default:
-		return log.ErrorLevel
+		return logrus.ErrorLevel
 	}
 }
 
 func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ...interface{}) {
-	fields := make(log.Fields)
+	fields := make(logrus.Fields)
 
 	// fetch fields from context and add them to logrus fields
 	ctxFields := loggers.FromContext(ctx)
@@ -68,13 +70,13 @@ func (l *logger) SetLevel(level loggers.Level) {
 
 func (l *logger) GetLevel() loggers.Level {
 	switch l.logger.Level {
-	case log.DebugLevel:
+	case logrus.DebugLevel:
 		return loggers.DebugLevel
-	case log.InfoLevel:
+	case logrus.InfoLevel:
 		return loggers.InfoLevel
-	case log.WarnLevel:
+	case logrus.WarnLevel:
 		return loggers.WarnLevel
-	case log.ErrorLevel:
+	case logrus.ErrorLevel:
 		return loggers.ErrorLevel
 	default:
 		return loggers.InfoLevel
@@ -91,22 +93,22 @@ func NewLogger(options ...loggers.Option) loggers.BaseLogger {
 	}
 
 	l := logger{}
-	l.logger = log.New()
+	l.logger = logrus.New()
 	l.logger.Out = os.Stdout
 
 	l.logger.SetLevel(toLogrusLogLevel(opt.Level))
 
-	fieldMap := log.FieldMap{
-		log.FieldKeyTime:  opt.TimestampFieldName,
-		log.FieldKeyLevel: opt.LevelFieldName,
+	fieldMap := logrus.FieldMap{
+		logrus.FieldKeyTime:  opt.TimestampFieldName,
+		logrus.FieldKeyLevel: opt.LevelFieldName,
 	}
 	//check JSON logs
 	if opt.JSONLogs {
-		l.logger.Formatter = &log.JSONFormatter{
+		l.logger.Formatter = &logrus.JSONFormatter{
 			FieldMap: fieldMap,
 		}
 	} else {
-		l.logger.Formatter = &log.TextFormatter{
+		l.logger.Formatter = &logrus.TextFormatter{
 			FullTimestamp: true,
 		}
 	}
