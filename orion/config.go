@@ -51,6 +51,8 @@ type Config struct {
 	Env string
 	// DefaultJSONPB sets jsonpb as the encoder/decoder for application/json request/response bodies
 	DefaultJSONPB bool
+	//LogSvcConfig is the configuration options for logging service
+	LogSvcConfig LogSvcConfig
 }
 
 // HystrixConfig is configuration used by hystrix
@@ -69,12 +71,18 @@ type ZipkinConfig struct {
 	Addr string
 }
 
+//LogSvcConfig is the configuration for log-svc
+type LogSvcConfig struct {
+	//Addr is the address of log-svc
+	Addr string
+}
+
 //NewRelicConfig is the configuration for newrelic
 type NewRelicConfig struct {
-	APIKey            string
-	ServiceName       string
+	APIKey      string
+	ServiceName string
 	//HttpTxNameType decides the transaction name logged in NR. Options are "fullmethod" (default), "method" , "route".
-	HttpTxNameType 	  string
+	HttpTxNameType    string
 	IncludeAttributes []string
 	ExcludeAttributes []string
 }

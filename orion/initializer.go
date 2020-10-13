@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/carousell/Orion/utils/hystrixprometheus"
+	"github.com/carousell/Orion/utils/log/logsvc"
 	"github.com/prometheus/client_golang/prometheus"
 	"net"
 	"net/http"
@@ -35,8 +36,13 @@ var (
 		PrometheusInitializer(),
 		PprofInitializer(),
 		ErrorLoggingInitializer(),
+		LogSvcInitializer(),
 	}
 )
+
+func LogSvcInitializer() Initializer {
+	return &logsvcInitializer{}
+}
 
 //HystrixInitializer returns a Initializer implementation for Hystrix
 func HystrixInitializer() Initializer {
@@ -66,6 +72,30 @@ func PrometheusInitializer() Initializer {
 //PprofInitializer returns a Initializer implementation for Pprof
 func PprofInitializer() Initializer {
 	return &pprofInitializer{}
+}
+
+type logsvcInitializer struct {
+	logsvcClient *logsvc.LogsvcClient
+}
+
+func (l *logsvcInitializer) Init(svr Server) error {
+	config := svr.GetOrionConfig()
+
+	logsvcConfig := logsvc.LogSvcConfig{
+		LogSvcAddr:  config.LogSvcConfig.Addr,
+		SvcName:     config.OrionServerName,
+		Environment: config.Env,
+	}
+
+	var err error
+	l.logsvcClient, err = logsvc.InitLogSvcClient(&logsvcConfig, log.GetLogger())
+	return err
+}
+
+func (l *logsvcInitializer) ReInit(svr Server) error {
+	l.logsvcClient.Close()
+	l.Init(svr)
+	return nil
 }
 
 type hystrixInitializer struct {
