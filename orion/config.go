@@ -106,6 +106,7 @@ func BuildDefaultConfig(name string) Config {
 		SentryDSN:                 viper.GetString("orion.SentryDSN"),
 		OrionServerName:           name,
 		HystrixConfig:             BuildDefaultHystrixConfig(),
+		LogSvcConfig:              BuildDefaultLogSvcConfig(),
 		ZipkinConfig:              BuildDefaultZipkinConfig(),
 		NewRelicConfig:            BuildDefaultNewRelicConfig(),
 		DefaultJSONPB:             viper.GetBool("orion.DefaultJSONPB"),
@@ -125,6 +126,13 @@ func BuildDefaultHystrixConfig() HystrixConfig {
 func BuildDefaultZipkinConfig() ZipkinConfig {
 	return ZipkinConfig{
 		Addr: viper.GetString("orion.ZipkinAddr"),
+	}
+}
+
+//BuildDefaultLogSvcConfig builds a default config for log-svc
+func BuildDefaultLogSvcConfig() LogSvcConfig {
+	return LogSvcConfig{
+		Addr: viper.GetString("orion.LogSvcAddr"),
 	}
 }
 
@@ -148,6 +156,7 @@ func setConfigDefaults() {
 	viper.SetDefault("orion.HTTPOnly", false)
 	viper.SetDefault("orion.EnableProtoURL", false)
 	viper.SetDefault("orion.ZipkinAddr", "")
+	viper.SetDefault("orion.LogSvcAddr", "")
 	viper.SetDefault("orion.env", "dev")
 	viper.SetDefault("orion.rollbar-token", "")
 	viper.SetDefault("orion.HotReload", true)
