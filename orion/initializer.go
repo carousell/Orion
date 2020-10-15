@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/carousell/Orion/utils/hystrixprometheus"
-	"github.com/carousell/Orion/utils/log/logsvc"
+	"github.com/carousell/Orion/utils/log/loggers"
 	"github.com/prometheus/client_golang/prometheus"
 	"net"
 	"net/http"
@@ -19,6 +19,7 @@ import (
 	"github.com/carousell/Orion/utils"
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/log"
+	logclient "github.com/carousell/log-svc-client"
 	logg "github.com/go-kit/kit/log"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	newrelic "github.com/newrelic/go-agent"
@@ -75,20 +76,39 @@ func PprofInitializer() Initializer {
 }
 
 type logsvcInitializer struct {
-	logsvcClient *logsvc.LogsvcClient
+	logsvcClient *logclient.LogsvcClient
+}
+
+// TODO: move this to log package
+type LogConfigListener struct{}
+
+func (l *LogConfigListener) UpdateConfig(config logclient.LogConfig) {
+	logger := log.GetLogger()
+	switch config.Level {
+	case logclient.PANIC:
+		fallthrough
+	case logclient.ERROR:
+		logger.SetLevel(loggers.ErrorLevel)
+	case logclient.WARNING:
+		logger.SetLevel(loggers.WarnLevel)
+	case logclient.INFO:
+		logger.SetLevel(loggers.InfoLevel)
+	case logclient.DEBUG:
+		logger.SetLevel(loggers.DebugLevel)
+	}
 }
 
 func (l *logsvcInitializer) Init(svr Server) error {
 	config := svr.GetOrionConfig()
 
-	logsvcConfig := logsvc.LogSvcConfig{
+	logSvcConfig := logclient.LogSvcConfig{
 		LogSvcAddr:  config.LogSvcConfig.Addr,
 		SvcName:     config.OrionServerName,
 		Environment: config.Env,
 	}
 
 	var err error
-	l.logsvcClient, err = logsvc.InitLogSvcClient(&logsvcConfig, log.GetLogger())
+	l.logsvcClient, err = logclient.InitLogSvcClient(&logSvcConfig, &LogConfigListener{})
 	return err
 }
 

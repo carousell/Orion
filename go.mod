@@ -18,6 +18,7 @@ require (
 	github.com/bugsnag/bugsnag-go v1.4.0
 	github.com/bugsnag/panicwrap v0.0.0-20180510051541-1d162ee1264c // indirect
 	github.com/cactus/go-statsd-client/statsd v0.0.0-20190805010426-5089fcbbe532 // indirect
+	github.com/carousell/log-svc-client v0.0.0-20201015045044-f795ae3083cb // indirect
 	github.com/certifi/gocertifi v0.0.0-20190105021004-abcd57078448 // indirect
 	github.com/eapache/go-resiliency v0.0.0-20181214162408-487be0453c7b // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
@@ -30,7 +31,7 @@ require (
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/golang-migrate/migrate v0.0.0-20180905021119-16f2b1736e65
 	github.com/golang/protobuf v1.4.1
-	github.com/google/uuid v1.1.0
+	github.com/google/uuid v1.1.2
 	github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 // indirect
 	github.com/gorilla/mux v1.7.0
 	github.com/gorilla/websocket v0.0.0-20181206070239-95ba29eb981b
@@ -69,7 +70,7 @@ require (
 	golang.org/x/sys v0.0.0-20190825160603-fb81701db80f // indirect
 	golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2 // indirect
 	google.golang.org/api v0.1.0
-	google.golang.org/grpc v1.27.0
+	google.golang.org/grpc v1.33.0
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/airbrake/gobrake.v2 v2.0.9
 )
