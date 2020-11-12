@@ -1,6 +1,6 @@
 module github.com/carousell/Orion
 
-go 1.12
+go 1.15
 
 replace git.apache.org/thrift.git => github.com/apache/thrift v0.12.0
 
@@ -19,7 +19,7 @@ require (
 	github.com/bugsnag/bugsnag-go v1.4.0
 	github.com/bugsnag/panicwrap v0.0.0-20180510051541-1d162ee1264c // indirect
 	github.com/cactus/go-statsd-client/statsd v0.0.0-20190805010426-5089fcbbe532 // indirect
-	github.com/carousell/log-svc-client v0.0.0-20201015045044-f795ae3083cb
+	github.com/carousell/log-svc-client v0.0.0-20201105074630-f7c9eb3ae577
 	github.com/certifi/gocertifi v0.0.0-20190105021004-abcd57078448 // indirect
 	github.com/eapache/go-resiliency v0.0.0-20181214162408-487be0453c7b // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect

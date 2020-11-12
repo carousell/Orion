@@ -85,12 +85,14 @@ type LogConfigListener struct{}
 func (l *LogConfigListener) UpdateConfig(config logclient.LogConfig) {
 	logger := log.GetLogger()
 	switch config.Level {
-	case logclient.PANIC:
-		fallthrough
+	case logclient.CRITICAL:
+		logger.SetLevel(loggers.CriticalLevel)
 	case logclient.ERROR:
 		logger.SetLevel(loggers.ErrorLevel)
 	case logclient.WARNING:
 		logger.SetLevel(loggers.WarnLevel)
+	case logclient.NOTICE:
+		logger.SetLevel(loggers.NoticeLevel)
 	case logclient.INFO:
 		logger.SetLevel(loggers.InfoLevel)
 	case logclient.DEBUG:

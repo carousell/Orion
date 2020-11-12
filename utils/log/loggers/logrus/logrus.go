@@ -47,6 +47,8 @@ func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ..
 		fields[l.opt.CallerFieldName] = fmt.Sprintf("%s:%d", file, line)
 	}
 
+	fields[l.opt.LogVersionKey] = loggers.LogVersion
+
 	logger := l.logger.WithFields(fields)
 	switch level {
 	case loggers.DebugLevel:

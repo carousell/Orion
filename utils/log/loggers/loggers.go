@@ -9,6 +9,12 @@ import (
 	"strings"
 )
 
+// Key for log message payloads
+const LogMessageKey = "msg"
+
+// Log message format version
+const LogVersion = "2"
+
 // Level type
 type Level uint32
 
@@ -19,10 +25,14 @@ func (level Level) String() string {
 		return "debug"
 	case InfoLevel:
 		return "info"
+	case NoticeLevel:
+		return "notice"
 	case WarnLevel:
 		return "warning"
 	case ErrorLevel:
 		return "error"
+	case CriticalLevel:
+		return "critical"
 	}
 
 	return "unknown"
@@ -31,10 +41,14 @@ func (level Level) String() string {
 // ParseLevel takes a string level and returns the log level constant.
 func ParseLevel(lvl string) (Level, error) {
 	switch strings.ToLower(lvl) {
+	case "critical":
+		return CriticalLevel, nil
 	case "error":
 		return ErrorLevel, nil
 	case "warn", "warning":
 		return WarnLevel, nil
+	case "notice":
+		return NoticeLevel, nil
 	case "info":
 		return InfoLevel, nil
 	case "debug":
@@ -47,7 +61,9 @@ func ParseLevel(lvl string) (Level, error) {
 
 //AllLevels A constant exposing all logging levels
 var AllLevels = []Level{
+	CriticalLevel,
 	ErrorLevel,
+	NoticeLevel,
 	WarnLevel,
 	InfoLevel,
 	DebugLevel,
@@ -56,11 +72,16 @@ var AllLevels = []Level{
 // These are the different logging levels. You can set the logging level to log
 // on your instance of logger, obtained with `logs.New()`.
 const (
+	// Critical level. Mostly for fatal error messages.
+	CriticalLevel = iota
 	// ErrorLevel level. Logs. Used for errors that should definitely be noted.
 	// Commonly used for hooks to send errors to an error tracking service.
-	ErrorLevel = iota
+	ErrorLevel
 	// WarnLevel level. Non-critical entries that deserve eyes.
 	WarnLevel
+	// Notice level. Should be used for logs that are not errors/warnings but are
+	// necessary to be captured. This should not be as verbose as info.
+	NoticeLevel
 	// InfoLevel level. General operational entries about what's going on inside the
 	// application.
 	InfoLevel
@@ -85,6 +106,7 @@ type Options struct {
 	CallerInfo         bool
 	CallerFileDepth    int
 	CallerFieldName    string
+	LogVersionKey      string
 }
 
 //GetDefaultOptions fetches loggers default options
@@ -97,12 +119,13 @@ var (
 	DefaultOptions = Options{
 		ReplaceStdLogger:   false,
 		JSONLogs:           true,
-		Level:              InfoLevel,
+		Level:              NoticeLevel,
 		TimestampFieldName: "@timestamp",
 		LevelFieldName:     "level",
 		CallerInfo:         true,
 		CallerFileDepth:    2,
 		CallerFieldName:    "caller",
+		LogVersionKey:      "_lgv",
 	}
 )
 

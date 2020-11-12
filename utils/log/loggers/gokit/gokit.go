@@ -25,6 +25,8 @@ func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ..
 		lgr = log.With(lgr, l.opt.CallerFieldName, fmt.Sprintf("%s:%d", file, line))
 	}
 
+	lgr = log.With(lgr, l.opt.LogVersionKey, loggers.LogVersion)
+
 	// fetch fields from context and add them to logrus fields
 	ctxFields := loggers.FromContext(ctx)
 	if ctxFields != nil {
@@ -34,7 +36,7 @@ func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ..
 	}
 
 	if len(args) == 1 {
-		lgr.Log("msg", args[0])
+		lgr.Log(loggers.LogMessageKey, args[0])
 	} else {
 		lgr.Log(args...)
 	}
