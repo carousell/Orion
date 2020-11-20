@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/carousell/Orion/utils/log/loggers"
 
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/carousell/Orion/utils/log"
@@ -178,15 +179,15 @@ func setup(name string) {
 
 func readConfig(name string) error {
 	ctx := context.Background()
-	log.Info(ctx, "config", "Reading config")
+	log.Info(ctx, "Reading config", []loggers.Label{{"loc", "config"}})
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {
 		// do nothing and default everything
-		log.Warn(ctx, "config", "config could not be read "+err.Error())
+		log.Warn(ctx, "Config could not be read "+err.Error(), []loggers.Label{{"loc", "config"}, {"Error", err}})
 		return fmt.Errorf("Config config could not be read %s", err.Error())
 	}
 	data, _ := json.MarshalIndent(viper.AllSettings(), "", "  ")
-	log.Info(ctx, "Config", string(data))
+	log.Info(ctx, fmt.Sprintf("Config: %s", string(data)), []loggers.Label{{"loc", "config"}})
 	return nil
 }
 

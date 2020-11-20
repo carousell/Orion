@@ -17,7 +17,7 @@ type logger struct {
 	opt    loggers.Options
 }
 
-func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ...interface{}) {
+func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, payload string, labels []loggers.Label, args ...interface{}) {
 	lgr := log.With(l.logger, l.opt.LevelFieldName, level.String())
 
 	if l.opt.CallerInfo {
@@ -25,21 +25,24 @@ func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ..
 		lgr = log.With(lgr, l.opt.CallerFieldName, fmt.Sprintf("%s:%d", file, line))
 	}
 
-	lgr = log.With(lgr, l.opt.LogVersionKey, loggers.LogVersion)
+	lgr = log.With(lgr, loggers.LogVersionKey, loggers.LogVersion)
 
 	// fetch fields from context and add them to logrus fields
 	ctxFields := loggers.FromContext(ctx)
 	if ctxFields != nil {
 		for k, v := range ctxFields {
-			lgr = log.With(lgr, k, v)
+			//lgr = log.With(lgr, k, v)
+			labels = append(labels, loggers.Label{Key: k, Value: v})
 		}
 	}
 
-	if len(args) == 1 {
-		lgr.Log(loggers.LogMessageKey, args[0])
-	} else {
-		lgr.Log(args...)
+	lgr = log.With(lgr, loggers.LogMessageKey, payload)
+
+	if labels != nil {
+		lgr = log.With(lgr, loggers.LogLabelsKey, labels)
 	}
+
+	lgr.Log(args...)
 }
 
 func (l *logger) SetLevel(level loggers.Level) {

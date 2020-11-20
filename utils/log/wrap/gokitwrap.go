@@ -1,18 +1,10 @@
 //Package wrap provides multiple wrap functions to wrap log implementation of other log packages
 package wrap
 
-import (
-	"context"
-
-	"github.com/carousell/Orion/utils/log"
-	"github.com/carousell/Orion/utils/log/loggers"
-
-	basegokit "github.com/go-kit/kit/log"
-)
-
 /*
  * gokitwrap wraps the gokit.Logger impl with log.Logger
  */
+/*
 type gokitwrap struct {
 	l log.Logger
 }
@@ -37,3 +29,4 @@ func ToGoKitLogger(l log.Logger) basegokit.Logger {
 		l: l,
 	}
 }
+*/

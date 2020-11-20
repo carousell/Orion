@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"encoding/json"
+	"github.com/carousell/Orion/utils/log/loggers"
 	"net/http"
 
 	"github.com/carousell/Orion/utils/log"
@@ -28,7 +29,7 @@ func (w *workerInfo) MarshalTraceInfo(ctx context.Context) {
 			opentracing.HTTPHeaders,
 			opentracing.HTTPHeadersCarrier(w.Trace))
 	} else {
-		log.Info(ctx, "trace", "not found")
+		log.Info(ctx, "trace not found", []loggers.Label{{"loc", "workerInfo"}})
 	}
 }
 
@@ -47,7 +48,7 @@ func (w *workerInfo) UnmarshalTraceInfo(ctx context.Context) context.Context {
 func (w *workerInfo) String() string {
 	data, err := json.Marshal(w)
 	if err != nil {
-		log.Info(context.Background(), "schedule", "scheduling error", "error", err)
+		log.Info(context.Background(), "scheduling error", []loggers.Label{{"error", err}, {"loc", "workerInfo"}})
 		return ""
 	}
 	return string(data)
@@ -67,7 +68,7 @@ func unmarshalWorkerInfo(payload string) *workerInfo {
 	wi := new(workerInfo)
 	err := json.Unmarshal([]byte(payload), wi)
 	if err != nil {
-		log.Error(context.Background(), "worker", "can not deserialize work", "error", err)
+		log.Error(context.Background(), "cannot deserialize work", []loggers.Label{{"error", err}, {"loc", "workerInfo"}})
 		return nil
 	}
 	return wi

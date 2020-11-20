@@ -17,21 +17,21 @@ func GetLevel() loggers.Level {
 }
 
 //Debug writes out a debug log to global logger
-func Debug(ctx context.Context, args ...interface{}) {
-	GetLogger().Log(ctx, loggers.DebugLevel, 1, args...)
+func Debug(ctx context.Context, payload string, labels []loggers.Label, args ...interface{}) {
+	GetLogger().Log(ctx, loggers.DebugLevel, 1, payload, labels, args...)
 }
 
 //Info writes out an info log to global logger
-func Info(ctx context.Context, args ...interface{}) {
-	GetLogger().Log(ctx, loggers.InfoLevel, 1, args...)
+func Info(ctx context.Context, payload string, labels []loggers.Label, args ...interface{}) {
+	GetLogger().Log(ctx, loggers.InfoLevel, 1, payload, labels, args...)
 }
 
 //Warn writes out a warning log to global logger
-func Warn(ctx context.Context, args ...interface{}) {
-	GetLogger().Log(ctx, loggers.WarnLevel, 1, args...)
+func Warn(ctx context.Context, payload string, labels []loggers.Label, args ...interface{}) {
+	GetLogger().Log(ctx, loggers.WarnLevel, 1, payload, labels, args...)
 }
 
 //Error writes out an error log to global logger
-func Error(ctx context.Context, args ...interface{}) {
-	GetLogger().Log(ctx, loggers.ErrorLevel, 1, args...)
+func Error(ctx context.Context, payload string, labels []loggers.Label, args ...interface{}) {
+	GetLogger().Log(ctx, loggers.ErrorLevel, 1, payload, labels, args...)
 }

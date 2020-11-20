@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -26,7 +27,8 @@ func (h *httpHandler) wsHandler(resp http.ResponseWriter, req *http.Request, ser
 	var ctx context.Context
 	defer func(t time.Time) {
 		notifier.Notify(err, ctx, req.URL.String())
-		log.Info(ctx, "path", req.URL.String(), "duration", time.Since(t), "err", err)
+		log.Info(ctx, fmt.Sprintf("wsHandler, path: %s", req.URL.String()),
+			[]loggers.Label{{"duration", time.Since(t)}, {"err", err}})
 	}(time.Now())
 	info, ok := h.mapping.Get(service, method)
 	if ok {
@@ -37,7 +39,7 @@ func (h *httpHandler) wsHandler(resp http.ResponseWriter, req *http.Request, ser
 		req = req.WithContext(ctx)
 
 		notifier.SetTraceId(ctx)
-		log.Info(ctx, "path", req.URL.String(), "msg", "new websocket connection")
+		log.Info(ctx, "New websocket connection", []loggers.Label{{"path", req.URL.String()}})
 
 		// httpHandler allows handling entire http request
 		if info.httpHandler != nil {
@@ -49,14 +51,16 @@ func (h *httpHandler) wsHandler(resp http.ResponseWriter, req *http.Request, ser
 		}
 
 		if info.stream == nil {
-			log.Error(ctx, "ws", "no stream registered", "url", req.URL.String())
+			log.Error(ctx, "no stream registered",
+				[]loggers.Label{{"loc", "wsHandler"}, {"url", req.URL.String()}})
 			err = errors.New("No stream registered")
 		}
 
 		var con *websocket.Conn
 		con, err = DefaultWSUpgrader(resp, req, http.Header{})
 		if err != nil {
-			log.Error(ctx, "wsUpgrade", "failed", "err", err, "url", req.URL.String())
+			log.Error(ctx, "wsUpgrade failed",
+				[]loggers.Label{{"loc", "wsHandler"}, {"err", err}, {"url", req.URL.String()}})
 			return
 		}
 		defer con.Close()

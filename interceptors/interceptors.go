@@ -78,7 +78,7 @@ func DefaultClientInterceptor(address string) grpc.UnaryClientInterceptor {
 //DebugLoggingInterceptor is the interceptor that logs all request/response from a handler
 func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		fmt.Println(info, "requst", req)
+		fmt.Println(info, "request", req)
 		resp, err := handler(ctx, req)
 		fmt.Println(info, "response", resp, "err", err)
 		return resp, err
@@ -91,7 +91,8 @@ func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 		// dont log for HTTP request, let HTTP Handler manage it
 		if !modifiers.IsHTTPRequest(ctx) {
 			defer func(begin time.Time) {
-				log.Info(ctx, "method", info.FullMethod, "error", err, "took", time.Since(begin))
+				log.Info(ctx, fmt.Sprintf("Response time for: %s", info.FullMethod),
+					[]loggers.Label{{"method", info.FullMethod}, {"error", err}, {"took", time.Since(begin)}})
 			}(time.Now())
 		}
 		resp, err = handler(ctx, req)
@@ -147,7 +148,8 @@ func PanicRecoveryInterceptor() grpc.UnaryServerInterceptor {
 		defer func(ctx context.Context) {
 			// panic handler
 			if r := recover(); r != nil {
-				log.Error(ctx, "panic", r, "method", info.FullMethod)
+				log.Error(ctx, fmt.Sprintf("Panic in method: %s", info.FullMethod),
+					[]loggers.Label{{"method", info.FullMethod}, {"panic", r}})
 				if e, ok := r.(error); ok {
 					err = e
 				} else {
@@ -199,8 +201,9 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 		return hystrix.Do(options.hystrixName, func() (err error) {
 			defer func() {
 				if r := recover(); r != nil {
-					err = errors.Wrap(fmt.Errorf("Panic inside hystrix Method: %s, req: %v, reply: %v", method, req, reply), "Hystrix")
-					log.Error(ctx, "panic", r, "method", method, "req", req, "reply", reply)
+					err = errors.Wrap(fmt.Errorf("panic inside hystrix Method: %s, req: %v, reply: %v", method, req, reply), "Hystrix")
+					log.Error(ctx, err.Error(),
+						[]loggers.Label{{"method", method}})
 				}
 			}()
 			defer notifier.NotifyOnPanic(newCtx, method)
@@ -213,7 +216,8 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 func ResponseTimeLoggingStreamInterceptor() grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
 		defer func(begin time.Time) {
-			log.Info(stream.Context(), "method", info.FullMethod, "error", err, "took", time.Since(begin))
+			log.Info(stream.Context(), fmt.Sprintf("stream RPC response time for: %s", info.FullMethod),
+				[]loggers.Label{{"error", err}, {"took", time.Since(begin)}})
 		}(time.Now())
 		err = handler(srv, stream)
 		return err

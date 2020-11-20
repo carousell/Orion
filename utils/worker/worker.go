@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"github.com/carousell/Orion/utils/log/loggers"
 	"time"
 
 	"github.com/RichardKnop/machinery/v1"
@@ -155,7 +156,7 @@ func (w *worker) init(config Config) error {
 		var err error
 		w.server, err = machinery.NewServer(cfg)
 		if err != nil {
-			log.Error(context.Background(), "err", err, "")
+			log.Error(context.Background(), "error initializing machinery", []loggers.Label{{"loc", "worker"}, {"err", err}})
 			return err
 		}
 		w.server.SetBackend(&fakeBackend{})
@@ -171,14 +172,14 @@ func (w *worker) RunWorker(name string, concurrency int) {
 					if f, ok := w.LocalMap[wi.Name]; ok {
 						f(wi.String())
 					} else {
-						log.Error(context.Background(), "err", "could not find "+wi.Name)
+						log.Error(context.Background(), "could not find worker: "+wi.Name, []loggers.Label{{"loc", "worker"}})
 					}
 				}
 			}()
 		}
 	} else {
 		if w.server == nil {
-			log.Error(context.Background(), "err", "worker not started, server not initialized")
+			log.Error(context.Background(), "worker not started, server not initialized", []loggers.Label{{"loc", "worker"}})
 		} else {
 			w.worker = w.server.NewWorker(name, concurrency)
 			errc := make(chan error, 1)

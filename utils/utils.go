@@ -26,7 +26,7 @@ func GetHostname() string {
 	if host == "" {
 		host = "localhost"
 	}
-	log.Info(context.Background(), "HOST", host)
+	log.Info(context.Background(), "HOST: "+host, nil)
 	return host
 }
 

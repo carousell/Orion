@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"fmt"
+	"github.com/carousell/Orion/utils/log/loggers"
 	"net"
 	"net/http"
 	"strings"
@@ -89,8 +90,8 @@ func (h *httpHandler) AddEncoder(serviceName, method string, httpMethod []string
 				info.encoderPath = url
 			}
 		} else {
-			log.Warn(context.Background(), "error", "Service and Method NOT found!", "service", serviceName,
-				"method", method, "mapping", h.mapping)
+			log.Warn(context.Background(), fmt.Sprintf("Service and method not found: %s, %s", serviceName, method),
+				[]loggers.Label{{"service", serviceName}, {"method", method}, {"mapping", h.mapping}, {"loc", "AddEncoder"}})
 		}
 	}
 }
@@ -109,8 +110,8 @@ func (h *httpHandler) AddHTTPHandler(serviceName string, method string, path str
 		if info, ok := h.mapping.Get(serviceName, method); ok {
 			info.httpHandler = handler
 		} else {
-			log.Warn(context.Background(), "error", "Service and Method NOT found!", "service", serviceName,
-				"method", method, "mapping", h.mapping)
+			log.Warn(context.Background(), fmt.Sprintf("Service and method not found: %s, %s", serviceName, method),
+				[]loggers.Label{{"service", serviceName}, {"method", method}, {"mapping", h.mapping}, {"loc", "AddHTTPHandler"}})
 		}
 	}
 }
@@ -120,8 +121,8 @@ func (h *httpHandler) AddDecoder(serviceName, method string, decoder handlers.De
 		if info, ok := h.mapping.Get(serviceName, method); ok {
 			info.decoder = decoder
 		} else {
-			log.Warn(context.Background(), "error", "Service and Method NOT found!", "service", serviceName,
-				"method", method, "mapping", h.mapping)
+			log.Warn(context.Background(), fmt.Sprintf("Service and method not found: %s, %s", serviceName, method),
+				[]loggers.Label{{"service", serviceName}, {"method", method}, {"mapping", h.mapping}, {"loc", "AddDecoder"}})
 		}
 	}
 }

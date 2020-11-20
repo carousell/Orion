@@ -3,6 +3,7 @@ package listenerutils
 import (
 	"context"
 	"errors"
+	"github.com/carousell/Orion/utils/log/loggers"
 	"io"
 	"net"
 	"time"
@@ -93,7 +94,7 @@ func (c *customConn) watcher(stop chan struct{}, timeout time.Duration) {
 func (c *customConn) doClose() {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Info(context.Background(), "msg", "panic trying to close channel", "err", err)
+			log.Info(context.Background(), "panic trying to close channel", []loggers.Label{{"err", err}})
 		}
 	}()
 	select {
@@ -138,7 +139,7 @@ func (c *customListener) GetListener() CustomListener {
 func (c *customListener) StopAccept() {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Info(context.Background(), "msg", "panic trying to close channel", "err", err)
+			log.Info(context.Background(), "panic trying to close channel", []loggers.Label{{"err", err}})
 		}
 	}()
 	select {

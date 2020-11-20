@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/carousell/Orion/utils/log/loggers"
 	"os"
 	"os/signal"
 	"reflect"
@@ -234,9 +235,10 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		httpPort := d.config.HTTPPort
 		httpListener, err := listenerutils.NewListener("tcp", ":"+httpPort)
 		if err != nil {
-			log.Error(context.Background(), "httpListener", "could not create listener", "error", err)
+			log.Error(context.Background(), fmt.Sprintf("could not create httpListener %v", err),
+				[]loggers.Label{{"loc", "httpListener"}})
 		}
-		log.Info(context.Background(), "HTTPListnerPort", httpPort)
+		log.Info(context.Background(), fmt.Sprintf("HTTPListnerPort: %s", httpPort), nil)
 		config := http.Config{
 			EnableProtoURL:   d.config.EnableProtoURL,
 			DefaultJSONPB:    d.config.DefaultJSONPB,
@@ -252,9 +254,10 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		grpcPort := d.config.GRPCPort
 		grpcListener, err := listenerutils.NewListener("tcp", ":"+grpcPort)
 		if err != nil {
-			log.Info(context.Background(), "grpcListener", "could not create listener", "error", err)
+			log.Error(context.Background(), fmt.Sprintf("could not create grpcListener %v", err),
+				[]loggers.Label{{"loc", "grpcListener"}})
 		}
-		log.Info(context.Background(), "gRPCListnerPort", grpcPort)
+		log.Info(context.Background(), fmt.Sprintf("gRPCListnerPort: %s", grpcPort), nil)
 		handler := grpcHandler.NewGRPCHandler(grpcHandler.Config{})
 		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,
@@ -275,16 +278,20 @@ func (d *DefaultServerImpl) signalWatcher() {
 	for sig := range c {
 		if sig == syscall.SIGHUP { // only reload config for sighup
 			if !d.config.HotReload {
-				log.Warn(context.Background(), "signal", "config reload SKIPPED (Hot reload disabled) on "+sig.String())
+				log.Warn(context.Background(), "signal: config reload SKIPPED (Hot reload disabled) on "+sig.String(),
+					[]loggers.Label{{"loc", "signalWatcher"}})
 				continue
 			}
 			d.version++
-			log.Info(context.Background(), "signal", "config reloaded on "+sig.String())
+			log.Info(context.Background(), "config reloaded on "+sig.String(),
+				[]loggers.Label{{"loc", "signalWatcher"}})
+
 			// relaod config
 			err := readConfig(d.config.OrionServerName)
 			if err != nil {
 				notifier.NotifyWithLevel(err, "critical", "Error parsing config not reloading services")
-				log.Error(context.Background(), "Error", err, "msg", "not reloading services")
+				log.Error(context.Background(), fmt.Sprintf("error parsing config, not reloading services %v", err),
+					[]loggers.Label{{"location", "signalWatcher"}, {"Error", err}})
 				continue
 			}
 
@@ -312,7 +319,9 @@ func (d *DefaultServerImpl) signalWatcher() {
 				info.sf.DisposeService(info.ss, params)
 			}
 		} else if sig == syscall.SIGTERM || sig == syscall.SIGINT {
-			log.Info(context.Background(), "signal", "starting shutdown on "+sig.String())
+			log.Info(context.Background(), "starting shutdown on "+sig.String(),
+				[]loggers.Label{{"loc", "signalWatcher"}})
+
 			d.Stop(30 * time.Second)
 			break
 		} else {
@@ -323,7 +332,7 @@ func (d *DefaultServerImpl) signalWatcher() {
 			}
 			break
 		}
-		log.Info(context.Background(), "signal", "all actions complete")
+		log.Info(context.Background(), "all actions complete", []loggers.Label{{"loc", "signalWatcher"}})
 	}
 }
 

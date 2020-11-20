@@ -9,11 +9,21 @@ import (
 	"strings"
 )
 
-// Key for log message payloads
-const LogMessageKey = "msg"
+type Label struct {
+	Key   string      `json:"k"`
+	Value interface{} `json:"v"`
+}
 
-// Log message format version
-const LogVersion = "2"
+const (
+	// Key for log format version
+	LogVersionKey = "_lv"
+	// Log message format version
+	LogVersion = "2"
+	// Key for log message payload
+	LogMessageKey = "msg"
+	// Key for log labels
+	LogLabelsKey = "lbl"
+)
 
 // Level type
 type Level uint32
@@ -91,7 +101,7 @@ const (
 
 //BaseLogger is the interface that needs to be implemented by client loggers
 type BaseLogger interface {
-	Log(ctx context.Context, level Level, skip int, args ...interface{})
+	Log(ctx context.Context, level Level, skip int, payload string, labels []Label, args ...interface{})
 	SetLevel(level Level)
 	GetLevel() Level
 }
@@ -106,7 +116,6 @@ type Options struct {
 	CallerInfo         bool
 	CallerFileDepth    int
 	CallerFieldName    string
-	LogVersionKey      string
 }
 
 //GetDefaultOptions fetches loggers default options
@@ -125,7 +134,6 @@ var (
 		CallerInfo:         true,
 		CallerFileDepth:    2,
 		CallerFieldName:    "caller",
-		LogVersionKey:      "_lgv",
 	}
 )
 

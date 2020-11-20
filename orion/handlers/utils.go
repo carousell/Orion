@@ -167,7 +167,7 @@ func GetMethodInterceptors(svc interface{}, config CommonConfig, middlewares []s
 	for _, middleware := range middlewares {
 		interceptor, err := getMiddleware(svc, middleware)
 		if err != nil {
-			log.Error(context.Background(), "error", err, "middleware", "could not fetch middleware")
+			log.Error(context.Background(), "could not fetch middleware", []loggers.Label{{"error", err}, {"loc", "middleware"}})
 			notifier.NotifyWithLevel(err, "critical")
 		} else {
 			if interceptor != nil {

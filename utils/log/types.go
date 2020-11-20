@@ -9,8 +9,10 @@ import (
 // Logger interface is implemnted by the log implementation
 type Logger interface {
 	loggers.BaseLogger
-	Debug(ctx context.Context, args ...interface{})
-	Info(ctx context.Context, args ...interface{})
-	Warn(ctx context.Context, args ...interface{})
-	Error(ctx context.Context, args ...interface{})
+	Debug(ctx context.Context, payload string, labels []loggers.Label, args ...interface{})
+	Info(ctx context.Context, payload string, labels []loggers.Label, args ...interface{})
+	Notice(ctx context.Context, payload string, labels []loggers.Label, args ...interface{})
+	Warn(ctx context.Context, payload string, labels []loggers.Label, args ...interface{})
+	Error(ctx context.Context, payload string, labels []loggers.Label, args ...interface{})
+	Critical(ctx context.Context, payload string, labels []loggers.Label, args ...interface{})
 }

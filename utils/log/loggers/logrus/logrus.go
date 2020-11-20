@@ -22,18 +22,23 @@ func toLogrusLogLevel(level loggers.Level) log.Level {
 		return log.DebugLevel
 	case loggers.InfoLevel:
 		return log.InfoLevel
+	case loggers.NoticeLevel:
+		// WARNING: Since logrus does not have a notice level, notice logs fall back to INFO level, with additional field {"k": "logrus_level", "v":"notice"}
+		return log.InfoLevel
 	case loggers.WarnLevel:
 		return log.WarnLevel
 	case loggers.ErrorLevel:
+		return log.ErrorLevel
+	case loggers.CriticalLevel:
+		// Since logrus calls panic(), avoiding the use of the same. Additional field: {"k": "logrus_level", "v":"critical"}
 		return log.ErrorLevel
 	default:
 		return log.ErrorLevel
 	}
 }
 
-func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ...interface{}) {
+func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, payload string, labels []loggers.Label, args ...interface{}) {
 	fields := make(log.Fields)
-
 	// fetch fields from context and add them to logrus fields
 	ctxFields := loggers.FromContext(ctx)
 	if ctxFields != nil {
@@ -47,18 +52,30 @@ func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ..
 		fields[l.opt.CallerFieldName] = fmt.Sprintf("%s:%d", file, line)
 	}
 
-	fields[l.opt.LogVersionKey] = loggers.LogVersion
+	fields[loggers.LogVersionKey] = loggers.LogVersion
+
+	//fields[loggers.LogMessageKey] = payload
+
+	if level == loggers.CriticalLevel {
+		fields["logrus_level"] = "critical"
+	} else if level == loggers.NoticeLevel {
+		fields["logrus_level"] = "notice"
+	}
+
+	if labels != nil {
+		fields[loggers.LogLabelsKey] = labels
+	}
 
 	logger := l.logger.WithFields(fields)
 	switch level {
 	case loggers.DebugLevel:
-		logger.Debug(args...)
+		logger.Debug(payload)
 	case loggers.InfoLevel:
-		logger.Info(args...)
+		logger.Info(payload)
 	case loggers.WarnLevel:
-		logger.Warn(args...)
+		logger.Warn(payload)
 	case loggers.ErrorLevel:
-		logger.Error(args...)
+		logger.Error(payload)
 	default:
 		l.logger.Error(args...)
 	}

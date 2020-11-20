@@ -2,6 +2,7 @@ package pubsub
 
 import (
 	"context"
+	"github.com/carousell/Orion/utils/log/loggers"
 	"time"
 
 	goPubSub "cloud.google.com/go/pubsub"
@@ -86,7 +87,7 @@ func (g *pubSubService) PublishMessage(ctx context.Context, topic string, data [
 			return nil
 		}, nil)
 		if er != nil {
-			log.Error(ctx, "err", er, "component", "pubsub msg publish")
+			log.Error(ctx, "error in pubsub msg publish", []loggers.Label{{"err", er}, {"component", "pubsub PublishMessage"}})
 		} else {
 			break
 		}

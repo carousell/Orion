@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"github.com/carousell/Orion/utils/log/loggers"
 	"net/http"
 	"strings"
 
@@ -84,23 +85,23 @@ func GrpcErrorToHTTP(err error, defaultStatus int, defaultMessage string) (int, 
 	return code, msg
 }
 
-func processWhitelist(ctx context.Context, data map[string][]string, allowedKeys []string) map[string][]string {
-	whitelistedMap := make(map[string][]string)
-	whitelistedKeys := make(map[string]bool)
+func processAllowlist(ctx context.Context, data map[string][]string, allowedKeys []string) map[string][]string {
+	allowlistMap := make(map[string][]string)
+	allowlistKeys := make(map[string]bool)
 
 	for _, k := range allowedKeys {
-		whitelistedKeys[strings.ToLower(k)] = true
+		allowlistKeys[strings.ToLower(k)] = true
 	}
 
 	for k, v := range data {
-		if _, found := whitelistedKeys[strings.ToLower(k)]; found {
-			whitelistedMap[k] = v
+		if _, found := allowlistKeys[strings.ToLower(k)]; found {
+			allowlistMap[k] = v
 		} else {
-			log.Warn(ctx, "error", "rejected headers not in whitelist", k, v)
+			log.Warn(ctx, "rejected headers not in allowlist", []loggers.Label{{k, v}})
 		}
 	}
 
-	return whitelistedMap
+	return allowlistMap
 }
 
 func cleanSvcName(serviceName string) string {

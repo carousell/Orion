@@ -3,6 +3,7 @@ package orion
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/carousell/Orion/utils/hystrixprometheus"
 	"github.com/carousell/Orion/utils/log/loggers"
 	"github.com/prometheus/client_golang/prometheus"
@@ -141,9 +142,9 @@ func (h *hystrixInitializer) Init(svr Server) error {
 		})
 		if err == nil {
 			metricCollector.Registry.Register(c.NewStatsdCollector)
-			log.Info(context.Background(), "HystrixStatsd", config.HystrixConfig.StatsdAddr)
+			log.Info(context.Background(), fmt.Sprintf("HystrixStatsd: %s", config.HystrixConfig.StatsdAddr), nil)
 		} else {
-			log.Info(context.Background(), "Hystrix", err.Error())
+			log.Info(context.Background(), fmt.Sprintf("Hystrix error: %s", err.Error()), nil)
 		}
 
 	}
@@ -154,7 +155,7 @@ func (h *hystrixInitializer) Init(svr Server) error {
 	hystrixStreamHandler := hystrix.NewStreamHandler()
 	hystrixStreamHandler.Start()
 	port := config.HystrixConfig.Port
-	log.Info(context.Background(), "HystrixPort", port)
+	log.Info(context.Background(), fmt.Sprintf("HystrixPort: %s", port), nil)
 	go http.ListenAndServe(net.JoinHostPort("", port), hystrixStreamHandler)
 	return nil
 }
@@ -188,11 +189,11 @@ func (n *newRelicInitializer) Init(svr Server) error {
 	}
 	app, err := newrelic.NewApplication(nrConfig)
 	if err != nil {
-		log.Error(context.Background(), "nr-error", err)
+		log.Error(context.Background(), fmt.Sprintf("nr-error: %v", err), []loggers.Label{{"location", "NR initializer"}})
 		return err
 	}
 	utils.NewRelicApp = app
-	log.Info(context.Background(), "NR", "initialized with "+serviceName)
+	log.Info(context.Background(), "NR initialized with "+serviceName, []loggers.Label{{"location", "NR initializer"}})
 	return nil
 }
 
@@ -285,7 +286,7 @@ func (p *pprofInitializer) Init(svr Server) error {
 
 	go func(svr Server) {
 		pprofport := svr.GetOrionConfig().PProfport
-		log.Info(context.Background(), "PprofPort", pprofport)
+		log.Info(context.Background(), fmt.Sprintf("PprofPort: %s", pprofport), nil)
 		http.ListenAndServe(":"+pprofport, nil)
 	}(svr)
 	return nil
@@ -306,14 +307,16 @@ func (e *errorLoggingInitializer) Init(svr Server) error {
 	rToken := svr.GetOrionConfig().RollbarToken
 	if strings.TrimSpace(rToken) != "" {
 		notifier.InitRollbar(rToken, env)
-		log.Debug(context.Background(), "rollbarToken", rToken, "env", env)
+		log.Debug(context.Background(), fmt.Sprintf("rollbarToken: %s", rToken),
+			[]loggers.Label{{"env", env}, {"location", "error logging initializer"}})
 	}
 
 	//sentry
 	sToken := svr.GetOrionConfig().SentryDSN
 	if strings.TrimSpace(sToken) != "" {
 		notifier.InitSentry(sToken)
-		log.Debug(context.Background(), "sentryDSN", rToken, "env", env)
+		log.Debug(context.Background(), fmt.Sprintf("sentryDSN: %s", rToken),
+			[]loggers.Label{{"env", env}, {"location", "error logging initializer"}})
 	}
 	return nil
 }

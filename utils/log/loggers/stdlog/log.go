@@ -20,7 +20,7 @@ func (l *logger) GetLevel() loggers.Level {
 	return l.level
 }
 
-func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ...interface{}) {
+func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, payload string, labels []loggers.Label, args ...interface{}) {
 	if l.level >= level {
 		// fetch fields from context and add them to logrus fields
 		ctxFields := loggers.FromContext(ctx)
@@ -29,6 +29,11 @@ func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ..
 				args = append(args, k, v)
 			}
 		}
+		args = append(args, loggers.LogMessageKey, payload)
+		if labels != nil {
+			args = append(args, loggers.LogLabelsKey, labels)
+		}
+
 		log.Println(args...)
 	}
 }

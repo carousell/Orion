@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"github.com/carousell/Orion/utils/log/loggers"
 	"net"
 	"sync"
 	"time"
@@ -57,7 +58,7 @@ func (g *grpcHandler) AddMiddleware(serviceName string, method string, middlewar
 }
 
 func (g *grpcHandler) Run(grpcListener net.Listener) error {
-	log.Info(context.Background(), "GRPC", "server starting")
+	log.Info(context.Background(), "GRPC: starting server", []loggers.Label{{"loc", "grpcHandler"}})
 	grpc_prometheus.Register(g.grpcServer)
 	return g.grpcServer.Serve(grpcListener)
 }
@@ -78,12 +79,12 @@ func timedCall(f func(), timeout time.Duration) {
 func (g *grpcHandler) Stop(timeout time.Duration) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	log.Info(context.Background(), "GRPC", "stopping server")
+	log.Info(context.Background(), "GRPC: stopping server", []loggers.Label{{"loc", "grpcHandler"}})
 	timedCall(g.grpcServer.GracefulStop, timeout)
 	g.grpcServer.Stop()
 	g.grpcServer = nil
 	g.middlewares = nil
-	log.Info(context.Background(), "GRPC", "stopped server")
+	log.Info(context.Background(), "GRPC: server stopped", []loggers.Label{{"loc", "grpcHandler"}})
 	return nil
 }
 

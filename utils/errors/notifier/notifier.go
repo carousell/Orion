@@ -263,7 +263,7 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 		raven.Capture(packet, nil)
 	}
 
-	log.GetLogger().Log(ctx, loggers.ErrorLevel, skip+1, "err", errWithStack, "stack", errWithStack.StackFrame())
+	log.GetLogger().Log(ctx, loggers.ErrorLevel, skip+1, errWithStack.Error(), []loggers.Label{{"stack", errWithStack.StackFrame()}})
 	return err
 }
 

@@ -59,7 +59,8 @@ func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, s
 	ctx = loggers.AddToLogContext(ctx, "transport", "http")
 	var err error
 	defer func(ctx context.Context, t time.Time) {
-		log.Info(ctx, "path", req.URL.Path, "method", req.Method, "error", err, "took", time.Since(t))
+		log.Info(ctx, fmt.Sprintf("httpHandler, path: %s, method: %s", req.URL.Path, req.Method),
+			[]loggers.Label{{"loc", "httpHandler"}, {"took", time.Since(t)}, {"error", err}})
 	}(ctx, time.Now())
 	req = req.WithContext(ctx)
 	ctx, err = h.serveHTTP(resp, req, service, method)
@@ -207,7 +208,7 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, ser
 		}
 
 		hdr := headers.ResponseHeadersFromContext(ctx)
-		responseHeaders := processWhitelist(ctx, hdr, append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
+		responseHeaders := processAllowlist(ctx, hdr, append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
 		if err != nil {
 			if encErr != nil {
 				writeRespWithHeaders(resp, http.StatusBadRequest, []byte("Bad Request!"), responseHeaders)
