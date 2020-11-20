@@ -19,7 +19,7 @@ require (
 	github.com/bugsnag/bugsnag-go v1.4.0
 	github.com/bugsnag/panicwrap v0.0.0-20180510051541-1d162ee1264c // indirect
 	github.com/cactus/go-statsd-client/statsd v0.0.0-20190805010426-5089fcbbe532 // indirect
-	github.com/carousell/log-svc-client v0.0.0-20201105074630-f7c9eb3ae577
+	github.com/carousell/log-svc-client v0.0.0-20201120110920-11ff83fe54bd
 	github.com/certifi/gocertifi v0.0.0-20190105021004-abcd57078448 // indirect
 	github.com/eapache/go-resiliency v0.0.0-20181214162408-487be0453c7b // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
@@ -65,13 +65,11 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/stvp/rollbar v0.0.0-20171113052335-4a50daf855af
 	go.elastic.co/apm v1.4.0
-	golang.org/x/net v0.0.0-20201031054903-ff519b6c9102
+	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
-	golang.org/x/sys v0.0.0-20201101102859-da207088b7d1 // indirect
 	golang.org/x/text v0.3.4 // indirect
 	google.golang.org/api v0.34.0
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20201104152603-2e45c02ce95c // indirect
-	google.golang.org/grpc v1.33.1
+	google.golang.org/grpc v1.33.2
 	gopkg.in/airbrake/gobrake.v2 v2.0.9
 )
