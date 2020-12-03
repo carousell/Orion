@@ -61,6 +61,16 @@ type HystrixConfig struct {
 	CommandConfig map[string]hystrix.CommandConfig
 	//StatsdAddr is the address of the statsd hosts to send hystrix data to
 	StatsdAddr string
+	// DefaultTimeout is how long to wait for command to complete, in milliseconds
+	DefaultTimeout int
+	// DefaultMaxConcurrent is how many commands of the same type can run at the same time
+	DefaultMaxConcurrent int
+	// DefaultVolumeThreshold is the minimum number of requests needed before a circuit can be tripped due to health
+	DefaultVolumeThreshold int
+	// DefaultSleepWindow is how long, in milliseconds, to wait after a circuit opens before testing for recovery
+	DefaultSleepWindow int
+	// DefaultErrorPercentThreshold causes circuits to open once the rolling measure of errors exceeds this percent of requests
+	DefaultErrorPercentThreshold int
 }
 
 //ZipkinConfig is the configuration for the zipkin collector
@@ -71,10 +81,10 @@ type ZipkinConfig struct {
 
 //NewRelicConfig is the configuration for newrelic
 type NewRelicConfig struct {
-	APIKey            string
-	ServiceName       string
+	APIKey      string
+	ServiceName string
 	//HttpTxNameType decides the transaction name logged in NR. Options are "fullmethod" (default), "method" , "route".
-	HttpTxNameType 	  string
+	HttpTxNameType    string
 	IncludeAttributes []string
 	ExcludeAttributes []string
 }
@@ -107,9 +117,14 @@ func BuildDefaultConfig(name string) Config {
 //BuildDefaultHystrixConfig builds a default config for hystrix
 func BuildDefaultHystrixConfig() HystrixConfig {
 	return HystrixConfig{
-		Port:          viper.GetString("orion.HystrixPort"),
-		CommandConfig: make(map[string]hystrix.CommandConfig),
-		StatsdAddr:    viper.GetString("orion.HystrixStatsd"),
+		Port:                         viper.GetString("orion.HystrixPort"),
+		CommandConfig:                make(map[string]hystrix.CommandConfig),
+		StatsdAddr:                   viper.GetString("orion.HystrixStatsd"),
+		DefaultTimeout:               viper.GetInt("orion.HystrixDefaultTimeout"),
+		DefaultMaxConcurrent:         viper.GetInt("orion.HystrixDefaultMaxConcurrent"),
+		DefaultVolumeThreshold:       viper.GetInt("orion.HystrixDefaultVolumeThreshold"),
+		DefaultSleepWindow:           viper.GetInt("orion.HystrixDefaultSleepWindow"),
+		DefaultErrorPercentThreshold: viper.GetInt("orion.HystrixDefaultErrorPercentThreshold"),
 	}
 }
 
@@ -147,6 +162,12 @@ func setConfigDefaults() {
 	viper.SetDefault("orion.EnablePrometheusHistogram", false)
 	viper.SetDefault("orion.Env", "development")
 	viper.SetDefault("orion.DefaultJSONPB", false)
+
+	viper.SetDefault("orion.HystrixDefaultTimeout", 1000)
+	viper.SetDefault("orion.HystrixDefaultMaxConcurrent", 300)
+	viper.SetDefault("orion.HystrixDefaultVolumeThreshold", 75)
+	viper.SetDefault("orion.HystrixDefaultSleepWindow", 1000)
+	viper.SetDefault("orion.HystrixDefaultErrorPercentThreshold", 75)
 }
 
 // sets up the config parser
