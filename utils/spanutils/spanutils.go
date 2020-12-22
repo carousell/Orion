@@ -83,7 +83,8 @@ func (span *tracingSpan) SetError(msg string) {
 		return
 	}
 	if msg != "" {
-		span.openSpan.SetTag("error", msg)
+		span.openSpan.SetTag("error", true)
+		span.openSpan.SetTag("error.msg", msg)
 	}
 }
 
