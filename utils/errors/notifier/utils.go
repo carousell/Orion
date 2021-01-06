@@ -21,6 +21,8 @@ func (s severity) LoggerLevel() loggers.Level {
 		return loggers.InfoLevel
 	case debugSeverity:
 		return loggers.DebugLevel
+	case errorSeverity:
+		return loggers.ErrorLevel
 	default:
 		return loggers.ErrorLevel
 	}
