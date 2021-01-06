@@ -5,10 +5,6 @@ package notifier
 // It turns out we expose string type constants for users to use and keep severity type as private for now
 type severity string
 
-func (s severity) String() string {
-	return string(s)
-}
-
 const (
 	ErrorLevel   = "error"
 	DebugLevel   = "debug"
@@ -33,5 +29,6 @@ var (
 		InfoLevel:    infoSeverity,
 		WarningLevel: warningSeverity,
 		FatalLevel:   fatalSeverity,
+		"critical":   fatalSeverity, // backward capability
 	}
 )
