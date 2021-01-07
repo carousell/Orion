@@ -2,15 +2,10 @@ package notifier
 
 import (
 	"github.com/carousell/Orion/utils/log/loggers"
-	"github.com/getsentry/raven-go"
 )
 
 func (s severity) String() string {
 	return string(s)
-}
-
-func (s severity) RavenSeverity() raven.Severity {
-	return raven.Severity(s)
 }
 
 func (s severity) LoggerLevel() loggers.Level {

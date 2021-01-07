@@ -254,7 +254,8 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 			packet.AddTags(tags)
 		}
 
-		packet.Level = sev.RavenSeverity()
+		// type assert directly since it's single use case so we don't consider about wrapping it for now
+		packet.Level = raven.Severity(sev)
 		raven.Capture(packet, nil)
 	}
 
