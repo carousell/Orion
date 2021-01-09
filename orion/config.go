@@ -51,6 +51,8 @@ type Config struct {
 	Env string
 	// DefaultJSONPB sets jsonpb as the encoder/decoder for application/json request/response bodies
 	DefaultJSONPB bool
+	//LogSvcConfig is the configuration options for logging service
+	LogSvcConfig LogSvcConfig
 }
 
 // HystrixConfig is configuration used by hystrix
@@ -76,6 +78,12 @@ type HystrixConfig struct {
 //ZipkinConfig is the configuration for the zipkin collector
 type ZipkinConfig struct {
 	//Addr is the address of the zipkin collector
+	Addr string
+}
+
+//LogSvcConfig is the configuration for log-svc
+type LogSvcConfig struct {
+	//Addr is the address of log-svc
 	Addr string
 }
 
