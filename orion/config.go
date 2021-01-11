@@ -119,6 +119,7 @@ func BuildDefaultConfig(name string) Config {
 		ZipkinConfig:              BuildDefaultZipkinConfig(),
 		NewRelicConfig:            BuildDefaultNewRelicConfig(),
 		DefaultJSONPB:             viper.GetBool("orion.DefaultJSONPB"),
+		LogSvcConfig:              BuildDefaultLogSvcConfig(),
 	}
 }
 
@@ -133,6 +134,12 @@ func BuildDefaultHystrixConfig() HystrixConfig {
 		DefaultVolumeThreshold:       viper.GetInt("orion.HystrixDefaultVolumeThreshold"),
 		DefaultSleepWindow:           viper.GetInt("orion.HystrixDefaultSleepWindow"),
 		DefaultErrorPercentThreshold: viper.GetInt("orion.HystrixDefaultErrorPercentThreshold"),
+	}
+}
+
+func BuildDefaultLogSvcConfig() LogSvcConfig {
+	return LogSvcConfig{
+		Addr: viper.GetString("orion.LogSvcAddr"),
 	}
 }
 
@@ -176,6 +183,7 @@ func setConfigDefaults() {
 	viper.SetDefault("orion.HystrixDefaultVolumeThreshold", 75)
 	viper.SetDefault("orion.HystrixDefaultSleepWindow", 1000)
 	viper.SetDefault("orion.HystrixDefaultErrorPercentThreshold", 75)
+	viper.SetDefault("orion.LogSvcAddr", "")
 }
 
 // sets up the config parser

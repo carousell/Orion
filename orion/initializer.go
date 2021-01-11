@@ -88,6 +88,7 @@ func (l *logsvcInitializer) Init(svr Server) error {
 		Environment: config.Env,
 	}
 
+	log.Info(context.Background(), "Initializing log-svc-client", "logSvcAddr", config.LogSvcConfig.Addr)
 	var err error
 	l.logsvcClient, err = logclient.InitLogSvcClient(&logSvcConfig, &log.ConfigListener{})
 	if err != nil {
