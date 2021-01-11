@@ -88,11 +88,13 @@ func (l *logsvcInitializer) Init(svr Server) error {
 		Environment: config.Env,
 	}
 
-	log.Info(context.Background(), "Initializing log-svc-client", "logSvcAddr", config.LogSvcConfig.Addr)
+	log.Info(context.Background(), "Initializing log-svc-client", config.LogSvcConfig.Addr)
 	var err error
 	l.logsvcClient, err = logclient.InitLogSvcClient(&logSvcConfig, &log.ConfigListener{})
 	if err != nil {
 		log.Error(context.Background(), "Error initializing log service client", "err", err)
+	} else if l.logsvcClient == nil {
+		log.Error(context.Background(), "Nil logsvc client")
 	} else {
 		log.Info(context.Background(), "Log service client initialized")
 	}
