@@ -90,6 +90,11 @@ func (l *logsvcInitializer) Init(svr Server) error {
 
 	var err error
 	l.logsvcClient, err = logclient.InitLogSvcClient(&logSvcConfig, &log.ConfigListener{})
+	if err != nil {
+		log.Error(context.Background(), "Error initializing log service client", "err", err)
+	} else {
+		log.Info(context.Background(), "Log service client initialized")
+	}
 	return err
 }
 
