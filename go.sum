@@ -55,6 +55,8 @@ github.com/carousell/log-svc-client v0.0.0-20201120110920-11ff83fe54bd h1:Ro4TEK
 github.com/carousell/log-svc-client v0.0.0-20201120110920-11ff83fe54bd/go.mod h1:Zw9uyXoNvfBzgbxPJ4V7qhYToLH7cvUe438D8lJDX7Q=
 github.com/carousell/log-svc-client v0.0.0-20210111045129-8843136ad24d h1:GfxgFVS1P9A4MGo0zYTgLl0OMDOkau1eX9YmoBsdwPw=
 github.com/carousell/log-svc-client v0.0.0-20210111045129-8843136ad24d/go.mod h1:Zw9uyXoNvfBzgbxPJ4V7qhYToLH7cvUe438D8lJDX7Q=
+github.com/carousell/log-svc-client v0.0.0-20210113074316-3b5aded8996a h1:VLGesUUkiskkjnvCKvXaWZaOZd4ZqzzozqLSsPXLros=
+github.com/carousell/log-svc-client v0.0.0-20210113074316-3b5aded8996a/go.mod h1:Zw9uyXoNvfBzgbxPJ4V7qhYToLH7cvUe438D8lJDX7Q=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/certifi/gocertifi v0.0.0-20190105021004-abcd57078448 h1:8tNk6SPXzLDnATTrWoI5Bgw9s/x4uf0kmBpk21NZgI4=
 github.com/certifi/gocertifi v0.0.0-20190105021004-abcd57078448/go.mod h1:GJKEexRPVJrBSOjoqN5VNOIKJ5Q3RViH6eu3puDRwx4=
