@@ -32,4 +32,15 @@ func (l *ConfigListener) UpdateConfig(config log_svc_client.LogConfig) {
 		log.Info("Setting log level to DEBUG")
 		logger.SetLevel(loggers.DebugLevel)
 	}
+
+	if config.SamplingRate < 0.0 {
+		config.SamplingRate = 0.0
+	}
+
+	if config.SamplingRate >= 1.0 {
+		config.SamplingRate = 1.0
+	}
+
+	samplingPercent := int(config.SamplingRate * 100)
+	logger.SetSampling(samplingPercent)
 }

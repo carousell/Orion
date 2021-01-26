@@ -12,8 +12,9 @@ import (
 )
 
 type logger struct {
-	logger *log.Logger
-	opt    loggers.Options
+	logger       *log.Logger
+	opt          loggers.Options
+	samplingRate int
 }
 
 func toLogrusLogLevel(level loggers.Level) log.Level {
@@ -81,6 +82,14 @@ func (l *logger) GetLevel() loggers.Level {
 	}
 }
 
+func (l *logger) SetSampling(percent int) {
+	l.samplingRate = percent
+}
+
+func (l *logger) GetSampling() int {
+	return l.samplingRate
+}
+
 //NewLogger returns a BaseLogger impl for logrus
 func NewLogger(options ...loggers.Option) loggers.BaseLogger {
 	// default options
@@ -90,7 +99,7 @@ func NewLogger(options ...loggers.Option) loggers.BaseLogger {
 		f(&opt)
 	}
 
-	l := logger{}
+	l := logger{samplingRate: opt.SamplingRate}
 	l.logger = log.New()
 	l.logger.Out = os.Stdout
 

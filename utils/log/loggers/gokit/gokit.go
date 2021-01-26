@@ -12,9 +12,10 @@ import (
 )
 
 type logger struct {
-	logger log.Logger
-	level  loggers.Level
-	opt    loggers.Options
+	logger       log.Logger
+	level        loggers.Level
+	opt          loggers.Options
+	samplingRate int
 }
 
 func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ...interface{}) {
@@ -48,6 +49,14 @@ func (l *logger) GetLevel() loggers.Level {
 	return l.level
 }
 
+func (l *logger) SetSampling(percent int) {
+	l.samplingRate = percent
+}
+
+func (l *logger) GetSampling() int {
+	return l.samplingRate
+}
+
 //NewLogger returns a base logger impl for go-kit log
 func NewLogger(options ...loggers.Option) loggers.BaseLogger {
 	// default options
@@ -58,7 +67,7 @@ func NewLogger(options ...loggers.Option) loggers.BaseLogger {
 		f(&opt)
 	}
 
-	l := logger{}
+	l := logger{samplingRate: opt.SamplingRate}
 	writer := log.NewSyncWriter(os.Stdout)
 
 	// check for json or logfmt

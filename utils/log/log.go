@@ -3,9 +3,11 @@ package log
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/carousell/Orion/utils/log/loggers"
 	"github.com/carousell/Orion/utils/log/loggers/gokit"
+	"math/rand"
 )
 
 var (
@@ -24,6 +26,14 @@ func (l *logger) SetLevel(level loggers.Level) {
 
 func (l *logger) GetLevel() loggers.Level {
 	return l.baseLog.GetLevel()
+}
+
+func (l *logger) SetSampling(percent int) {
+	l.baseLog.SetSampling(percent)
+}
+
+func (l *logger) GetSampling() int {
+	return l.baseLog.GetSampling()
 }
 
 func (l *logger) Debug(ctx context.Context, args ...interface{}) {
@@ -46,7 +56,15 @@ func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ..
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	showLog := false
 	if l.GetLevel() >= level {
+		showLog = true
+		if level >= loggers.MinSamplingLevel && rand.Intn(100)+1 > l.GetSampling() {
+			showLog = false
+		}
+	}
+
+	if showLog {
 		l.baseLog.Log(ctx, level, skip+1, args...)
 	}
 }
@@ -63,6 +81,7 @@ func GetLogger() Logger {
 	if defaultLogger == nil {
 		once.Do(func() {
 			defaultLogger = NewLogger(gokit.NewLogger())
+			rand.Seed(time.Now().UnixNano())
 		})
 	}
 	return defaultLogger

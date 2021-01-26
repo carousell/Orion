@@ -9,7 +9,8 @@ import (
 )
 
 type logger struct {
-	level loggers.Level
+	level        loggers.Level
+	samplingRate int
 }
 
 func (l *logger) SetLevel(level loggers.Level) {
@@ -18,6 +19,14 @@ func (l *logger) SetLevel(level loggers.Level) {
 
 func (l *logger) GetLevel() loggers.Level {
 	return l.level
+}
+
+func (l *logger) SetSampling(percent int) {
+	l.samplingRate = percent
+}
+
+func (l *logger) GetSampling() int {
+	return l.samplingRate
 }
 
 func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ...interface{}) {
@@ -35,7 +44,10 @@ func (l *logger) Log(ctx context.Context, level loggers.Level, skip int, args ..
 
 //NewLogger returns a BaseLogger impl for golang "log" package
 func NewLogger(options ...loggers.Option) loggers.BaseLogger {
+	opt := loggers.GetDefaultOptions()
+
 	return &logger{
-		level: loggers.InfoLevel,
+		level:        opt.Level,
+		samplingRate: opt.SamplingRate,
 	}
 }

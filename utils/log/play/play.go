@@ -14,6 +14,7 @@ func main() {
 	ctx := context.Background()
 	ctx = loggers.AddToLogContext(ctx, "hello", "world")
 	logger := log.GetLogger()
+	logger.SetSampling(50)
 	//logger := log.NewLogger(stdlog.NewLogger())
 	logger.SetLevel(loggers.InfoLevel)
 	logger.Error(ctx, "error")

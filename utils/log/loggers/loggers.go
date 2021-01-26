@@ -68,11 +68,17 @@ const (
 	DebugLevel
 )
 
+const (
+	MinSamplingLevel Level = InfoLevel // Do not sample logs below this level
+)
+
 //BaseLogger is the interface that needs to be implemented by client loggers
 type BaseLogger interface {
 	Log(ctx context.Context, level Level, skip int, args ...interface{})
 	SetLevel(level Level)
 	GetLevel() Level
+	SetSampling(percent int)
+	GetSampling() int
 }
 
 //Options contain all common options for BaseLoggers
@@ -80,6 +86,7 @@ type Options struct {
 	ReplaceStdLogger   bool
 	JSONLogs           bool
 	Level              Level
+	SamplingRate       int
 	TimestampFieldName string
 	LevelFieldName     string
 	CallerInfo         bool
@@ -98,6 +105,7 @@ var (
 		ReplaceStdLogger:   false,
 		JSONLogs:           true,
 		Level:              InfoLevel,
+		SamplingRate:       100,
 		TimestampFieldName: "@timestamp",
 		LevelFieldName:     "level",
 		CallerInfo:         true,
