@@ -217,7 +217,7 @@ func ForwardMetadataInterceptor() grpc.UnaryClientInterceptor {
 		md, ok := metadata.FromIncomingContext(ctx)
 		if ok {
 			// means that we have some incoming context values needed to pass through following services
-			// e.g. fulfillgw -> caroorders -> caroship -> caroseveneleven
+			// e.g. api-gateway -> service1 -> service2
 			for key, values := range md {
 				for _, value := range values {
 					ctx = metadata.AppendToOutgoingContext(ctx, key, value)
