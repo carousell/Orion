@@ -66,6 +66,10 @@ func (pubsubqueue *PubSubQueue) Close() error {
 			topic.Stop()
 		}
 	}
+	if pubsubqueue.PubsubClient != nil {
+		pubsubqueue.PubsubClient.Close()
+	}
+
 	return nil
 }
 
