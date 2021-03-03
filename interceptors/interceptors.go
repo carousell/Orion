@@ -53,10 +53,10 @@ func DefaultInterceptors() []grpc.UnaryServerInterceptor {
 //DefaultClientInterceptors are the set of default interceptors that should be applied to all client calls
 func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 	return []grpc.UnaryClientInterceptor{
+		HystrixClientInterceptor(),
 		grpc_retry.UnaryClientInterceptor(),
 		GRPCClientInterceptor(),
 		NewRelicClientInterceptor(address),
-		HystrixClientInterceptor(),
 		ForwardMetadataInterceptor(),
 	}
 }
