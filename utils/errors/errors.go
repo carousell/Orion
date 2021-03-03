@@ -37,6 +37,11 @@ type NotifyExt interface {
 	Notified(status bool)
 }
 
+// RawExt is the interface definition for raw data about an error
+type RawExt interface {
+	RawData() []interface{}
+}
+
 type customError struct {
 	Msg          string
 	stack        []uintptr
@@ -44,6 +49,21 @@ type customError struct {
 	cause        error
 	shouldNotify bool
 	status       *grpcstatus.Status
+	rawData      []interface{}
+}
+
+type Option func(*customError)
+
+func RawData(rawData ...interface{}) Option {
+	return func(args *customError) {
+		args.rawData = append(args.rawData, rawData...)
+	}
+}
+
+func Status(status *grpcstatus.Status) Option {
+	return func(args *customError) {
+		args.status = status
+	}
 }
 
 // implements notifier.NotifyExt
@@ -86,6 +106,10 @@ func (c customError) GRPCStatus() *grpcstatus.Status {
 	}
 
 	return grpcstatus.New(codes.Internal, c.Error())
+}
+
+func (c customError) RawData() []interface{} {
+	return c.rawData
 }
 
 func (c *customError) generateStack(skip int) []StackFrame {
@@ -142,6 +166,10 @@ func New(msg string) ErrorExt {
 	return NewWithSkip(msg, 1)
 }
 
+func NewWithSkipAndOptions(msg string, skip int, options ...Option) ErrorExt {
+	return WrapWithSkipAndOptions(fmt.Errorf(msg), "", skip, options...)
+}
+
 //NewWithStatus creates a new error with statck information and GRPC status
 func NewWithStatus(msg string, status *grpcstatus.Status) ErrorExt {
 	return NewWithSkipAndStatus(msg, 1, status)
@@ -162,7 +190,7 @@ func Wrap(err error, msg string) ErrorExt {
 	return WrapWithSkip(err, msg, 1)
 }
 
-//Wrap wraps an existing error and appends stack information if it does not exists along with GRPC status
+//WrapWithStatus wraps an existing error and appends stack information if it does not exists along with GRPC status
 func WrapWithStatus(err error, msg string, status *grpcstatus.Status) ErrorExt {
 	return WrapWithSkipAndStatus(err, msg, 1, status)
 }
@@ -172,8 +200,15 @@ func WrapWithSkip(err error, msg string, skip int) ErrorExt {
 	return WrapWithSkipAndStatus(err, msg, skip+1, nil)
 }
 
-//WrapWithSkip wraps an existing error and appends stack information if it does not exists skipping the number of function on the stack along with GRPC status
+//wrapWithSkipAndStatus wraps an existing error and appends stack information if it does not exists skipping the number of function on the stack along with GRPC status
 func WrapWithSkipAndStatus(err error, msg string, skip int, status *grpcstatus.Status) ErrorExt {
+	return WrapWithSkipAndOptions(err, msg, skip, Status(status))
+}
+
+func WrapWithSkipAndOptions(err error, msg string, skip int, options ...Option) ErrorExt {
+	var (
+		c *customError
+	)
 	if err == nil {
 		return nil
 	}
@@ -182,39 +217,39 @@ func WrapWithSkipAndStatus(err error, msg string, skip int, status *grpcstatus.S
 	if msg != "" {
 		msg = msg + ": "
 	}
-
-	if status == nil {
-		// try to get status from existing one from error
-		if s, ok := grpcstatus.FromError(err); ok {
-			status = s
-		}
-	}
-
-	//if we have stack information reuse that
-	if e, ok := err.(ErrorExt); ok {
-		c := &customError{
-			Msg:    msg + e.Error(),
-			cause:  e.Cause(),
-			status: status,
-		}
-
-		c.stack = e.Callers()
-		c.frame = e.StackFrame()
-		if n, ok := e.(NotifyExt); ok {
-			c.shouldNotify = n.ShouldNotify()
-		}
-		return c
-	}
-
-	c := &customError{
+	// Default customError
+	c = &customError{
 		Msg:          msg + err.Error(),
 		cause:        err,
 		shouldNotify: true,
-		status:       status,
 	}
-	c.generateStack(skip + 1)
-	return c
+	if r, ok := err.(RawExt); ok {
+		c.rawData = r.RawData()
+	}
+	if e, ok := err.(ErrorExt); ok {
+		c.cause = e.Cause()
+		c.status = e.GRPCStatus()
+		c.stack = e.Callers()
+		c.frame = e.StackFrame()
+	} else {
+		// generate stack and frame
+		c.generateStack(skip + 1)
+	}
+	if n, ok := err.(NotifyExt); ok {
+		c.shouldNotify = n.ShouldNotify()
+	}
+	if c.status == nil {
+		// try to get status from existing one from error
+		if s, ok := grpcstatus.FromError(err); ok {
+			c.status = s
+		}
+	}
 
+	for _, option := range options {
+		option(c)
+	}
+
+	return c
 }
 
 //SetBaseFilePath sets the base file path for linking source code with reported stack information
