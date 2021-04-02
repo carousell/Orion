@@ -99,6 +99,9 @@ func prepareContext(req *http.Request, info *methodInfo) context.Context {
 	//initialize headers
 	ctx = headers.AddToRequestHeaders(ctx, "", "")
 	ctx = headers.AddToResponseHeaders(ctx, "", "")
+	// initialize incoming context as gRPC server has it naturally
+	// so we can have features where we utilize it for both types of server
+	ctx = metadata.NewIncomingContext(ctx, metadata.MD{})
 
 	// fetch and populate whitelisted headers
 	if len(info.svc.requestHeaders) > 0 {
