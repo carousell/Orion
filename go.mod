@@ -2,7 +2,10 @@ module github.com/carousell/Orion
 
 go 1.12
 
-replace git.apache.org/thrift.git => github.com/apache/thrift v0.12.0
+replace (
+	git.apache.org/thrift.git => github.com/apache/thrift v0.12.0
+	github.com/openzipkin-contrib/zipkin-go-opentracing => github.com/openzipkin-contrib/zipkin-go-opentracing v0.3.5
+)
 
 require (
 	cloud.google.com/go v0.34.0
