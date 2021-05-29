@@ -188,6 +188,9 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		options := clientOptions{
 			hystrixName: method,
+			hystrixErrorSuppressor: func(e error) error {
+				return e
+			},
 		}
 		for _, opt := range opts {
 			if opt != nil {
@@ -198,7 +201,8 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 		}
 		newCtx, cancel := context.WithCancel(ctx)
 		defer cancel()
-		return hystrix.Do(options.hystrixName, func() (err error) {
+		var err error
+		_ = hystrix.Do(options.hystrixName, func() (e error) {
 			defer func() {
 				if r := recover(); r != nil {
 					err = errors.Wrap(fmt.Errorf("Panic inside hystrix Method: %s, req: %v, reply: %v", method, req, reply), "Hystrix")
@@ -206,8 +210,13 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 				}
 			}()
 			defer notifier.NotifyOnPanic(newCtx, method)
-			return invoker(newCtx, method, req, reply, cc, opts...)
+			// error assigns back to the err object out of hystrix anyway
+			err = invoker(newCtx, method, req, reply, cc, opts...)
+			// error could be suppressed in hystrix wrapper by the function from options
+			return options.hystrixErrorSuppressor(err)
 		}, nil)
+
+		return err
 	}
 }
 

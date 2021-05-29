@@ -9,6 +9,7 @@ type clientOption interface {
 
 type clientOptions struct {
 	hystrixName string
+	hystrixErrorSuppressor func(err error)error
 }
 
 type optionCarrier struct {
@@ -26,6 +27,17 @@ func WithHystrixName(name string) clientOption {
 		processor: func(co *clientOptions) {
 			if name != "" {
 				co.hystrixName = name
+			}
+		},
+	}
+}
+
+// WithHystrixErrorSuppressor applies a function that you can write logics to suppress errors to hystrix interceptor
+func WithHystrixErrorSuppressor(e func(err error) error) clientOption {
+	return &optionCarrier{
+		processor: func(co *clientOptions) {
+			if e != nil {
+				co.hystrixErrorSuppressor = e
 			}
 		},
 	}
