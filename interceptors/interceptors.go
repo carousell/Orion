@@ -188,9 +188,6 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		options := clientOptions{
 			hystrixName: method,
-			hystrixErrorSuppressor: func(e error) error {
-				return e
-			},
 		}
 		for _, opt := range opts {
 			if opt != nil {
@@ -209,11 +206,15 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 					log.Error(ctx, "panic", r, "method", method, "req", req, "reply", reply)
 				}
 			}()
-			defer notifier.NotifyOnPanic(newCtx, method)
 			// error assigns back to the err object out of hystrix anyway
 			err = invoker(newCtx, method, req, reply, cc, opts...)
-			// error could be suppressed in hystrix wrapper by the function from options
-			return options.hystrixErrorSuppressor(err)
+			defer notifier.NotifyOnPanic(newCtx, method)
+			if options.hystrixErrorSuppressor != nil {
+				// error could be suppressed in hystrix wrapper by the function from options
+				return options.hystrixErrorSuppressor(err)
+			} else {
+				return err
+			}
 		}, nil)
 
 		return err
