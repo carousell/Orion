@@ -82,8 +82,27 @@ func TestHystrixClientInterceptorOptionsCanIgnore(t *testing.T) {
 			}
 		}
 
+		invoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
+			return test.err
+		}
+
+		hystrixErr := HystrixClientInterceptor()(
+			context.Background(),
+			"method",
+			nil,
+			nil,
+			nil,
+			invoker,
+			WithHystrixIgnorableErrors(test.ignorableErrors...),
+			WithHystrixIgnorableGRPCCodes(test.ignorableGRPCCodes...),
+		)
+
 		if options.canIgnore(test.err) == test.IsHystrixError {
 			t.Errorf("%s got problems on suppressing errors\n", test.testName)
+		}
+
+		if hystrixErr != test.err {
+			t.Errorf("hystrixInterceptor doesn't return the expected error, got: %v, expect: %v", hystrixErr, test.err)
 		}
 	}
 }
