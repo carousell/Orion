@@ -2,68 +2,88 @@ package interceptors
 
 import (
 	"context"
-	"github.com/afex/hystrix-go/hystrix"
+	"strings"
+	"testing"
+
+	"google.golang.org/grpc/status"
+
+	"google.golang.org/grpc/codes"
+
 	"github.com/carousell/Orion/utils/errors"
 	"google.golang.org/grpc"
-	"testing"
 )
 
-func TestHystrixClientInterceptor(t *testing.T) {
-	suppressedErr := errors.New("test error")
-	var isHystrixError bool
-	errorSuppressor := func(e error)error{
-		if e == suppressedErr {
-			isHystrixError = false
-			return nil
-		}
-		isHystrixError = true
-		return e
+func TestHystrixClientInterceptorPanicRecovery(t *testing.T) {
+	panicErr := errors.New("test panic")
+	invoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
+		panic(panicErr)
 	}
 
-	tests := []struct{
-		testName string
-		IsHystrixError bool
-		err error
+	err := HystrixClientInterceptor()(
+		context.Background(),
+		"method",
+		nil,
+		nil,
+		nil,
+		invoker,
+	)
+
+	if !strings.Contains(err.Error(), "panic") {
+		t.Errorf("hystrixInterceptor doesn't recover panic properly, got:%v", err)
+	}
+}
+
+func TestHystrixClientInterceptorOptionsCanIgnore(t *testing.T) {
+	err1 := errors.New("hello world")
+	tests := []struct {
+		testName           string
+		IsHystrixError     bool
+		err                error
+		ignorableErrors    []error
+		ignorableGRPCCodes []codes.Code
 	}{
 		{
-			testName: "HystrixError",
-			IsHystrixError: true,
-			err: errors.New("hello world"),
+			testName:        "NonHystrixErrorByIgnorableErrors",
+			IsHystrixError:  false,
+			err:             err1,
+			ignorableErrors: []error{err1},
 		},
 		{
-			testName: "NonHystrixError",
-			IsHystrixError: false,
-			err: suppressedErr,
+			testName:           "NonHystrixErrorByIgnorableGRPCCodes",
+			IsHystrixError:     false,
+			err:                errors.NewWithStatus("test", status.New(codes.Canceled, "test")),
+			ignorableGRPCCodes: []codes.Code{codes.Canceled},
+		},
+		{
+			testName:        "HystrixError",
+			IsHystrixError:  true,
+			err:             errors.New("new error"),
+			ignorableErrors: []error{errors.New("new error")},
+		},
+		{
+			testName:        "HystrixNoError",
+			IsHystrixError:  true, // meaning we can return the error (in this case, the error is nil, so it's fine)
+			err:             nil,
+			ignorableErrors: []error{errors.New("new error")},
 		},
 	}
 
-	// not support concurrent testing yet
-	for _, test:= range tests {
-		// Test WithHystrixErrorSuppressor
-		hystrixCmd := test.testName
-		hystrix.ConfigureCommand(hystrixCmd, hystrix.CommandConfig{
-			ErrorPercentThreshold: 0,
-		})
-		invoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
-			return test.err
+	for _, test := range tests {
+		options := hystrixOptions{
+			cmdName: test.testName,
 		}
-		err := HystrixClientInterceptor()(
-			context.Background(),
-			"method",
-			nil,
-			nil,
-			nil,
-			invoker,
-			WithHystrixName(hystrixCmd),
-			WithHystrixErrorSuppressor(errorSuppressor),
-		)
+		for _, opt := range []grpc.CallOption{
+			WithHystrixIgnorableErrors(test.ignorableErrors...),
+			WithHystrixIgnorableGRPCCodes(test.ignorableGRPCCodes...)} {
+			if opt != nil {
+				if o, ok := opt.(hystrixOption); ok {
+					o.process(&options)
+				}
+			}
+		}
 
-		if isHystrixError != test.IsHystrixError {
-			t.Errorf("%s got problems on error suppressor\n", hystrixCmd)
-		}
-		if err != test.err {
-			// we expect the same error as we define but it could be suppressed on hystrix
-			t.Errorf("%s got different errors", hystrixCmd)
+		if options.canIgnore(test.err) == test.IsHystrixError {
+			t.Errorf("%s got problems on suppressing errors\n", test.testName)
 		}
 	}
 }

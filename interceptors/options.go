@@ -1,44 +1,83 @@
 package interceptors
 
-import "google.golang.org/grpc"
+import (
+	"github.com/pkg/errors"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
 
-type clientOption interface {
+type hystrixOption interface {
 	grpc.CallOption
-	process(*clientOptions)
+	process(*hystrixOptions)
 }
 
-type clientOptions struct {
-	hystrixName string
-	hystrixErrorSuppressor func(err error)error
+type hystrixOptions struct {
+	cmdName            string
+	ignorableErrors    []error
+	ignorableGRPCCodes []codes.Code
+	fallbackFunc       func(error) error
 }
 
 type optionCarrier struct {
 	grpc.EmptyCallOption
-	processor func(*clientOptions)
+	processor func(*hystrixOptions)
 }
 
-func (h *optionCarrier) process(co *clientOptions) {
+func (h *optionCarrier) process(co *hystrixOptions) {
 	h.processor(co)
 }
 
 //WithHystrixName changes the hystrix name to be used in the client interceptors
-func WithHystrixName(name string) clientOption {
+func WithHystrixName(name string) hystrixOption {
 	return &optionCarrier{
-		processor: func(co *clientOptions) {
+		processor: func(co *hystrixOptions) {
 			if name != "" {
-				co.hystrixName = name
+				co.cmdName = name
 			}
 		},
 	}
 }
 
-// WithHystrixErrorSuppressor applies a function that you can write logics to suppress errors to hystrix interceptor
-func WithHystrixErrorSuppressor(e func(err error) error) clientOption {
+func WithHystrixIgnorableErrors(e ...error) hystrixOption {
 	return &optionCarrier{
-		processor: func(co *clientOptions) {
-			if e != nil {
-				co.hystrixErrorSuppressor = e
-			}
+		processor: func(co *hystrixOptions) {
+			co.ignorableErrors = e
 		},
 	}
+}
+
+func WithHystrixIgnorableGRPCCodes(c ...codes.Code) hystrixOption {
+	return &optionCarrier{
+		processor: func(co *hystrixOptions) {
+			co.ignorableGRPCCodes = c
+		},
+	}
+}
+func WithHystrixFallbackFunc(f func(error) error) hystrixOption {
+	return &optionCarrier{
+		processor: func(co *hystrixOptions) {
+			co.fallbackFunc = f
+		},
+	}
+}
+
+func (ho *hystrixOptions) canIgnore(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if ge, ok := status.FromError(err); ok {
+		for _, c := range ho.ignorableGRPCCodes {
+			if ge.Code() == c {
+				return true
+			}
+		}
+	}
+	for _, e := range ho.ignorableErrors {
+		if errors.Cause(err) == errors.Cause(e) {
+			return true
+		}
+	}
+	return false
 }

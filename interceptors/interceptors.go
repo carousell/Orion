@@ -3,9 +3,10 @@ package interceptors
 import (
 	"context"
 	"fmt"
-	"google.golang.org/grpc/metadata"
 	"strings"
 	"time"
+
+	"google.golang.org/grpc/metadata"
 
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/carousell/Orion/orion/modifiers"
@@ -186,12 +187,12 @@ func GRPCClientInterceptor() grpc.UnaryClientInterceptor {
 //HystrixClientInterceptor is the interceptor that intercepts all cleint requests and adds hystrix info to them
 func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		options := clientOptions{
-			hystrixName: method,
+		options := hystrixOptions{
+			cmdName: method,
 		}
 		for _, opt := range opts {
 			if opt != nil {
-				if o, ok := opt.(clientOption); ok {
+				if o, ok := opt.(hystrixOption); ok {
 					o.process(&options)
 				}
 			}
@@ -199,23 +200,22 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 		newCtx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		var err error
-		_ = hystrix.Do(options.hystrixName, func() (e error) {
+		_ = hystrix.Do(options.cmdName, func() (e error) {
 			defer func() {
 				if r := recover(); r != nil {
-					err = errors.Wrap(fmt.Errorf("Panic inside hystrix Method: %s, req: %v, reply: %v", method, req, reply), "Hystrix")
+					err = errors.Wrap(fmt.Errorf("panic inside hystrix Method: %s, req: %v, reply: %v", method, req, reply), "Hystrix")
 					log.Error(ctx, "panic", r, "method", method, "req", req, "reply", reply)
 				}
 			}()
 			// error assigns back to the err object out of hystrix anyway
-			err = invoker(newCtx, method, req, reply, cc, opts...)
 			defer notifier.NotifyOnPanic(newCtx, method)
-			if options.hystrixErrorSuppressor != nil {
-				// error could be suppressed in hystrix wrapper by the function from options
-				return options.hystrixErrorSuppressor(err)
+			err = invoker(newCtx, method, req, reply, cc, opts...)
+			if options.canIgnore(err) {
+				return nil
 			} else {
 				return err
 			}
-		}, nil)
+		}, options.fallbackFunc)
 
 		return err
 	}
