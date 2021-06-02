@@ -3,9 +3,10 @@ package interceptors
 import (
 	"context"
 	"fmt"
-	"google.golang.org/grpc/metadata"
 	"strings"
 	"time"
+
+	"google.golang.org/grpc/metadata"
 
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/carousell/Orion/orion/modifiers"
@@ -186,28 +187,37 @@ func GRPCClientInterceptor() grpc.UnaryClientInterceptor {
 //HystrixClientInterceptor is the interceptor that intercepts all cleint requests and adds hystrix info to them
 func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		options := clientOptions{
-			hystrixName: method,
+		options := hystrixOptions{
+			cmdName: method,
 		}
 		for _, opt := range opts {
 			if opt != nil {
-				if o, ok := opt.(clientOption); ok {
+				if o, ok := opt.(hystrixOption); ok {
 					o.process(&options)
 				}
 			}
 		}
 		newCtx, cancel := context.WithCancel(ctx)
 		defer cancel()
-		return hystrix.Do(options.hystrixName, func() (err error) {
+		var err error
+		_ = hystrix.Do(options.cmdName, func() (e error) {
 			defer func() {
 				if r := recover(); r != nil {
-					err = errors.Wrap(fmt.Errorf("Panic inside hystrix Method: %s, req: %v, reply: %v", method, req, reply), "Hystrix")
+					err = errors.Wrap(fmt.Errorf("panic inside hystrix Method: %s, req: %v, reply: %v", method, req, reply), "Hystrix")
 					log.Error(ctx, "panic", r, "method", method, "req", req, "reply", reply)
 				}
 			}()
+			// error assigns back to the err object out of hystrix anyway
 			defer notifier.NotifyOnPanic(newCtx, method)
-			return invoker(newCtx, method, req, reply, cc, opts...)
-		}, nil)
+			err = invoker(newCtx, method, req, reply, cc, opts...)
+			if options.canIgnore(err) {
+				return nil
+			} else {
+				return err
+			}
+		}, options.fallbackFunc)
+
+		return err
 	}
 }
 
