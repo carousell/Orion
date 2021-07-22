@@ -1,5 +1,6 @@
 syntax = "proto3";
 
+option go_package="github.com/carousell/Orion/builder/ServiceName/ServiceName_proto";
 package ServiceName_proto;
 
 service ServiceName{
