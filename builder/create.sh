@@ -51,12 +51,6 @@ do
     mv $file ${file/ServiceName/$SVC}
 done
 
-echo "regenerating proto buff"
-p=`pwd`
-cd ${SVC}/${SVC}_proto/
-bash generate.sh
-cd $p
-
 echo "creating $SVC project"
 # remove builder
 for file in $(grep -rl "Orion/builder" * | grep -v vendor| grep -v rename)
@@ -65,6 +59,12 @@ do
     sed -i "" "s|github.com/carousell/Orion/builder|$PKG/Orion/builder|g" $file
     sed -i "" "s|Orion/builder|$SVC|g" $file
 done
+
+echo "regenerating proto buff"
+p=`pwd`
+cd ${SVC}/${SVC}_proto/
+bash generate.sh
+cd $p
 
 svc_name=`echo "$SVC" | awk '{print tolower($0)}'`
 sed -i "" "s/service_name/$svc_name/g" run.sh
