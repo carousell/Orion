@@ -60,7 +60,7 @@ do
     sed -i "" "s|Orion/builder|$SVC|g" $file
 done
 
-echo "regenerating proto buff"
+echo "regenerating protobuf"
 p=`pwd`
 cd ${SVC}/${SVC}_proto/
 bash generate.sh
