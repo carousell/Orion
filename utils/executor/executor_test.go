@@ -129,13 +129,13 @@ func TestRandomErrorsNoFail(t *testing.T) {
 func TestRandomPanic(t *testing.T) {
 	defer leaktest.Check(t)()
 	e := NewExecutor()
-	paniced := false
+	paniced := safeBool{}
 
 	for i := 0; i < rand.Intn(runCount)+10; i++ {
 		e.Add(func() error {
 			time.Sleep(time.Millisecond * time.Duration(rand.Intn(200)))
 			if rand.Intn(500) > 300 {
-				paniced = true
+				paniced.Set(true)
 				panic("error")
 			} else {
 				return nil
@@ -143,7 +143,7 @@ func TestRandomPanic(t *testing.T) {
 		})
 	}
 
-	if !paniced {
+	if !paniced.Get() {
 		e.Add(func() error {
 			panic("error")
 		})

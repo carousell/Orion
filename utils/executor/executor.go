@@ -11,7 +11,7 @@ type exe struct {
 	config  config
 	errc    chan error
 	done    chan bool
-	errored bool
+	errored safeBool
 }
 
 type config struct {
@@ -46,7 +46,7 @@ func (e *exe) add(task Task) {
 func (e *exe) worker() {
 	for t := range e.work {
 		// if e has errored stop processing and drain the queue
-		if !e.errored {
+		if !e.errored.Get() {
 			e.processTask(t)
 		} else {
 			// no task, just handle all wait groups
@@ -84,7 +84,7 @@ func (e *exe) Wait() error {
 		select {
 		case err := <-e.errc:
 			if err != nil {
-				e.errored = true
+				e.errored.Set(true)
 				go func(errc chan error) {
 					for range errc {
 					} // drain rest of the errors
