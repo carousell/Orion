@@ -157,6 +157,12 @@ func NewWithSkipAndStatus(msg string, skip int, status *grpcstatus.Status) Error
 	return WrapWithSkipAndStatus(fmt.Errorf(msg), "", skip+1, status)
 }
 
+// NewWithGRPCCode creates a new error with statck information and GRPC status with the given GRPC code
+func NewWithGRPCCode(msg string, grpcCode codes.Code) error {
+	status := grpcstatus.New(grpcCode, msg)
+	return NewWithSkipAndStatus(msg, 1, status)
+}
+
 //Wrap wraps an existing error and appends stack information if it does not exists
 func Wrap(err error, msg string) ErrorExt {
 	return WrapWithSkip(err, msg, 1)
@@ -170,6 +176,15 @@ func WrapWithStatus(err error, msg string, status *grpcstatus.Status) ErrorExt {
 //WrapWithSkip wraps an existing error and appends stack information if it does not exists skipping the number of function on the stack
 func WrapWithSkip(err error, msg string, skip int) ErrorExt {
 	return WrapWithSkipAndStatus(err, msg, skip+1, nil)
+}
+
+// WrapWithGRPCCode wraps an existing error and appends stack information if it does not exists along with GRPC status with the given GRPC code
+func WrapWithGRPCCode(err error, msg string, grpcCode codes.Code) error {
+	if strings.TrimSpace(msg) != "" {
+		msg = msg + ": "
+	}
+	status := grpcstatus.New(grpcCode, msg+err.Error())
+	return WrapWithSkipAndStatus(err, msg, 1, status)
 }
 
 //WrapWithSkip wraps an existing error and appends stack information if it does not exists skipping the number of function on the stack along with GRPC status
