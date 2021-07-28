@@ -6,9 +6,6 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
-	"github.com/carousell/Orion/utils"
-	newrelic "github.com/newrelic/go-agent"
-
 	"github.com/carousell/Orion/orion/modifiers"
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/log"
@@ -46,19 +43,6 @@ func ServerErrorStreamInterceptor() grpc.StreamServerInterceptor {
 		}
 		return err
 
-	}
-}
-
-//NewRelicStreamClientInterceptor intercepts all client actions and reports them to newrelic
-func NewRelicStreamClientInterceptor(address string) grpc.StreamClientInterceptor {
-	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-		txn := utils.GetNewRelicTransactionFromContext(ctx)
-		seg := newrelic.ExternalSegment{
-			StartTime: newrelic.StartSegmentNow(txn),
-			URL:       "http://" + address + "/" + method,
-		}
-		defer seg.End()
-		return streamer(ctx, desc, cc, method, opts...)
 	}
 }
 

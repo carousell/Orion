@@ -50,13 +50,16 @@ func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 	}
 }
 
-//DefaultClientStreamInterceptors are the set of default interceptors that should be applied to all client streaming calls
-func DefaultClientStreamInterceptors(address string) []grpc.StreamClientInterceptor {
+//DefaultStreamClientInterceptors are the set of default interceptors that should be applied to all client streaming calls
+func DefaultStreamClientInterceptors() []grpc.StreamClientInterceptor {
+	/*
+		compare to DefaultClientInterceptors, we don't have hystrix and newreflic interceptors here
+		because a stream call includes three parts: create connection, streaming, and close
+		as an interceptor, it's not easy to differentiate them
+	*/
 	return []grpc.StreamClientInterceptor{
 		grpc_retry.StreamClientInterceptor(),
 		grpc_opentracing.StreamClientInterceptor(),
-		NewRelicStreamClientInterceptor(address),
-		//HystrixClientInterceptor(),
 		ForwardMetadataStreamClientInterceptor(),
 	}
 }
@@ -75,4 +78,9 @@ func DefaultStreamInterceptors() []grpc.StreamServerInterceptor {
 //DefaultClientInterceptor are the set of default interceptors that should be applied to all client calls
 func DefaultClientInterceptor(address string) grpc.UnaryClientInterceptor {
 	return grpc_middleware.ChainUnaryClient(DefaultClientInterceptors(address)...)
+}
+
+//DefaultStreamClientInterceptor are the set of default interceptors that should be applied to all client calls
+func DefaultStreamClientInterceptor() grpc.StreamClientInterceptor {
+	return grpc_middleware.ChainStreamClient(DefaultStreamClientInterceptors()...)
 }
