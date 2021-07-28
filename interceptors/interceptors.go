@@ -53,7 +53,7 @@ func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 //DefaultStreamClientInterceptors are the set of default interceptors that should be applied to all client streaming calls
 func DefaultStreamClientInterceptors() []grpc.StreamClientInterceptor {
 	/*
-		compare to DefaultClientInterceptors, we don't have hystrix and newreflic interceptors here
+		compare to DefaultClientInterceptors, we don't have hystrix and newrelic interceptors here
 		because a stream call includes three parts: create connection, streaming, and close
 		as an interceptor, it's not easy to differentiate them
 	*/
