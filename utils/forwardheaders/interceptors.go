@@ -48,3 +48,36 @@ func StreamClientInterceptor() grpc.StreamClientInterceptor {
 		return streamer(ctx, desc, cc, method, opts...)
 	}
 }
+
+// UnaryServerInterceptor sets the allowlist for every request to protect its outgoing requests
+func UnaryServerInterceptor(allowlist []string) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		ctx = SetAllowList(ctx, allowlist)
+		return handler(ctx, req)
+	}
+}
+
+type streamServer struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (ss *streamServer) Context() context.Context {
+	if ss.ctx == nil {
+		return ss.ServerStream.Context()
+	}
+	return ss.ctx
+}
+
+// StreamServerInterceptor sets the allowlist for every request to protect its outgoing requests
+func StreamServerInterceptor(allowlist []string) grpc.StreamServerInterceptor {
+	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		ctx := ss.Context()
+		ctx = SetAllowList(ctx, allowlist)
+		newServer := &streamServer{
+			ServerStream: ss,
+			ctx:          ctx,
+		}
+		return handler(srv, newServer)
+	}
+}

@@ -51,6 +51,14 @@ type Config struct {
 	Env string
 	// DefaultJSONPB sets jsonpb as the encoder/decoder for application/json request/response bodies
 	DefaultJSONPB bool
+
+	/*
+		Mainly for handler common config
+	*/
+	// ForwardHeaders sets an allowlist to forward headers for both of gRPC and HTTP requests to downstream services
+	ForwardHeaders []string
+	// NoDefaultInterceptors tells the Orion skip including default server interceptors for every protocol
+	NoDefaultInterceptors bool
 }
 
 // HystrixConfig is configuration used by hystrix

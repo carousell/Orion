@@ -4,6 +4,8 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/carousell/Orion/utils/forwardheaders"
+
 	"github.com/carousell/Orion/interceptors"
 	"github.com/carousell/Orion/orion/modifiers"
 	"github.com/carousell/Orion/utils/errors"
@@ -108,7 +110,7 @@ func GetInterceptorsWithMethodMiddlewares(svc interface{}, config CommonConfig, 
 }
 
 func getInterceptors(svc interface{}, config CommonConfig, middlewares []string) []grpc.UnaryServerInterceptor {
-	opts := []grpc.UnaryServerInterceptor{optionsInterceptor}
+	opts := []grpc.UnaryServerInterceptor{optionsInterceptor, forwardheaders.UnaryServerInterceptor(config.ForwardHeaders)}
 
 	// check and add default interceptors
 	if !config.NoDefaultInterceptors {
@@ -129,7 +131,7 @@ func getInterceptors(svc interface{}, config CommonConfig, middlewares []string)
 }
 
 func getStreamInterceptors(svc interface{}, config CommonConfig) []grpc.StreamServerInterceptor {
-	opts := []grpc.StreamServerInterceptor{optionsStreamInterceptor}
+	opts := []grpc.StreamServerInterceptor{optionsStreamInterceptor, forwardheaders.StreamServerInterceptor(config.ForwardHeaders)}
 
 	// check and add default interceptors
 	if !config.NoDefaultInterceptors {
