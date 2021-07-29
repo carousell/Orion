@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/carousell/Orion/utils/forwardheaders"
+
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
@@ -46,7 +48,7 @@ func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 		GRPCClientInterceptor(),
 		NewRelicClientInterceptor(address),
 		HystrixClientInterceptor(),
-		ForwardMetadataInterceptor(),
+		forwardheaders.UnaryClientInterceptor(),
 	}
 }
 
@@ -60,7 +62,7 @@ func DefaultStreamClientInterceptors() []grpc.StreamClientInterceptor {
 	return []grpc.StreamClientInterceptor{
 		grpc_retry.StreamClientInterceptor(),
 		grpc_opentracing.StreamClientInterceptor(),
-		ForwardMetadataStreamClientInterceptor(),
+		forwardheaders.StreamClientInterceptor(),
 	}
 }
 

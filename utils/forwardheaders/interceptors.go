@@ -41,7 +41,7 @@ func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 	}
 }
 
-// ForwardMetadataInterceptor forwards metadata from upstream to downstream
+// StreamClientInterceptor forwards metadata from upstream to downstream
 func StreamClientInterceptor() grpc.StreamClientInterceptor {
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		ctx = forwardHeadersThroughCtx(ctx)

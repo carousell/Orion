@@ -1,10 +1,7 @@
 package interceptors
 
 import (
-	"context"
 	"time"
-
-	"google.golang.org/grpc/metadata"
 
 	"github.com/carousell/Orion/orion/modifiers"
 	"github.com/carousell/Orion/utils/errors/notifier"
@@ -43,22 +40,5 @@ func ServerErrorStreamInterceptor() grpc.StreamServerInterceptor {
 		}
 		return err
 
-	}
-}
-
-// ForwardMetadataInterceptor forwards metadata from upstream to downstream
-func ForwardMetadataStreamClientInterceptor() grpc.StreamClientInterceptor {
-	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-		md, ok := metadata.FromIncomingContext(ctx)
-		if ok {
-			// means that we have some incoming context values needed to pass through following services
-			// e.g. api-gateway -> service1 -> service2
-			for key, values := range md {
-				for _, value := range values {
-					ctx = metadata.AppendToOutgoingContext(ctx, key, value)
-				}
-			}
-		}
-		return streamer(ctx, desc, cc, method, opts...)
 	}
 }
