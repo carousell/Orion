@@ -114,6 +114,16 @@ func prepareContext(req *http.Request, info *methodInfo) context.Context {
 		}
 	}
 
+	// transform http headers to gRPC headers
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		md = metadata.MD{}
+		ctx = metadata.NewIncomingContext(ctx, md)
+	}
+	for k, values := range req.Header {
+		md.Set(k, values...)
+	}
+
 	if values, found := req.Header["Content-Type"]; found {
 		for _, value := range values {
 			headers.AddToRequestHeaders(ctx, "Content-Type", value)
