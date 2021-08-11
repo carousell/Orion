@@ -138,8 +138,8 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 				}
 			}
 		}
-		newCtx, cancel := context.WithCancel(ctx)
-		defer cancel()
+		//newCtx, cancel := context.WithCancel(ctx)
+		//defer cancel()
 		var err error
 		_ = hystrix.Do(options.cmdName, func() (e error) {
 			defer func() {
@@ -149,8 +149,8 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 				}
 			}()
 			// error assigns back to the err object out of hystrix anyway
-			defer notifier.NotifyOnPanic(newCtx, method)
-			err = invoker(newCtx, method, req, reply, cc, opts...)
+			defer notifier.NotifyOnPanic(ctx, method)
+			err = invoker(ctx, method, req, reply, cc, opts...)
 			if options.canIgnore(err) {
 				return nil
 			} else {
