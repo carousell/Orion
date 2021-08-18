@@ -1,6 +1,9 @@
 language: go
 sudo: false
 
+addons:
+  sonarcloud: true
+
 go:
   - "1.12.x"
   - tip
@@ -13,6 +16,7 @@ install: true
 script:
   - GO111MODULE=auto go get -u golang.org/x/lint/golint
   - make ci
+  - make sonar-test
 
 matrix:
   allow_failures:
@@ -20,3 +24,5 @@ matrix:
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
+  - if [ "$TRAVIS_PULL_REQUEST_BRANCH" != "" ]; then make sonar-check-pr; fi
+  - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then make sonar-check-baseline; fi

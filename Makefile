@@ -71,3 +71,21 @@ macinstall:
 
 gen:
 	go generate ./orion ./utils ./interceptors ./example
+
+sonar-test:
+	$(GOVENDORCMD) test $(OPTS) ./orion/... -coverprofile coverage.out -coverpkg=./orion/...
+
+sonar-check-pr:
+	sonar-scanner \
+		-Dproject.settings=sonar.properties \
+		-Dsonar.host.url=http://qa-sonarqube.carouselltech.com \
+		-Dsonar.login=${SONAR_LOGIN_TOKEN} \
+		-Dsonar.pullrequest.key=${TRAVIS_PULL_REQUEST} \
+		-Dsonar.pullrequest.branch=${TRAVIS_PULL_REQUEST_BRANCH} \
+		-Dsonar.pullrequest.base=master
+
+sonar-check-baseline:
+	sonar-scanner \
+		-Dproject.settings=sonar.properties \
+		-Dsonar.host.url=http://qa-sonarqube.carouselltech.com \
+		-Dsonar.login=${SONAR_LOGIN_TOKEN}
