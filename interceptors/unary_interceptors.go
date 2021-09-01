@@ -141,7 +141,7 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 		newCtx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		var err error
-		_ = hystrix.Do(options.cmdName, func() (e error) {
+		herr := hystrix.Do(options.cmdName, func() (e error) {
 			defer func() {
 				if r := recover(); r != nil {
 					err = errors.Wrap(fmt.Errorf("panic inside hystrix Method: %s, req: %v, reply: %v", method, req, reply), "Hystrix")
@@ -157,7 +157,9 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 				return err
 			}
 		}, options.fallbackFunc)
-
+		if herr != nil {
+			return herr
+		}
 		return err
 	}
 }
