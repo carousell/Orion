@@ -158,7 +158,7 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 			}
 		}, options.fallbackFunc)
 		if herr != nil {
-			err = herr
+			return herr
 		}
 		return err
 	}
