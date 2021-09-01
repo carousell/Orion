@@ -2,7 +2,6 @@ package interceptors
 
 import (
 	"context"
-	goerrors "errors"
 	"strings"
 	"testing"
 	"time"
@@ -53,7 +52,7 @@ func TestHystrixClientInterceptorTimeoutError(t *testing.T) {
 		invoker,
 	)
 
-	if !goerrors.Is(err, hystrix.ErrTimeout) {
+	if !strings.Contains(err.Error(), hystrix.ErrTimeout.Error()) {
 		t.Errorf("hystrixInterceptor doesn't propagate the hystrix timeout error properly, got:%v", err)
 	}
 }
