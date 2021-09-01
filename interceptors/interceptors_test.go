@@ -2,13 +2,16 @@ package interceptors
 
 import (
 	"context"
+	goerrors "errors"
 	"strings"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc/status"
 
 	"google.golang.org/grpc/codes"
 
+	"github.com/afex/hystrix-go/hystrix"
 	"github.com/carousell/Orion/utils/errors"
 	"google.golang.org/grpc"
 )
@@ -30,6 +33,28 @@ func TestHystrixClientInterceptorPanicRecovery(t *testing.T) {
 
 	if !strings.Contains(err.Error(), "panic") {
 		t.Errorf("hystrixInterceptor doesn't recover panic properly, got:%v", err)
+	}
+}
+
+func TestHystrixClientInterceptorTimeoutError(t *testing.T) {
+
+	// default hystrix timeout is 1000 ms
+	invoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
+		time.Sleep(1100 * time.Millisecond)
+		return nil
+	}
+
+	err := HystrixClientInterceptor()(
+		context.Background(),
+		"method",
+		nil,
+		nil,
+		nil,
+		invoker,
+	)
+
+	if !goerrors.Is(err, hystrix.ErrTimeout) {
+		t.Errorf("hystrixInterceptor doesn't propagate the hystrix timeout error properly, got:%v", err)
 	}
 }
 
