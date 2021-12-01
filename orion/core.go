@@ -68,10 +68,12 @@ type middlewareInfo struct {
 
 //DefaultServerImpl provides a default implementation of orion.Server this can be embedded in custom orion.Server implementations
 type DefaultServerImpl struct {
-	config Config
-	mu     sync.Mutex
-	wg     sync.WaitGroup
-	inited bool
+	config                Config
+	mu                    sync.Mutex
+	wg                    sync.WaitGroup
+	customCodec           *grpc.Codec
+	unknownServiceHandler *grpc.StreamHandler
+	inited                bool
 
 	services     map[string]*svcInfo
 	encoders     map[string]*encoderInfo
@@ -137,6 +139,16 @@ func (d *DefaultServerImpl) AddDefaultEncoder(serviceName string, encoder Encode
 		d.defEncoders = make(map[string]handlers.Encoder)
 	}
 	d.defEncoders[serviceName] = encoder
+}
+
+//AddCustomCode is the addition of custom Codec
+
+func (d *DefaultServerImpl) AddCustomCodec(customCodec *grpc.Codec) {
+	d.customCodec = customCodec
+}
+
+func (d *DefaultServerImpl) AddUnknownHandler(handler grpc.StreamHandler) {
+	d.unknownServiceHandler = &handler
 }
 
 //AddHTTPHandler is the implementation of handlers.HTTPInterceptor

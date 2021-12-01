@@ -37,6 +37,10 @@ type Server interface {
 	GetConfig() map[string]interface{}
 	//AddInitializers adds the initializers to orion server
 	AddInitializers(ins ...Initializer)
+	//AddCodec to the orion server
+	AddCustomCodec(customCodec *grpc.Codec)
+	//Add custom handler to the orion server
+	AddUnknownHandler(handler grpc.StreamHandler)
 }
 
 //Initializer is the interface needed to be implemented by custom initializers
