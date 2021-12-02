@@ -267,7 +267,10 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			log.Info(context.Background(), "grpcListener", "could not create listener", "error", err)
 		}
 		log.Info(context.Background(), "gRPCListnerPort", grpcPort)
-		handler := grpcHandler.NewGRPCHandler(grpcHandler.Config{})
+		handler := grpcHandler.NewGRPCHandler(grpcHandler.Config{
+			CustomCodec:           d.customCodec,
+			UnknownServiceHandler: d.unknownServiceHandler,
+		})
 		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,
 			listener: grpcListener,
