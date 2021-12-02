@@ -15,8 +15,8 @@ import (
 // Config is the configuration for GRPC Handler
 type Config struct {
 	handlers.CommonConfig
-	customCodec           *grpc.Codec
-	unknownServiceHandler *grpc.StreamHandler
+	CustomCodec           *grpc.Codec
+	UnknownServiceHandler *grpc.StreamHandler
 }
 
 //NewGRPCHandler creates a new GRPC handler
@@ -37,8 +37,8 @@ func (g *grpcHandler) init() {
 		g.grpcServer = grpc.NewServer(
 			grpc.UnaryInterceptor(g.grpcInterceptor()),
 			grpc.StreamInterceptor(g.grpcStreamInterceptor()),
-			grpc.CustomCodec(*g.config.customCodec),
-			grpc.UnknownServiceHandler(*g.config.unknownServiceHandler),
+			grpc.CustomCodec(*g.config.CustomCodec),
+			grpc.UnknownServiceHandler(*g.config.UnknownServiceHandler),
 		)
 	}
 	if g.middlewares == nil {
