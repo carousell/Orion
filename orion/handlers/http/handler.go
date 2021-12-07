@@ -154,6 +154,11 @@ func (h *httpHandler) AddMiddleware(serviceName string, method string, middlewar
 
 func (h *httpHandler) Run(httpListener net.Listener) error {
 	r := mux.NewRouter()
+	//Add http interceptor wih pattern and handler function if provided
+	if h.config.Pattern != "" && h.config.Handler != nil {
+		httpMethods := []string{"GET", "POST"}
+		r.Methods(httpMethods...).PathPrefix(h.config.Pattern).HandlerFunc(h.config.Handler)
+	}
 	fmt.Println("Mapped URLs: ")
 	allPaths := h.mapping.GetAllMethodInfoByOrder()
 	for i := range allPaths {

@@ -1,6 +1,7 @@
 package orion
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/carousell/Orion/orion/handlers"
@@ -41,6 +42,10 @@ type Server interface {
 	AddCustomCodec(customCodec *grpc.Codec)
 	//Add custom handler to the orion server
 	AddUnknownHandler(handler grpc.StreamHandler)
+	//Add Http Pattern to orioan server
+	AddPattern(pattern string)
+	//Add Http Handler function to orion server
+	AddHandler(func(w http.ResponseWriter, request *http.Request))
 }
 
 //Initializer is the interface needed to be implemented by custom initializers

@@ -51,6 +51,8 @@ type Config struct {
 	EnableProtoURL bool
 	DefaultJSONPB  bool
 	NRHttpTxNameType string
+	Pattern		string
+	Handler		func(http.ResponseWriter, *http.Request)
 }
 
 type serviceInfo struct {

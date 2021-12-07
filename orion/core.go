@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	nethttp "net/http"
 	"os"
 	"os/signal"
 	"reflect"
@@ -74,6 +75,9 @@ type DefaultServerImpl struct {
 	customCodec           *grpc.Codec
 	unknownServiceHandler *grpc.StreamHandler
 	inited                bool
+	pattern				  string
+	handler				  func(nethttp.ResponseWriter, *nethttp.Request)
+
 
 	services     map[string]*svcInfo
 	encoders     map[string]*encoderInfo
@@ -149,6 +153,14 @@ func (d *DefaultServerImpl) AddCustomCodec(customCodec *grpc.Codec) {
 
 func (d *DefaultServerImpl) AddUnknownHandler(handler grpc.StreamHandler) {
 	d.unknownServiceHandler = &handler
+}
+
+func (d *DefaultServerImpl) AddPattern(pattern string) {
+	d.pattern = pattern
+}
+
+func (d *DefaultServerImpl) AddHandler(handlerFunction func(w nethttp.ResponseWriter, request *nethttp.Request)) {
+	d.handler = handlerFunction
 }
 
 //AddHTTPHandler is the implementation of handlers.HTTPInterceptor
@@ -253,6 +265,8 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			EnableProtoURL:   d.config.EnableProtoURL,
 			DefaultJSONPB:    d.config.DefaultJSONPB,
 			NRHttpTxNameType: d.config.NewRelicConfig.HttpTxNameType,
+			Pattern:		  d.pattern,
+			Handler: 		  d.handler,
 		}
 		handler := http.NewHTTPHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
