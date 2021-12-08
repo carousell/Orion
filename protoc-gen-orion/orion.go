@@ -119,8 +119,8 @@ func Register{{.SvcName}}{{.MethodName}}Encoder(svr orion.Server, encoder orion.
 {{ end }}
 // Handlers
 {{ range .Handlers }}
-// Register{{.SvcName}}{{.MethodName}}Handler registers the handler for {{.MethodName}} method in {{.SvcName}}
-func Register{{.SvcName}}{{.MethodName}}Handler(svr orion.Server, handler orion.HTTPHandler) {
+// Register{{.SvcName}}{{.MethodName}}HandlerFunc registers the handler for {{.MethodName}} method in {{.SvcName}}
+func Register{{.SvcName}}{{.MethodName}}HandlerFunc(svr orion.Server, handler orion.HTTPHandler) {
 	orion.RegisterHandler(svr, "{{.SvcName}}", "{{.MethodName}}", "{{.Path}}", handler)
 }
 {{ end }}

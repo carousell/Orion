@@ -32,7 +32,7 @@ func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 //ResponseTimeLoggingInterceptor logs response time for each request on server
 func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		// dont log for HTTP request, let HTTP Handler manage it
+		// dont log for HTTP request, let HTTP HandlerFunc manage it
 		if !modifiers.IsHTTPRequest(ctx) {
 			defer func(begin time.Time) {
 				log.Info(ctx, "method", info.FullMethod, "error", err, "took", time.Since(begin))
@@ -46,7 +46,7 @@ func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 //NewRelicInterceptor intercepts all server actions and reports them to newrelic
 func NewRelicInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		// dont log NR for HTTP request, let HTTP Handler manage it
+		// dont log NR for HTTP request, let HTTP HandlerFunc manage it
 		if modifiers.IsHTTPRequest(ctx) {
 			return handler(ctx, req)
 		}
@@ -74,7 +74,7 @@ func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 			t.Set("trace", traceID)
 			ctx = loggers.AddToLogContext(ctx, "trace", traceID)
 		}
-		// dont log Error for HTTP request, let HTTP Handler manage it
+		// dont log Error for HTTP request, let HTTP HandlerFunc manage it
 		if modifiers.IsHTTPRequest(ctx) {
 			return handler(ctx, req)
 		}
