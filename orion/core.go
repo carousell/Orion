@@ -72,12 +72,8 @@ type DefaultServerImpl struct {
 	config                Config
 	mu                    sync.Mutex
 	wg                    sync.WaitGroup
-	customCodec           *grpc.Codec
-	unknownServiceHandler *grpc.StreamHandler
 	inited                bool
-	pattern				  string
-	handler				  func(nethttp.ResponseWriter, *nethttp.Request)
-
+	reverseProxyConfig	  ReverseProxyConfig
 
 	services     map[string]*svcInfo
 	encoders     map[string]*encoderInfo
@@ -89,6 +85,13 @@ type DefaultServerImpl struct {
 	handlers     []*handlerInfo
 	initializers []Initializer
 	version      uint64
+}
+
+type ReverseProxyConfig struct {
+	CustomCodec           *grpc.Codec
+	UnknownServiceHandler *grpc.StreamHandler
+	HttpUrlPrefix		  string
+	HttpHandlerFunc		  func(nethttp.ResponseWriter, *nethttp.Request)
 }
 
 //AddMiddleware adds middlewares for particular service/method
@@ -145,22 +148,8 @@ func (d *DefaultServerImpl) AddDefaultEncoder(serviceName string, encoder Encode
 	d.defEncoders[serviceName] = encoder
 }
 
-//AddCustomCode is the addition of custom Codec
-
-func (d *DefaultServerImpl) AddCustomCodec(customCodec *grpc.Codec) {
-	d.customCodec = customCodec
-}
-
-func (d *DefaultServerImpl) AddUnknownHandler(handler grpc.StreamHandler) {
-	d.unknownServiceHandler = &handler
-}
-
-func (d *DefaultServerImpl) AddPattern(pattern string) {
-	d.pattern = pattern
-}
-
-func (d *DefaultServerImpl) AddHandler(handlerFunction func(w nethttp.ResponseWriter, request *nethttp.Request)) {
-	d.handler = handlerFunction
+func (d *DefaultServerImpl) AddReverseProxyConfig(reverseProxyConfig ReverseProxyConfig) {
+	d.reverseProxyConfig = reverseProxyConfig
 }
 
 //AddHTTPHandler is the implementation of handlers.HTTPInterceptor
@@ -261,12 +250,15 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			log.Error(context.Background(), "httpListener", "could not create listener", "error", err)
 		}
 		log.Info(context.Background(), "HTTPListnerPort", httpPort)
+		reverseProxyConfig := http.ReverseProxyConfig{
+			UrlPrefix:   d.reverseProxyConfig.HttpUrlPrefix,
+			HandlerFunc: d.reverseProxyConfig.HttpHandlerFunc,
+		}
 		config := http.Config{
 			EnableProtoURL:   d.config.EnableProtoURL,
 			DefaultJSONPB:    d.config.DefaultJSONPB,
 			NRHttpTxNameType: d.config.NewRelicConfig.HttpTxNameType,
-			Pattern:		  d.pattern,
-			Handler: 		  d.handler,
+			ReverseProxy: reverseProxyConfig,
 		}
 		handler := http.NewHTTPHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
@@ -281,9 +273,12 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			log.Info(context.Background(), "grpcListener", "could not create listener", "error", err)
 		}
 		log.Info(context.Background(), "gRPCListnerPort", grpcPort)
+		reverseProxyConfig := grpcHandler.ReverseProxyConfig{
+			CustomCodec: d.reverseProxyConfig.CustomCodec,
+			UnknownServiceHandler: d.reverseProxyConfig.UnknownServiceHandler,
+		}
 		handler := grpcHandler.NewGRPCHandler(grpcHandler.Config{
-			CustomCodec: d.customCodec,
-			UnknownServiceHandler: d.unknownServiceHandler,
+			ReverseProxy: reverseProxyConfig,
 		})
 		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,

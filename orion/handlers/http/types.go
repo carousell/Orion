@@ -51,8 +51,12 @@ type Config struct {
 	EnableProtoURL bool
 	DefaultJSONPB  bool
 	NRHttpTxNameType string
-	Pattern		string
-	Handler		func(http.ResponseWriter, *http.Request)
+	ReverseProxy	ReverseProxyConfig
+}
+
+type ReverseProxyConfig struct {
+	UrlPrefix   string
+	HandlerFunc func(http.ResponseWriter, *http.Request)
 }
 
 type serviceInfo struct {

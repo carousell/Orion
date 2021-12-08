@@ -15,6 +15,10 @@ import (
 // Config is the configuration for GRPC Handler
 type Config struct {
 	handlers.CommonConfig
+	ReverseProxy	ReverseProxyConfig
+}
+
+type ReverseProxyConfig struct {
 	CustomCodec           *grpc.Codec
 	UnknownServiceHandler *grpc.StreamHandler
 }
@@ -32,7 +36,6 @@ type grpcHandler struct {
 }
 
 func (g *grpcHandler) init() {
-	// may be refactor to add only if present
 	if g.grpcServer == nil {
 		var opts []grpc.ServerOption
 		if g.grpcInterceptor() != nil {
@@ -41,11 +44,11 @@ func (g *grpcHandler) init() {
 		if g.grpcStreamInterceptor() != nil {
 			opts = append(opts, grpc.StreamInterceptor(g.grpcStreamInterceptor()))
 		}
-		if g.config.CustomCodec != nil {
-			opts = append(opts, grpc.CustomCodec(*g.config.CustomCodec))
+		if g.config.ReverseProxy.CustomCodec != nil {
+			opts = append(opts, grpc.CustomCodec(*g.config.ReverseProxy.CustomCodec))
 		}
-		if g.config.UnknownServiceHandler != nil {
-			opts = append(opts, grpc.UnknownServiceHandler(*g.config.UnknownServiceHandler))
+		if g.config.ReverseProxy.UnknownServiceHandler != nil {
+			opts = append(opts, grpc.UnknownServiceHandler(*g.config.ReverseProxy.UnknownServiceHandler))
 		}
 		g.grpcServer = grpc.NewServer(opts...)
 	}
