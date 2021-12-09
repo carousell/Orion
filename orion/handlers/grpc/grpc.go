@@ -32,14 +32,21 @@ type grpcHandler struct {
 }
 
 func (g *grpcHandler) init() {
-	// may be refactor to add only if present
 	if g.grpcServer == nil {
-		g.grpcServer = grpc.NewServer(
-			grpc.UnaryInterceptor(g.grpcInterceptor()),
-			grpc.StreamInterceptor(g.grpcStreamInterceptor()),
-			grpc.CustomCodec(*g.config.CustomCodec),
-			grpc.UnknownServiceHandler(*g.config.UnknownServiceHandler),
-		)
+		var opts []grpc.ServerOption
+		if g.grpcInterceptor() != nil {
+			opts = append(opts, grpc.UnaryInterceptor(g.grpcInterceptor()))
+		}
+		if g.grpcStreamInterceptor() != nil {
+			opts = append(opts, grpc.StreamInterceptor(g.grpcStreamInterceptor()))
+		}
+		if g.config.CustomCodec != nil {
+			opts = append(opts, grpc.CustomCodec(*g.config.CustomCodec))
+		}
+		if g.config.UnknownServiceHandler != nil {
+			opts = append(opts, grpc.UnknownServiceHandler(*g.config.UnknownServiceHandler))
+		}
+		g.grpcServer = grpc.NewServer(opts...)
 	}
 	if g.middlewares == nil {
 		g.middlewares = handlers.NewMiddlewareMapping()
