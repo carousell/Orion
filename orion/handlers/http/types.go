@@ -51,6 +51,7 @@ type Config struct {
 	EnableProtoURL bool
 	DefaultJSONPB  bool
 	NRHttpTxNameType string
+	NotFoundHandler	http.Handler
 }
 
 type serviceInfo struct {
