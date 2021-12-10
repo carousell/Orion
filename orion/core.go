@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"google.golang.org/grpc/encoding"
 	nethttp "net/http"
 	"os"
 	"os/signal"
@@ -72,7 +73,7 @@ type DefaultServerImpl struct {
 	config                Config
 	mu                    sync.Mutex
 	wg                    sync.WaitGroup
-	customCodec           *grpc.Codec
+	customCodec           encoding.Codec
 	unknownServiceHandler *grpc.StreamHandler
 	notFoundHandler		  nethttp.Handler
 	inited                bool
@@ -145,7 +146,7 @@ func (d *DefaultServerImpl) AddDefaultEncoder(serviceName string, encoder Encode
 
 //AddCustomCode is the addition of custom Codec
 
-func (d *DefaultServerImpl) AddCustomCodec(customCodec *grpc.Codec) {
+func (d *DefaultServerImpl) AddCustomCodec(customCodec encoding.Codec) {
 	d.customCodec = customCodec
 }
 
