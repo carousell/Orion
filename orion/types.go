@@ -39,9 +39,9 @@ type Server interface {
 	//AddInitializers adds the initializers to orion server
 	AddInitializers(ins ...Initializer)
 	//Add custom grpc handler to the orion server
-	AddUnknownHandler(handler grpc.StreamHandler)
+	AddGrpcUnknownHandler(handler grpc.StreamHandler)
 	//Add custom http handler to the orion server
-	AddNotFoundHandler(handler http.Handler)
+	AddHttpNotFoundHandler(handler http.Handler)
 }
 
 //Initializer is the interface needed to be implemented by custom initializers

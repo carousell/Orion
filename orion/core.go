@@ -69,12 +69,12 @@ type middlewareInfo struct {
 
 //DefaultServerImpl provides a default implementation of orion.Server this can be embedded in custom orion.Server implementations
 type DefaultServerImpl struct {
-	config                Config
-	mu                    sync.Mutex
-	wg                    sync.WaitGroup
-	unknownServiceHandler *grpc.StreamHandler
-	notFoundHandler		  nethttp.Handler
-	inited                bool
+	config                    Config
+	mu                        sync.Mutex
+	wg                        sync.WaitGroup
+	grpcUnknownServiceHandler *grpc.StreamHandler
+	httpNotFoundHandler       nethttp.Handler
+	inited                    bool
 
 	services     map[string]*svcInfo
 	encoders     map[string]*encoderInfo
@@ -142,12 +142,12 @@ func (d *DefaultServerImpl) AddDefaultEncoder(serviceName string, encoder Encode
 	d.defEncoders[serviceName] = encoder
 }
 
-func (d *DefaultServerImpl) AddUnknownHandler(handler grpc.StreamHandler) {
-	d.unknownServiceHandler = &handler
+func (d *DefaultServerImpl) AddGrpcUnknownHandler(handler grpc.StreamHandler) {
+	d.grpcUnknownServiceHandler = &handler
 }
 
-func (d *DefaultServerImpl) AddNotFoundHandler(handler nethttp.Handler) {
-	d.notFoundHandler = handler
+func (d *DefaultServerImpl) AddHttpNotFoundHandler(handler nethttp.Handler) {
+	d.httpNotFoundHandler = handler
 }
 
 //AddHTTPHandler is the implementation of handlers.HTTPInterceptor
@@ -252,7 +252,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			EnableProtoURL:   d.config.EnableProtoURL,
 			DefaultJSONPB:    d.config.DefaultJSONPB,
 			NRHttpTxNameType: d.config.NewRelicConfig.HttpTxNameType,
-			NotFoundHandler: d.notFoundHandler,
+			NotFoundHandler: d.httpNotFoundHandler,
 		}
 		handler := http.NewHTTPHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
@@ -268,7 +268,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		}
 		log.Info(context.Background(), "gRPCListnerPort", grpcPort)
 		handler := grpcHandler.NewGRPCHandler(grpcHandler.Config{
-			UnknownServiceHandler: d.unknownServiceHandler,
+			UnknownServiceHandler: d.grpcUnknownServiceHandler,
 		})
 		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,
