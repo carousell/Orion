@@ -1,7 +1,6 @@
 package orion
 
 import (
-	"google.golang.org/grpc/encoding"
 	"net/http"
 	"time"
 
@@ -39,8 +38,6 @@ type Server interface {
 	GetConfig() map[string]interface{}
 	//AddInitializers adds the initializers to orion server
 	AddInitializers(ins ...Initializer)
-	//AddCodec to the orion server
-	AddCustomCodec(customCodec encoding.Codec)
 	//Add custom grpc handler to the orion server
 	AddUnknownHandler(handler grpc.StreamHandler)
 	//Add custom http handler to the orion server

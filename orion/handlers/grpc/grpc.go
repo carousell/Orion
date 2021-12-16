@@ -10,14 +10,12 @@ import (
 	"github.com/carousell/Orion/utils/log"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/encoding"
 
 )
 
 // Config is the configuration for GRPC Handler
 type Config struct {
 	handlers.CommonConfig
-	CustomCodec           encoding.Codec
 	UnknownServiceHandler *grpc.StreamHandler
 }
 
@@ -41,9 +39,6 @@ func (g *grpcHandler) init() {
 		}
 		if g.grpcStreamInterceptor() != nil {
 			opts = append(opts, grpc.StreamInterceptor(g.grpcStreamInterceptor()))
-		}
-		if g.config.CustomCodec != nil {
-			encoding.RegisterCodec(g.config.CustomCodec)
 		}
 		if g.config.UnknownServiceHandler != nil {
 			opts = append(opts, grpc.UnknownServiceHandler(*g.config.UnknownServiceHandler))
