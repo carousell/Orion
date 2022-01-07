@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"google.golang.org/grpc"
+	nethttp "net/http"
 
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/carousell/Orion/utils/log"
@@ -51,6 +53,8 @@ type Config struct {
 	Env string
 	// DefaultJSONPB sets jsonpb as the encoder/decoder for application/json request/response bodies
 	DefaultJSONPB bool
+	GrpcUnknownServiceHandler *grpc.StreamHandler
+	HttpNotFoundHandler       nethttp.Handler
 }
 
 // HystrixConfig is configuration used by hystrix

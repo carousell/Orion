@@ -252,7 +252,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			EnableProtoURL:   d.config.EnableProtoURL,
 			DefaultJSONPB:    d.config.DefaultJSONPB,
 			NRHttpTxNameType: d.config.NewRelicConfig.HttpTxNameType,
-			NotFoundHandler: d.httpNotFoundHandler,
+			NotFoundHandler: d.config.HttpNotFoundHandler,
 		}
 		handler := http.NewHTTPHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
@@ -268,7 +268,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		}
 		log.Info(context.Background(), "gRPCListnerPort", grpcPort)
 		handler := grpcHandler.NewGRPCHandler(grpcHandler.Config{
-			UnknownServiceHandler: d.grpcUnknownServiceHandler,
+			UnknownServiceHandler: d.config.GrpcUnknownServiceHandler,
 		})
 		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,
