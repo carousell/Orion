@@ -1,7 +1,6 @@
 package orion
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/carousell/Orion/orion/handlers"
@@ -38,10 +37,6 @@ type Server interface {
 	GetConfig() map[string]interface{}
 	//AddInitializers adds the initializers to orion server
 	AddInitializers(ins ...Initializer)
-	//Add custom grpc handler to the orion server
-	AddGrpcUnknownHandler(handler grpc.StreamHandler)
-	//Add custom http handler to the orion server
-	AddHttpNotFoundHandler(handler http.Handler)
 }
 
 //Initializer is the interface needed to be implemented by custom initializers

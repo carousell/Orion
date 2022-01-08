@@ -142,14 +142,6 @@ func (d *DefaultServerImpl) AddDefaultEncoder(serviceName string, encoder Encode
 	d.defEncoders[serviceName] = encoder
 }
 
-func (d *DefaultServerImpl) AddGrpcUnknownHandler(handler grpc.StreamHandler) {
-	d.grpcUnknownServiceHandler = &handler
-}
-
-func (d *DefaultServerImpl) AddHttpNotFoundHandler(handler nethttp.Handler) {
-	d.httpNotFoundHandler = handler
-}
-
 //AddHTTPHandler is the implementation of handlers.HTTPInterceptor
 func (d *DefaultServerImpl) AddHTTPHandler(serviceName string, method string, path string, handler handlers.HTTPHandler) {
 	if d.encoders == nil {
@@ -252,7 +244,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			EnableProtoURL:   d.config.EnableProtoURL,
 			DefaultJSONPB:    d.config.DefaultJSONPB,
 			NRHttpTxNameType: d.config.NewRelicConfig.HttpTxNameType,
-			NotFoundHandler: d.config.HttpNotFoundHandler,
+			NotFoundHandler: d.httpNotFoundHandler,
 		}
 		handler := http.NewHTTPHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
@@ -268,7 +260,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		}
 		log.Info(context.Background(), "gRPCListnerPort", grpcPort)
 		handler := grpcHandler.NewGRPCHandler(grpcHandler.Config{
-			UnknownServiceHandler: d.config.GrpcUnknownServiceHandler,
+			UnknownServiceHandler: d.grpcUnknownServiceHandler,
 		})
 		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,
@@ -511,5 +503,45 @@ func GetDefaultServer(name string) Server {
 func GetDefaultServerWithConfig(config Config) Server {
 	return &DefaultServerImpl{
 		config: config,
+	}
+}
+
+func GetDefaultServerWithHandlerOptions(name string, opts ...DefaultServerOption) Server {
+	svr := &DefaultServerImpl{
+		config: BuildDefaultConfig(name),
+	}
+	for _, opt := range opts {
+		opt.apply(svr)
+	}
+	return svr
+}
+
+type DefaultServerOption interface {
+	apply(*DefaultServerImpl)
+}
+
+func WithGrpcUnknownHandler(grpcUnknownServiceHandler grpc.StreamHandler) DefaultServerOption {
+	return newFuncDefaultServerOption(func(h *DefaultServerImpl) {
+		h.grpcUnknownServiceHandler = &grpcUnknownServiceHandler
+	})
+}
+
+func WithHttpNotFoundHandler(httpNotFoundHandler nethttp.Handler) DefaultServerOption {
+	return newFuncDefaultServerOption(func(h *DefaultServerImpl) {
+		h.httpNotFoundHandler = httpNotFoundHandler
+	})
+}
+
+type funcDefaultServerOption struct {
+	f func(options *DefaultServerImpl)
+}
+
+func (fdso *funcDefaultServerOption) apply(ds *DefaultServerImpl) {
+	fdso.f(ds)
+}
+
+func newFuncDefaultServerOption(f func(options *DefaultServerImpl)) *funcDefaultServerOption {
+	return &funcDefaultServerOption{
+		f: f,
 	}
 }
