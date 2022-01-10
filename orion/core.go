@@ -73,7 +73,7 @@ type DefaultServerImpl struct {
 	mu                        sync.Mutex
 	wg                        sync.WaitGroup
 	grpcUnknownServiceHandler *grpc.StreamHandler
-	httpNotFoundHandler       nethttp.Handler
+	httpNotFoundHandler       *nethttp.Handler
 	inited                    bool
 
 	services     map[string]*svcInfo
@@ -520,15 +520,19 @@ type DefaultServerOption interface {
 	apply(*DefaultServerImpl)
 }
 
+// WithGrpcUnknownHandler returns a DefaultServerOption which sets
+// UnknownServiceHandler option in grpc server
 func WithGrpcUnknownHandler(grpcUnknownServiceHandler grpc.StreamHandler) DefaultServerOption {
 	return newFuncDefaultServerOption(func(h *DefaultServerImpl) {
 		h.grpcUnknownServiceHandler = &grpcUnknownServiceHandler
 	})
 }
 
+// WithHttpNotFoundHandler returns a DefaultServerOption which sets
+// NotFoundHandler in http server
 func WithHttpNotFoundHandler(httpNotFoundHandler nethttp.Handler) DefaultServerOption {
 	return newFuncDefaultServerOption(func(h *DefaultServerImpl) {
-		h.httpNotFoundHandler = httpNotFoundHandler
+		h.httpNotFoundHandler = &httpNotFoundHandler
 	})
 }
 
