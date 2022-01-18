@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	nethttp "net/http"
 	"os"
 	"os/signal"
 	"reflect"
@@ -73,7 +72,6 @@ type DefaultServerImpl struct {
 	mu                        sync.Mutex
 	wg                        sync.WaitGroup
 	grpcUnknownServiceHandler *grpc.StreamHandler
-	httpNotFoundHandler       *nethttp.Handler
 	inited                    bool
 
 	services     map[string]*svcInfo
@@ -244,7 +242,6 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			EnableProtoURL:   d.config.EnableProtoURL,
 			DefaultJSONPB:    d.config.DefaultJSONPB,
 			NRHttpTxNameType: d.config.NewRelicConfig.HttpTxNameType,
-			NotFoundHandler: d.httpNotFoundHandler,
 		}
 		handler := http.NewHTTPHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
@@ -525,14 +522,6 @@ type DefaultServerOption interface {
 func WithGrpcUnknownHandler(grpcUnknownServiceHandler grpc.StreamHandler) DefaultServerOption {
 	return newFuncDefaultServerOption(func(h *DefaultServerImpl) {
 		h.grpcUnknownServiceHandler = &grpcUnknownServiceHandler
-	})
-}
-
-// WithHttpNotFoundHandler returns a DefaultServerOption which sets
-// NotFoundHandler in http server
-func WithHttpNotFoundHandler(httpNotFoundHandler nethttp.Handler) DefaultServerOption {
-	return newFuncDefaultServerOption(func(h *DefaultServerImpl) {
-		h.httpNotFoundHandler = &httpNotFoundHandler
 	})
 }
 

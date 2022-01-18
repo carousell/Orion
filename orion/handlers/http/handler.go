@@ -188,11 +188,7 @@ func (h *httpHandler) Run(httpListener net.Listener) error {
 			fmt.Println("\t", info.httpMethod, routeURL, "mapped to", info.serviceName, info.methodName, methodClassifier)
 		}
 	}
-
 	r.NotFoundHandler = &notFoundHandler{}
-	if h.config.NotFoundHandler != nil {
-		r.NotFoundHandler = *h.config.NotFoundHandler
-	}
 	h.svr = &http.Server{
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
