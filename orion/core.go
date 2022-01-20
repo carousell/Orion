@@ -492,8 +492,14 @@ func (d *DefaultServerImpl) Stop(timeout time.Duration) error {
 }
 
 //GetDefaultServer returns a default server object that can be directly used to start orion server
-func GetDefaultServer(name string) Server {
-	return GetDefaultServerWithConfig(BuildDefaultConfig(name))
+func GetDefaultServer(name string, opts ...DefaultServerOption) Server {
+	server := &DefaultServerImpl{
+		config: BuildDefaultConfig(name),
+	}
+	for _, opt := range opts {
+		opt.apply(server)
+	}
+	return server
 }
 
 //GetDefaultServerWithConfig returns a default server object that uses provided configuration
@@ -501,16 +507,6 @@ func GetDefaultServerWithConfig(config Config) Server {
 	return &DefaultServerImpl{
 		config: config,
 	}
-}
-
-func GetDefaultServerWithHandlerOptions(name string, opts ...DefaultServerOption) Server {
-	svr := &DefaultServerImpl{
-		config: BuildDefaultConfig(name),
-	}
-	for _, opt := range opts {
-		opt.apply(svr)
-	}
-	return svr
 }
 
 type DefaultServerOption interface {
