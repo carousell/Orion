@@ -71,7 +71,7 @@ type DefaultServerImpl struct {
 	config                    Config
 	mu                        sync.Mutex
 	wg                        sync.WaitGroup
-	grpcUnknownServiceHandler *grpc.StreamHandler
+	grpcUnknownServiceHandler grpc.StreamHandler
 	inited                    bool
 
 	services     map[string]*svcInfo
@@ -517,7 +517,7 @@ type DefaultServerOption interface {
 // UnknownServiceHandler option in grpc server
 func WithGrpcUnknownHandler(grpcUnknownServiceHandler grpc.StreamHandler) DefaultServerOption {
 	return newFuncDefaultServerOption(func(h *DefaultServerImpl) {
-		h.grpcUnknownServiceHandler = &grpcUnknownServiceHandler
+		h.grpcUnknownServiceHandler = grpcUnknownServiceHandler
 	})
 }
 

@@ -16,7 +16,7 @@ import (
 // Config is the configuration for GRPC Handler
 type Config struct {
 	handlers.CommonConfig
-	UnknownServiceHandler *grpc.StreamHandler
+	UnknownServiceHandler grpc.StreamHandler
 }
 
 //NewGRPCHandler creates a new GRPC handler
@@ -41,7 +41,7 @@ func (g *grpcHandler) init() {
 			opts = append(opts, grpc.StreamInterceptor(g.grpcStreamInterceptor()))
 		}
 		if g.config.UnknownServiceHandler != nil {
-			opts = append(opts, grpc.UnknownServiceHandler(*g.config.UnknownServiceHandler))
+			opts = append(opts, grpc.UnknownServiceHandler(g.config.UnknownServiceHandler))
 		}
 		g.grpcServer = grpc.NewServer(opts...)
 	}
