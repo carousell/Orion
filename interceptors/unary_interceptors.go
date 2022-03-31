@@ -3,6 +3,7 @@ package interceptors
 import (
 	"context"
 	"fmt"
+	"github.com/opentracing/opentracing-go"
 	"time"
 
 	"github.com/afex/hystrix-go/hystrix"
@@ -35,6 +36,29 @@ func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 		// dont log for HTTP request, let HTTP Handler manage it
 		if !modifiers.IsHTTPRequest(ctx) {
 			defer func(begin time.Time) {
+				imd, ok := metadata.FromIncomingContext(ctx)
+				if ok {
+					for k, v := range imd {
+						fmt.Println(">>> in", k, v)
+					}
+				}
+				omd, ok := metadata.FromOutgoingContext(ctx)
+				if ok {
+					for k, v := range omd {
+						fmt.Println(">>> out", k, v)
+					}
+				}
+				span := opentracing.SpanFromContext(ctx)
+				if span != nil {
+					fmt.Println(">>> span", span)
+					span.Context().ForeachBaggageItem(func(k, v string) bool {
+						fmt.Println(">>> spanctx", k, v)
+						return true
+					})
+					fmt.Println(">>> whole span", span)
+				} else {
+					fmt.Println(">>> empty span ")
+				}
 				log.Info(ctx, "method", info.FullMethod, "error", err, "took", time.Since(begin))
 			}(time.Now())
 		}
