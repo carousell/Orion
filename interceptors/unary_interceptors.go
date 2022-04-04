@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/opentracing/opentracing-go"
+	"google.golang.org/grpc/grpclog"
 	"time"
 
 	"github.com/afex/hystrix-go/hystrix"
@@ -30,10 +31,64 @@ func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
+type a struct {
+}
+
+type loggingContext map[string][]string
+
+func (l loggingContext) Set(key, val string) {
+	l[key] = []string{val}
+}
+
+// ForeachKey is a opentracing.TextMapReader interface that extracts values.
+func (l loggingContext) ForeachKey(callback func(key, val string) error) error {
+	for k, vv := range l {
+		for _, v := range vv {
+			if err := callback(k, v); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+//TracingLoggingInterceptor adds trace info to logging context.
+func TracingLoggingInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		tracer := opentracing.GlobalTracer()
+		var parentSpanCtx opentracing.SpanContext
+		if parent := opentracing.SpanFromContext(ctx); parent != nil {
+			parentSpanCtx = parent.Context()
+		}
+
+		lc := loggingContext{}
+		if err := tracer.Inject(parentSpanCtx, opentracing.HTTPHeaders, lc); err != nil {
+			grpclog.Printf("grpc_opentracing: failed serializing trace information: %v", err)
+		}
+
+		for k, v := range lc {
+			loggers.AddToLogContext(ctx, k, v)
+		}
+
+		resp, err = handler(ctx, req)
+		return resp, err
+	}
+}
+
 //ResponseTimeLoggingInterceptor logs response time for each request on server
 func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		// dont log for HTTP request, let HTTP Handler manage it
+		// ctx. traceId, sampling_deciding
+		///??
+		// opentracing.
+
+		// span.x-b3-traceid
+		// space
+		// tracer.Inject(ctx,format,  logCarrer)
+		//
+		//tr
+
 		if !modifiers.IsHTTPRequest(ctx) {
 			defer func(begin time.Time) {
 				imd, ok := metadata.FromIncomingContext(ctx)
