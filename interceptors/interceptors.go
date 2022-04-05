@@ -29,10 +29,10 @@ func filterFromZipkin(ctx context.Context, fullMethodName string) bool {
 //DefaultInterceptors are the set of default interceptors that are applied to all Orion methods
 func DefaultInterceptors() []grpc.UnaryServerInterceptor {
 	return []grpc.UnaryServerInterceptor{
-		TracingLoggingInterceptor(),
 		ResponseTimeLoggingInterceptor(),
 		grpc_ctxtags.UnaryServerInterceptor(),
 		grpc_opentracing.UnaryServerInterceptor(grpc_opentracing.WithFilterFunc(filterFromZipkin)),
+		TracingLoggingInterceptor(),
 		grpc_prometheus.UnaryServerInterceptor,
 		ServerErrorInterceptor(),
 		NewRelicInterceptor(),

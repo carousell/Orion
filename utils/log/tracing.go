@@ -11,19 +11,11 @@ import (
 type loggingContext map[string][]string
 
 func (l loggingContext) Set(key, val string) {
-	l[key] = []string{val}
-}
-
-// ForeachKey is a opentracing.TextMapReader interface that extracts values.
-func (l loggingContext) ForeachKey(callback func(key, val string) error) error {
-	for k, vv := range l {
-		for _, v := range vv {
-			if err := callback(k, v); err != nil {
-				return err
-			}
-		}
+	if values, ok := l[key]; ok {
+		l[key] = append(values, val)
+	} else {
+		l[key] = []string{val}
 	}
-	return nil
 }
 
 func AppendTracingInfoToLoggingContext(ctx context.Context) {
