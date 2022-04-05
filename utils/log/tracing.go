@@ -2,6 +2,7 @@ package log
 
 import (
 	"context"
+	"fmt"
 	"github.com/carousell/Orion/utils/log/loggers"
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc/grpclog"
@@ -31,6 +32,7 @@ func AppendTracingInfoToLoggingContext(ctx context.Context) {
 	if parent := opentracing.SpanFromContext(ctx); parent != nil {
 		parentSpanCtx = parent.Context()
 	}
+	fmt.Println(">>> AppendTracingInfoToLoggingContext: parentSpanCtx", parentSpanCtx)
 
 	lc := loggingContext{}
 	if err := tracer.Inject(parentSpanCtx, opentracing.HTTPHeaders, lc); err != nil {
@@ -38,6 +40,7 @@ func AppendTracingInfoToLoggingContext(ctx context.Context) {
 	}
 
 	for k, v := range lc {
+		fmt.Println(">>> AppendTracingInfoToLoggingContext: k ", k, ", v: ", v)
 		loggers.AddToLogContext(ctx, k, v)
 	}
 
