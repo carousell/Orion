@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/carousell/Orion/utils/log/loggers"
 	"github.com/opentracing/opentracing-go"
-	"google.golang.org/grpc/grpclog"
 )
 
 type loggingContext map[string][]string
@@ -28,7 +27,7 @@ func AppendTracingInfoToLoggingContext(ctx context.Context) {
 
 	lc := loggingContext{}
 	if err := tracer.Inject(parentSpanCtx, opentracing.HTTPHeaders, lc); err != nil {
-		grpclog.Printf("grpc_opentracing: failed serializing trace information: %v", err)
+		fmt.Printf("grpc_opentracing: failed serializing trace information: %v\n", err)
 	}
 
 	for k, v := range lc {
