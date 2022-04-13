@@ -11,8 +11,6 @@ import (
 	"github.com/carousell/Orion/utils/errors"
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/log"
-	"github.com/carousell/Orion/utils/log/loggers"
-	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	newrelic "github.com/newrelic/go-agent"
 	"google.golang.org/grpc"
@@ -65,15 +63,6 @@ func NewRelicInterceptor() grpc.UnaryServerInterceptor {
 //ServerErrorInterceptor intercepts all server actions and reports them to error notifier
 func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		// set trace id if not set
-		ctx = notifier.SetTraceId(ctx)
-
-		t := grpc_ctxtags.Extract(ctx)
-		if t != nil {
-			traceID := notifier.GetTraceId(ctx)
-			t.Set("trace", traceID)
-			ctx = loggers.AddToLogContext(ctx, "trace", traceID)
-		}
 		// dont log Error for HTTP request, let HTTP Handler manage it
 		if modifiers.IsHTTPRequest(ctx) {
 			return handler(ctx, req)

@@ -36,7 +36,6 @@ func (h *httpHandler) wsHandler(resp http.ResponseWriter, req *http.Request, ser
 		ctx = loggers.AddToLogContext(ctx, "transport", "ws")
 		req = req.WithContext(ctx)
 
-		notifier.SetTraceId(ctx)
 		log.Info(ctx, "path", req.URL.String(), "msg", "new websocket connection")
 
 		// httpHandler allows handling entire http request

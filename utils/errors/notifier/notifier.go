@@ -2,21 +2,17 @@ package notifier
 
 import (
 	"context"
+	bugsnag "github.com/bugsnag/bugsnag-go"
+	"github.com/carousell/Orion/utils/errors"
 	"os"
 	"reflect"
 	"runtime"
 	"strconv"
-	"strings"
-
-	bugsnag "github.com/bugsnag/bugsnag-go"
-	"github.com/carousell/Orion/utils/errors"
 
 	"github.com/carousell/Orion/utils/log"
 	"github.com/carousell/Orion/utils/log/loggers"
-	"github.com/carousell/Orion/utils/options"
 	raven "github.com/getsentry/raven-go"
 	stdopentracing "github.com/opentracing/opentracing-go"
-	"github.com/pborman/uuid"
 	"github.com/stvp/rollbar"
 	gobrake "gopkg.in/airbrake/gobrake.v2"
 )
@@ -204,9 +200,6 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 			if span := stdopentracing.SpanFromContext(c); span != nil {
 				traceID = span.BaggageItem("trace")
 			}
-			if strings.TrimSpace(traceID) == "" {
-				traceID = GetTraceId(c)
-			}
 			ctx = c
 			break
 		}
@@ -347,49 +340,6 @@ func SetEnvironemnt(env string) {
 	}
 	rollbar.Environment = env
 	raven.SetEnvironment(env)
-}
-
-//SetTraceId updates the traceID based on context values
-func SetTraceId(ctx context.Context) context.Context {
-	if GetTraceId(ctx) != "" {
-		return ctx
-	}
-	var traceID string
-	if span := stdopentracing.SpanFromContext(ctx); span != nil {
-		traceID = span.BaggageItem("trace")
-	}
-	// if no trace id then create one
-	if strings.TrimSpace(traceID) == "" {
-		traceID = uuid.NewUUID().String()
-	}
-	ctx = loggers.AddToLogContext(ctx, "trace", traceID)
-	return options.AddToOptions(ctx, tracerID, traceID)
-}
-
-//GetTraceId fetches traceID from context
-func GetTraceId(ctx context.Context) string {
-	if o := options.FromContext(ctx); o != nil {
-		if data, found := o.Get(tracerID); found {
-			return data.(string)
-		}
-	}
-	if logCtx := loggers.FromContext(ctx); logCtx != nil {
-		if data, found := logCtx["trace"]; found {
-			traceID := data.(string)
-			options.AddToOptions(ctx, tracerID, traceID)
-			return traceID
-		}
-	}
-	return ""
-}
-
-//UpdateTraceId force updates the traced id to provided id
-func UpdateTraceId(ctx context.Context, traceID string) context.Context {
-	if traceID == "" {
-		return SetTraceId(ctx)
-	}
-	ctx = loggers.AddToLogContext(ctx, "trace", traceID)
-	return options.AddToOptions(ctx, tracerID, traceID)
 }
 
 func SetServerRoot(path string) {
