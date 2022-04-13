@@ -21,12 +21,13 @@ func AppendTracingInfoToLoggingContext(ctx context.Context) {
 	tracer := opentracing.GlobalTracer()
 	var parentSpanCtx opentracing.SpanContext
 	if parent := opentracing.SpanFromContext(ctx); parent != nil {
+		parent.LogFields()
 		parentSpanCtx = parent.Context()
 	}
 	fmt.Println(">>> AppendTracingInfoToLoggingContext: parentSpanCtx", parentSpanCtx)
 
 	lc := loggingContext{}
-	if err := tracer.Inject(parentSpanCtx, opentracing.TextMap, lc); err != nil {
+	if err := tracer.Inject(parentSpanCtx, opentracing.HTTPHeaders, lc); err != nil {
 		fmt.Printf("grpc_opentracing: failed serializing trace information: %v\n", err)
 	}
 
