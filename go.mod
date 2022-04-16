@@ -40,7 +40,6 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v0.0.0-20190118093823-f849b5445de4
 	github.com/grpc-ecosystem/go-grpc-prometheus v0.0.0-20181025070259-68e3a13e4117
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1 // indirect
-	github.com/micro/protobuf v0.0.0-20180321161605-ebd3be6d4fdb
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/newrelic/go-agent v2.3.0+incompatible
 	github.com/opentracing-contrib/go-observer v0.0.0-20170622124052-a52f23424492 // indirect
