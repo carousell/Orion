@@ -65,9 +65,10 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/stvp/rollbar v0.0.0-20171113052335-4a50daf855af
 	go.elastic.co/apm v1.4.0
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
-	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
+	golang.org/x/net v0.0.0-20190311183353-d8887717615a
 	golang.org/x/oauth2 v0.0.0-20190130055435-99b60b757ec1
+	golang.org/x/sys v0.0.0-20190825160603-fb81701db80f // indirect
+	golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2 // indirect
 	google.golang.org/api v0.1.0
 	google.golang.org/genproto v0.0.0-20190128161407-8ac453e89fca // indirect
 	google.golang.org/grpc v1.22.1
