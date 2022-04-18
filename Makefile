@@ -8,7 +8,10 @@ all: clean vet test build
 
 cleanall: clean dockerclean
 
-ci: clean vet bench build
+ci: mod clean vet bench build
+
+mod:
+	go mod tidy
 
 vet:
 	go vet ./orion/... ./utils/...
