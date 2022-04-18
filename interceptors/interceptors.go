@@ -44,10 +44,10 @@ func DefaultInterceptors() []grpc.UnaryServerInterceptor {
 func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 	return []grpc.UnaryClientInterceptor{
 		grpc_retry.UnaryClientInterceptor(),
-		GRPCClientInterceptor(),
 		NewRelicClientInterceptor(address),
 		HystrixClientInterceptor(),
 		ForwardMetadataInterceptor(),
+		GRPCClientInterceptor(),
 	}
 }
 
