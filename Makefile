@@ -8,7 +8,7 @@ all: clean vet test build
 
 cleanall: clean dockerclean
 
-ci: mod clean vet bench build
+ci: clean vet bench build
 
 mod:
 	go mod tidy

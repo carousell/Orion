@@ -2,16 +2,13 @@ language: go
 sudo: false
 
 go:
-  - "1.12.x"
-  - tip
-
-env:
-  - GO111MODULE=on
+  - "1.18.x"
+  - master
 
 install: true
 
 script:
-  - GO111MODULE=auto go get -u golang.org/x/lint/golint
+  - go get -u golang.org/x/lint/golint
   - make ci
 
 matrix:
