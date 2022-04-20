@@ -32,7 +32,6 @@ func DefaultInterceptors() []grpc.UnaryServerInterceptor {
 		ResponseTimeLoggingInterceptor(),
 		grpc_ctxtags.UnaryServerInterceptor(),
 		grpc_opentracing.UnaryServerInterceptor(grpc_opentracing.WithFilterFunc(filterFromZipkin)),
-		TracingLoggingInterceptor(),
 		grpc_prometheus.UnaryServerInterceptor,
 		ServerErrorInterceptor(),
 		NewRelicInterceptor(),
