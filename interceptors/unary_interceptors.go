@@ -3,6 +3,7 @@ package interceptors
 import (
 	"context"
 	"fmt"
+	stdopentracing "github.com/opentracing/opentracing-go"
 	"time"
 
 	"github.com/afex/hystrix-go/hystrix"
@@ -125,6 +126,12 @@ func GRPCClientInterceptor() grpc.UnaryClientInterceptor {
 	return grpc_opentracing.UnaryClientInterceptor()
 }
 
+type logCtxCarrier map[string]string
+
+func (l logCtxCarrier) Set(key, val string) {
+	l[key] = val
+}
+
 //DebugInterceptor is the interceptor that intercepts all cleint requests and adds tracing info to them
 func DebugInterceptor() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
@@ -133,6 +140,22 @@ func DebugInterceptor() grpc.UnaryClientInterceptor {
 		for k, v := range md {
 			fmt.Println(">>>", "Outgoing metadata for : ", method, ", k:", k, ", v: ", v)
 		}
+
+		var parentSpanCtx stdopentracing.SpanContext
+		if parent := stdopentracing.SpanFromContext(ctx); parent != nil {
+			parentSpanCtx = parent.Context()
+		}
+
+		lc := logCtxCarrier{}
+		tracer := stdopentracing.GlobalTracer()
+		if err := tracer.Inject(parentSpanCtx, stdopentracing.HTTPHeaders, lc); err != nil {
+			log.Error(ctx, errors.Wrap(err, "grpc_opentracing: failed serializing trace information: %"))
+		}
+
+		for k, v := range lc {
+			fmt.Println(">>>", "span info  : ", method, ", k:", k, ", v: ", v)
+		}
+
 		err := invoker(ctx, method, req, reply, cc, opts...)
 		fmt.Println(">>>", "DebugInterceptor end: ", method)
 		return err
