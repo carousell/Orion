@@ -47,6 +47,7 @@ func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 		HystrixClientInterceptor(),
 		ForwardMetadataInterceptor(),
 		GRPCClientInterceptor(),
+		DebugInterceptor(),
 	}
 }
 

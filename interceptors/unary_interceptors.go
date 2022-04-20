@@ -125,6 +125,20 @@ func GRPCClientInterceptor() grpc.UnaryClientInterceptor {
 	return grpc_opentracing.UnaryClientInterceptor()
 }
 
+//DebugInterceptor is the interceptor that intercepts all cleint requests and adds tracing info to them
+func DebugInterceptor() grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		fmt.Println(">>>", "DebugInterceptor start: ", method)
+		md, _ := metadata.FromOutgoingContext(ctx)
+		for k, v := range md {
+			fmt.Println(">>>", "Outgoing metadata for : ", method, ", k:", k, ", v: ", v)
+		}
+		err := invoker(ctx, method, req, reply, cc, opts...)
+		fmt.Println(">>>", "DebugInterceptor end: ", method)
+		return err
+	}
+}
+
 //HystrixClientInterceptor is the interceptor that intercepts all cleint requests and adds hystrix info to them
 func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
