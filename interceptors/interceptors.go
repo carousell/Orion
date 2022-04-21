@@ -46,6 +46,9 @@ func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 		NewRelicClientInterceptor(address),
 		HystrixClientInterceptor(),
 		ForwardMetadataInterceptor(),
+		// ForwardMetadataInterceptor should come before GRPCClientInterceptor
+		// Because the trace headers propagated to the caller service should be of the current span,
+		// not the upstream span present in the incoming metadata.
 		GRPCClientInterceptor(),
 	}
 }
