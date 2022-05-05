@@ -40,7 +40,6 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v0.0.0-20190118093823-f849b5445de4
 	github.com/grpc-ecosystem/go-grpc-prometheus v0.0.0-20181025070259-68e3a13e4117
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1 // indirect
-	github.com/micro/protobuf v0.0.0-20180321161605-ebd3be6d4fdb
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/newrelic/go-agent v2.3.0+incompatible
 	github.com/opentracing-contrib/go-observer v0.0.0-20170622124052-a52f23424492 // indirect
@@ -66,10 +65,10 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/stvp/rollbar v0.0.0-20171113052335-4a50daf855af
 	go.elastic.co/apm v1.4.0
-	golang.org/x/net v0.0.0-20190311183353-d8887717615a
+	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
+	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
 	golang.org/x/oauth2 v0.0.0-20190130055435-99b60b757ec1
-	golang.org/x/sys v0.0.0-20190825160603-fb81701db80f // indirect
-	golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2 // indirect
+	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	google.golang.org/api v0.1.0
 	google.golang.org/genproto v0.0.0-20190128161407-8ac453e89fca // indirect
 	google.golang.org/grpc v1.22.1
