@@ -6,8 +6,9 @@ import (
 	"fmt"
 
 	"github.com/afex/hystrix-go/hystrix"
-	"github.com/carousell/Orion/utils/log"
 	"github.com/spf13/viper"
+
+	"github.com/carousell/Orion/utils/log"
 )
 
 var (
@@ -51,8 +52,8 @@ type Config struct {
 	Env string
 	// DefaultJSONPB sets jsonpb as the encoder/decoder for application/json request/response bodies
 	DefaultJSONPB bool
-	// NoDefaultInterceptors disables all default interceptors on all handlers
-	NoDefaultInterceptors bool
+	// DisableDefaultInterceptors disables the default interceptors for all handlers
+	DisableDefaultInterceptors bool
 }
 
 // HystrixConfig is configuration used by hystrix
@@ -96,24 +97,24 @@ func BuildDefaultConfig(name string) Config {
 	setup(name)
 	readConfig(name)
 	return Config{
-		GRPCOnly:                  viper.GetBool("orion.GRPCOnly"),
-		HTTPOnly:                  viper.GetBool("orion.HTTPOnly"),
-		GRPCPort:                  viper.GetString("orion.GRPCPort"),
-		HTTPPort:                  viper.GetString("orion.HTTPPort"),
-		PProfport:                 viper.GetString("orion.PprofPort"),
-		HotReload:                 viper.GetBool("orion.HotReload"),
-		EnableProtoURL:            viper.GetBool("orion.EnableProtoURL"),
-		EnablePrometheus:          viper.GetBool("orion.EnablePrometheus"),
-		EnablePrometheusHistogram: viper.GetBool("orion.EnablePrometheusHistogram"),
-		RollbarToken:              viper.GetString("orion.rollbar-token"),
-		Env:                       viper.GetString("orion.Env"),
-		SentryDSN:                 viper.GetString("orion.SentryDSN"),
-		OrionServerName:           name,
-		HystrixConfig:             BuildDefaultHystrixConfig(),
-		ZipkinConfig:              BuildDefaultZipkinConfig(),
-		NewRelicConfig:            BuildDefaultNewRelicConfig(),
-		DefaultJSONPB:             viper.GetBool("orion.DefaultJSONPB"),
-		NoDefaultInterceptors: 	   viper.GetBool("orion.NoDefaultInterceptors"),
+		GRPCOnly:                   viper.GetBool("orion.GRPCOnly"),
+		HTTPOnly:                   viper.GetBool("orion.HTTPOnly"),
+		GRPCPort:                   viper.GetString("orion.GRPCPort"),
+		HTTPPort:                   viper.GetString("orion.HTTPPort"),
+		PProfport:                  viper.GetString("orion.PprofPort"),
+		HotReload:                  viper.GetBool("orion.HotReload"),
+		EnableProtoURL:             viper.GetBool("orion.EnableProtoURL"),
+		EnablePrometheus:           viper.GetBool("orion.EnablePrometheus"),
+		EnablePrometheusHistogram:  viper.GetBool("orion.EnablePrometheusHistogram"),
+		RollbarToken:               viper.GetString("orion.rollbar-token"),
+		Env:                        viper.GetString("orion.Env"),
+		SentryDSN:                  viper.GetString("orion.SentryDSN"),
+		OrionServerName:            name,
+		HystrixConfig:              BuildDefaultHystrixConfig(),
+		ZipkinConfig:               BuildDefaultZipkinConfig(),
+		NewRelicConfig:             BuildDefaultNewRelicConfig(),
+		DefaultJSONPB:              viper.GetBool("orion.DefaultJSONPB"),
+		DisableDefaultInterceptors: viper.GetBool("orion.DisableDefaultInterceptors"),
 	}
 }
 

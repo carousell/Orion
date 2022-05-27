@@ -11,14 +11,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/spf13/viper"
+	"google.golang.org/grpc"
+
 	"github.com/carousell/Orion/orion/handlers"
 	grpcHandler "github.com/carousell/Orion/orion/handlers/grpc"
 	"github.com/carousell/Orion/orion/handlers/http"
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/listenerutils"
 	"github.com/carousell/Orion/utils/log"
-	"github.com/spf13/viper"
-	"google.golang.org/grpc"
 )
 
 var (
@@ -239,7 +240,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		log.Info(context.Background(), "HTTPListenerPort", httpPort)
 		config := http.Config{
 			CommonConfig: handlers.CommonConfig{
-				NoDefaultInterceptors: d.config.NoDefaultInterceptors,
+				NoDefaultInterceptors: d.config.DisableDefaultInterceptors,
 			},
 			EnableProtoURL:   d.config.EnableProtoURL,
 			DefaultJSONPB:    d.config.DefaultJSONPB,
@@ -260,7 +261,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		log.Info(context.Background(), "gRPCListenerPort", grpcPort)
 		config := grpcHandler.Config{
 			handlers.CommonConfig{
-				NoDefaultInterceptors: d.config.NoDefaultInterceptors,
+				NoDefaultInterceptors: d.config.DisableDefaultInterceptors,
 			},
 		}
 		handler := grpcHandler.NewGRPCHandler(config)
