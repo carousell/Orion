@@ -1,5 +1,7 @@
 package executor
 
+import "sync"
+
 //Task is the basic task that gets executed in executor
 type Task func() error
 
@@ -13,3 +15,20 @@ type Executor interface {
 
 //Option represents different options available for Executor
 type Option func(*config)
+
+type safeBool struct {
+	val bool
+	m   sync.Mutex
+}
+
+func (i *safeBool) Get() bool {
+	i.m.Lock()
+	defer i.m.Unlock()
+	return i.val
+}
+
+func (i *safeBool) Set(val bool) {
+	i.m.Lock()
+	defer i.m.Unlock()
+	i.val = val
+}

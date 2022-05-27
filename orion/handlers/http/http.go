@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/textproto"
+	"strconv"
 	"strings"
 	"time"
 
@@ -65,7 +67,17 @@ func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, s
 	if modifiers.HasDontLogError(ctx) {
 		utils.FinishNRTransaction(req.Context(), nil)
 	} else {
-		notifier.Notify(err, req.URL.String(), ctx)
+
+		// Add HTTP response code as tag
+		var tags notifier.Tags
+		if err != nil {
+			httpCode, _ := GrpcErrorToHTTP(err, http.StatusInternalServerError, "Internal Server Error!")
+			tags = notifier.Tags{
+				"http_code": strconv.Itoa(httpCode),
+			}
+		}
+
+		notifier.Notify(err, req.URL.String(), ctx, tags)
 		utils.FinishNRTransaction(req.Context(), err)
 	}
 }
@@ -92,7 +104,13 @@ func prepareContext(req *http.Request, info *methodInfo) context.Context {
 	// fetch and populate whitelisted headers
 	if len(info.svc.requestHeaders) > 0 {
 		for _, hdr := range info.svc.requestHeaders {
-			ctx = headers.AddToRequestHeaders(ctx, hdr, req.Header.Get(hdr))
+			if values, found := req.Header[textproto.CanonicalMIMEHeaderKey(hdr)]; found {
+				value := ""
+				if len(values) > 0 {
+					value = values[0]
+				}
+				ctx = headers.AddToRequestHeaders(ctx, hdr, value)
+			}
 		}
 	}
 

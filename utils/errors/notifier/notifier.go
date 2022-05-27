@@ -171,6 +171,7 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 	if err == nil {
 		return nil
 	}
+	sev := parseLevel(level)
 
 	// add stack infomation
 	errWithStack, ok := err.(errors.ErrorExt)
@@ -242,16 +243,10 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 			fields = append(fields, &rollbar.Field{Name: "traceId", Data: traceID})
 		}
 		fields = append(fields, &rollbar.Field{Name: "server", Data: map[string]interface{}{"hostname": getHostname(), "root": getServerRoot()}})
-		rollbar.ErrorWithStack(level, errWithStack, convToRollbar(errWithStack.StackFrame()), fields...)
+		rollbar.ErrorWithStack(sev.String(), errWithStack, convToRollbar(errWithStack.StackFrame()), fields...)
 	}
 
 	if sentryInited {
-		defLevel := raven.ERROR
-		if level == "critical" {
-			defLevel = raven.FATAL
-		} else if level == "warning" {
-			defLevel = raven.WARNING
-		}
 		ravenExp := raven.NewException(errWithStack, convToSentry(errWithStack))
 		packet := raven.NewPacketWithExtra(errWithStack.Error(), parsedData, ravenExp)
 
@@ -259,11 +254,12 @@ func doNotify(err error, skip int, level string, rawData ...interface{}) error {
 			packet.AddTags(tags)
 		}
 
-		packet.Level = defLevel
+		// type assert directly since it's single use case so we don't consider about wrapping it for now
+		packet.Level = raven.Severity(sev)
 		raven.Capture(packet, nil)
 	}
 
-	log.GetLogger().Log(ctx, loggers.ErrorLevel, skip+1, "err", errWithStack, "stack", errWithStack.StackFrame())
+	log.GetLogger().Log(ctx, sev.LoggerLevel(), skip+1, "err", errWithStack, "stack", errWithStack.StackFrame())
 	return err
 }
 

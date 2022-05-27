@@ -1,4 +1,4 @@
-# Orion [![Build Status](https://travis-ci.com/carousell/Orion.svg?token=kSVweyyqayUyyfutjTqD&branch=master)](https://travis-ci.com/carousell/Orion) [![Go Report Card](https://goreportcard.com/badge/github.com/carousell/Orion)](https://goreportcard.com/report/github.com/carousell/Orion) [![GoDoc](https://godoc.org/github.com/carousell/Orion/orion?status.svg)](https://godoc.org/github.com/carousell/Orion/orion)
+# Orion [![Build Status](https://travis-ci.com/carousell/Orion.svg?token=kSVweyyqayUyyfutjTqD&branch=master)](https://travis-ci.com/carousell/Orion) [![Go Report Card](https://goreportcard.com/badge/github.com/carousell/Orion)](https://goreportcard.com/report/github.com/carousell/Orion) [![codecov](https://codecov.io/gh/carousell/Orion/branch/master/graph/badge.svg?token=XEOedAF3IG)](https://codecov.io/gh/carousell/Orion) [![GoDoc](https://godoc.org/github.com/carousell/Orion/orion?status.svg)](https://godoc.org/github.com/carousell/Orion/orion)
 
 Orion is a small lightweight framework written around grpc/protobuf with the aim to shorten time to build microservices at Carousell.
 
@@ -80,7 +80,7 @@ go get -u github.com/carousell/Orion/protoc-gen-orion
 ```
 
 ## Project Status
-Orion is in use at production at Carousell and powers multiple (40+) services serving thousands of requests per second,
+Orion is in use at production at Carousell and powers multiple (100+) services serving thousands of requests per second,
 we ensure all updates are backward compatible unless it involves a major bug or security issue.
 
 ## License
