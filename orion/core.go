@@ -240,7 +240,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		log.Info(context.Background(), "HTTPListenerPort", httpPort)
 		config := http.Config{
 			CommonConfig: handlers.CommonConfig{
-				NoDefaultInterceptors: d.config.DisableDefaultInterceptors,
+				DisableDefaultInterceptors: d.config.DisableDefaultInterceptors,
 			},
 			EnableProtoURL:   d.config.EnableProtoURL,
 			DefaultJSONPB:    d.config.DefaultJSONPB,
@@ -261,7 +261,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		log.Info(context.Background(), "gRPCListenerPort", grpcPort)
 		config := grpcHandler.Config{
 			handlers.CommonConfig{
-				NoDefaultInterceptors: d.config.DisableDefaultInterceptors,
+				DisableDefaultInterceptors: d.config.DisableDefaultInterceptors,
 			},
 		}
 		handler := grpcHandler.NewGRPCHandler(config)

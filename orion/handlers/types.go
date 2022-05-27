@@ -82,5 +82,5 @@ type Middlewareable interface {
 
 //CommonConfig is the config that is common across both http and grpc handlers
 type CommonConfig struct {
-	NoDefaultInterceptors bool
+	DisableDefaultInterceptors bool
 }
