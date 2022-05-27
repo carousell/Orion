@@ -260,7 +260,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		}
 		log.Info(context.Background(), "gRPCListenerPort", grpcPort)
 		config := grpcHandler.Config{
-			handlers.CommonConfig{
+			CommonConfig: handlers.CommonConfig{
 				DisableDefaultInterceptors: d.config.DisableDefaultInterceptors,
 			},
 		}
