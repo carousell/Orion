@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/carousell/Orion/utils"
-	"github.com/carousell/Orion/utils/log"
 	newrelic "github.com/newrelic/go-agent"
 	opentracing "github.com/opentracing/opentracing-go"
 	otext "github.com/opentracing/opentracing-go/ext"
@@ -204,31 +203,4 @@ func ClientSpan(operationName string, ctx context.Context) (context.Context, ope
 	otext.SpanKindRPCClient.Set(clientSpan)
 	ctx = opentracing.ContextWithSpan(ctx, clientSpan)
 	return ctx, clientSpan
-}
-
-func GRPCTracingSpan(operationName string, ctx context.Context) context.Context {
-	tracer := opentracing.GlobalTracer()
-	// Retrieve gRPC metadata.
-	md, ok := metadata.FromIncomingContext(ctx)
-	if ok {
-		md = md.Copy()
-	} else {
-		md = metadata.MD{}
-	}
-	if span := opentracing.SpanFromContext(ctx); span != nil {
-		// There's nothing we can do with an error here.
-		if err := tracer.Inject(span.Context(), opentracing.TextMap, metadataReaderWriter{&md}); err != nil {
-			log.Info(ctx, "err", err, "component", "spanutils")
-		}
-	}
-
-	var span opentracing.Span
-	wireContext, err := tracer.Extract(opentracing.TextMap, metadataReaderWriter{&md})
-	if err != nil && err != opentracing.ErrSpanContextNotFound {
-		log.Info(ctx, "err", err, "component", "spanutils")
-	}
-	span = tracer.StartSpan(operationName, otext.RPCServerOption(wireContext))
-	ctx = opentracing.ContextWithSpan(ctx, span)
-	ctx = metadata.NewOutgoingContext(ctx, md)
-	return ctx
 }
