@@ -4,11 +4,11 @@ ifdef RACE
 	OPTS = -v
 endif
 
-all: clean vet test build
+all: clean vet golangci-lint test build
 
 cleanall: clean dockerclean
 
-ci: clean vet bench build
+ci: clean vet golangci-lint bench build
 
 vet:
 	go vet ./ServiceName/...
@@ -63,10 +63,13 @@ install: macinstall goinstall
 goinstall:
 	go get -u github.com/kardianos/govendor
 	go get -u github.com/shurcooL/Go-Package-Store/cmd/Go-Package-Store
-	go get -u github.com/golang/lint/golint
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.46.2
 	go get -u google.golang.org/grpc
 	go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
 	go get -u github.com/carousell/Orion/protoc-gen-orion
 
 macinstall:
 	brew install protobuf
+
+golangci-lint:
+	./bin/golangci-lint run --config .golangci.yml  ./ServiceName/...  --skip-dirs='(ServiceName_proto|pb)'
