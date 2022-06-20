@@ -67,6 +67,7 @@ bash generate.sh
 cd $p
 
 svc_name=`echo "$SVC" | awk '{print tolower($0)}'`
+sed -i "" "s/service_name/$SVC/g" ./sonar.properties
 sed -i "" "s/service_name/$svc_name/g" run.sh
 
 echo "compiling code for $SVC"
