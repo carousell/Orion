@@ -72,9 +72,5 @@ goinstall:
 macinstall:
 	brew install protobuf
 
-golangci-lint-install:
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.46.2
-	golangci-lint --version
-
 gen:
 	go generate ./orion ./utils ./interceptors ./example
