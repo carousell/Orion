@@ -21,7 +21,7 @@ func (s *service) GetInterceptors() []grpc.UnaryServerInterceptor {
 	return s.interceptors
 }
 
-func TestGetInterceptors(t *testing.T) {
+func TestGetInterceptorsWithMethodMiddlewares(t *testing.T) {
 	// this test currently verifies the Interceptors is executed at the same sequence that you passed in
 	// gRPC's normal chainUnaryInterceptor is executing interceptor in a reverse order.
 	// but Orion's chainUnaryServer ensure the interceptor execution order is normal (ensure this)
@@ -44,7 +44,7 @@ func TestGetInterceptors(t *testing.T) {
 	}
 	svc := NewMockService(interceptors...)
 
-	serverInterceptor := GetInterceptors(svc, CommonConfig{NoDefaultInterceptors: true})
+	serverInterceptor := GetInterceptorsWithMethodMiddlewares(svc, CommonConfig{NoDefaultInterceptors: true}, []string{})
 	serverInterceptor(context.Background(), nil, &grpc.UnaryServerInfo{FullMethod: "test"}, func(ctx context.Context, req interface{}) (interface{}, error) {
 		return nil, nil
 	}) // to trigger the interceptors
