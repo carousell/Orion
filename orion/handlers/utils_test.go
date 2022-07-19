@@ -44,7 +44,7 @@ func TestGetInterceptorsWithMethodMiddlewares(t *testing.T) {
 	}
 	svc := NewMockService(interceptors...)
 
-	serverInterceptor := GetInterceptorsWithMethodMiddlewares(svc, CommonConfig{NoDefaultInterceptors: true}, []string{})
+	serverInterceptor := GetInterceptorsWithMethodMiddlewares(svc, CommonConfig{DisableDefaultInterceptors: true}, []string{})
 	serverInterceptor(context.Background(), nil, &grpc.UnaryServerInfo{FullMethod: "test"}, func(ctx context.Context, req interface{}) (interface{}, error) {
 		return nil, nil
 	}) // to trigger the interceptors
