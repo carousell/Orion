@@ -3,6 +3,7 @@ package notifier
 import (
 	"context"
 	"fmt"
+	"google.golang.org/grpc/metadata"
 	"os"
 	"reflect"
 	"runtime"
@@ -353,7 +354,7 @@ func SetEnvironemnt(env string) {
 //SetTraceId updates the traceID based on context values
 func SetTraceId(ctx context.Context) context.Context {
 	traceId := GetTraceId(ctx)
-	fmt.Println("traceId = ", traceId)
+	fmt.Println("After getter traceId = ", traceId)
 	log.Info(ctx, traceId)
 	if traceId != "" {
 		return ctx
@@ -366,9 +367,16 @@ func SetTraceId(ctx context.Context) context.Context {
 	if strings.TrimSpace(traceID) == "" {
 		traceID = uuid.NewUUID().String()
 	}
-	fmt.Println("traceId = ", traceId)
-	log.Info(ctx, traceId)
+	fmt.Println("After setter traceId = ", traceId)
 	ctx = loggers.AddToLogContext(ctx, "trace", traceID)
+	log.Info(ctx)
+	md, _ := metadata.FromIncomingContext(ctx)
+	if len(md["trace"]) > 0 {
+		traceId := md["trace"][0]
+		fmt.Println(" in set traceId traceId from metadata", traceId)
+	} else {
+		fmt.Println("in set traceId next no trace")
+	}
 	return options.AddToOptions(ctx, tracerID, traceID)
 }
 
