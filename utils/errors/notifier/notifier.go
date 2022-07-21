@@ -367,7 +367,7 @@ func SetTraceId(ctx context.Context) context.Context {
 	if strings.TrimSpace(traceID) == "" {
 		traceID = uuid.NewUUID().String()
 	}
-	fmt.Println("After setter traceId = ", traceId)
+	fmt.Println("After setter traceId = ", traceID)
 	ctx = loggers.AddToLogContext(ctx, "trace", traceID)
 	log.Info(ctx)
 	md, _ := metadata.FromIncomingContext(ctx)
@@ -375,7 +375,7 @@ func SetTraceId(ctx context.Context) context.Context {
 		traceId := md["trace"][0]
 		fmt.Println(" in set traceId traceId from metadata", traceId)
 	} else {
-		fmt.Println("in set traceId next no trace")
+		fmt.Println("in set traceId no trace")
 	}
 	return options.AddToOptions(ctx, tracerID, traceID)
 }
