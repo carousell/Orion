@@ -11,14 +11,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/spf13/viper"
+	"google.golang.org/grpc"
+
 	"github.com/carousell/Orion/orion/handlers"
 	grpcHandler "github.com/carousell/Orion/orion/handlers/grpc"
 	"github.com/carousell/Orion/orion/handlers/http"
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/listenerutils"
 	"github.com/carousell/Orion/utils/log"
-	"github.com/spf13/viper"
-	"google.golang.org/grpc"
 )
 
 var (
@@ -236,8 +237,11 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		if err != nil {
 			log.Error(context.Background(), "httpListener", "could not create listener", "error", err)
 		}
-		log.Info(context.Background(), "HTTPListnerPort", httpPort)
+		log.Info(context.Background(), "HTTPListenerPort", httpPort)
 		config := http.Config{
+			CommonConfig: handlers.CommonConfig{
+				DisableDefaultInterceptors: d.config.DisableDefaultInterceptors,
+			},
 			EnableProtoURL:   d.config.EnableProtoURL,
 			DefaultJSONPB:    d.config.DefaultJSONPB,
 			NRHttpTxNameType: d.config.NewRelicConfig.HttpTxNameType,
@@ -254,8 +258,13 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		if err != nil {
 			log.Info(context.Background(), "grpcListener", "could not create listener", "error", err)
 		}
-		log.Info(context.Background(), "gRPCListnerPort", grpcPort)
-		handler := grpcHandler.NewGRPCHandler(grpcHandler.Config{})
+		log.Info(context.Background(), "gRPCListenerPort", grpcPort)
+		config := grpcHandler.Config{
+			CommonConfig: handlers.CommonConfig{
+				DisableDefaultInterceptors: d.config.DisableDefaultInterceptors,
+			},
+		}
+		handler := grpcHandler.NewGRPCHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,
 			listener: grpcListener,
