@@ -69,10 +69,11 @@ type middlewareInfo struct {
 
 //DefaultServerImpl provides a default implementation of orion.Server this can be embedded in custom orion.Server implementations
 type DefaultServerImpl struct {
-	config Config
-	mu     sync.Mutex
-	wg     sync.WaitGroup
-	inited bool
+	config                    Config
+	mu                        sync.Mutex
+	wg                        sync.WaitGroup
+	grpcUnknownServiceHandler grpc.StreamHandler
+	inited                    bool
 
 	services     map[string]*svcInfo
 	encoders     map[string]*encoderInfo
@@ -263,6 +264,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			CommonConfig: handlers.CommonConfig{
 				DisableDefaultInterceptors: d.config.DisableDefaultInterceptors,
 			},
+			UnknownServiceHandler: d.grpcUnknownServiceHandler,
 		}
 		handler := grpcHandler.NewGRPCHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
@@ -498,13 +500,45 @@ func (d *DefaultServerImpl) Stop(timeout time.Duration) error {
 }
 
 //GetDefaultServer returns a default server object that can be directly used to start orion server
-func GetDefaultServer(name string) Server {
-	return GetDefaultServerWithConfig(BuildDefaultConfig(name))
+func GetDefaultServer(name string, opts ...DefaultServerOption) Server {
+	server := &DefaultServerImpl{
+		config: BuildDefaultConfig(name),
+	}
+	for _, opt := range opts {
+		opt.apply(server)
+	}
+	return server
 }
 
 //GetDefaultServerWithConfig returns a default server object that uses provided configuration
 func GetDefaultServerWithConfig(config Config) Server {
 	return &DefaultServerImpl{
 		config: config,
+	}
+}
+
+type DefaultServerOption interface {
+	apply(*DefaultServerImpl)
+}
+
+// WithGrpcUnknownHandler returns a DefaultServerOption which sets
+// UnknownServiceHandler option in grpc server
+func WithGrpcUnknownHandler(grpcUnknownServiceHandler grpc.StreamHandler) DefaultServerOption {
+	return newFuncDefaultServerOption(func(h *DefaultServerImpl) {
+		h.grpcUnknownServiceHandler = grpcUnknownServiceHandler
+	})
+}
+
+type funcDefaultServerOption struct {
+	f func(options *DefaultServerImpl)
+}
+
+func (fdso *funcDefaultServerOption) apply(ds *DefaultServerImpl) {
+	fdso.f(ds)
+}
+
+func newFuncDefaultServerOption(f func(options *DefaultServerImpl)) *funcDefaultServerOption {
+	return &funcDefaultServerOption{
+		f: f,
 	}
 }

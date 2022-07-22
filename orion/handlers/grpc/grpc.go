@@ -10,11 +10,13 @@ import (
 	"github.com/carousell/Orion/utils/log"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
+
 )
 
 // Config is the configuration for GRPC Handler
 type Config struct {
 	handlers.CommonConfig
+	UnknownServiceHandler grpc.StreamHandler
 }
 
 //NewGRPCHandler creates a new GRPC handler
@@ -31,10 +33,17 @@ type grpcHandler struct {
 
 func (g *grpcHandler) init() {
 	if g.grpcServer == nil {
-		g.grpcServer = grpc.NewServer(
-			grpc.UnaryInterceptor(g.grpcInterceptor()),
-			grpc.StreamInterceptor(g.grpcStreamInterceptor()),
-		)
+		var opts []grpc.ServerOption
+		if g.grpcInterceptor() != nil {
+			opts = append(opts, grpc.UnaryInterceptor(g.grpcInterceptor()))
+		}
+		if g.grpcStreamInterceptor() != nil {
+			opts = append(opts, grpc.StreamInterceptor(g.grpcStreamInterceptor()))
+		}
+		if g.config.UnknownServiceHandler != nil {
+			opts = append(opts, grpc.UnknownServiceHandler(g.config.UnknownServiceHandler))
+		}
+		g.grpcServer = grpc.NewServer(opts...)
 	}
 	if g.middlewares == nil {
 		g.middlewares = handlers.NewMiddlewareMapping()

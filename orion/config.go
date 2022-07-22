@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/spf13/viper"
 
