@@ -1,6 +1,6 @@
 module github.com/carousell/Orion
 
-go 1.12
+go 1.17
 
 replace (
 	git.apache.org/thrift.git => github.com/apache/thrift v0.12.0
@@ -40,7 +40,6 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v0.0.0-20190118093823-f849b5445de4
 	github.com/grpc-ecosystem/go-grpc-prometheus v0.0.0-20181025070259-68e3a13e4117
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1 // indirect
-	github.com/micro/protobuf v0.0.0-20180321161605-ebd3be6d4fdb
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/newrelic/go-agent v2.3.0+incompatible
 	github.com/opentracing-contrib/go-observer v0.0.0-20170622124052-a52f23424492 // indirect
@@ -66,12 +65,54 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/stvp/rollbar v0.0.0-20171113052335-4a50daf855af
 	go.elastic.co/apm v1.4.0
-	golang.org/x/net v0.0.0-20190311183353-d8887717615a
+	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
+	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
 	golang.org/x/oauth2 v0.0.0-20190130055435-99b60b757ec1
-	golang.org/x/sys v0.0.0-20190825160603-fb81701db80f // indirect
-	golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2 // indirect
+	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	google.golang.org/api v0.1.0
 	google.golang.org/genproto v0.0.0-20190128161407-8ac453e89fca // indirect
 	google.golang.org/grpc v1.22.1
 	gopkg.in/airbrake/gobrake.v2 v2.0.9
+)
+
+require (
+	github.com/RichardKnop/redsync v1.2.0 // indirect
+	github.com/armon/go-radix v1.0.0 // indirect
+	github.com/aws/aws-sdk-go v1.15.66 // indirect
+	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
+	github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/elastic/go-windows v1.0.0 // indirect
+	github.com/fsnotify/fsnotify v1.4.7 // indirect
+	github.com/go-stack/stack v1.8.0 // indirect
+	github.com/gogo/protobuf v1.1.1 // indirect
+	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
+	github.com/gomodule/redigo v2.0.0+incompatible // indirect
+	github.com/google/go-cmp v0.5.5 // indirect
+	github.com/googleapis/gax-go v2.0.0+incompatible // indirect
+	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af // indirect
+	github.com/joeshaw/multierror v0.0.0-20140124173710-69b34d4ec901 // indirect
+	github.com/kelseyhightower/envconfig v1.3.0 // indirect
+	github.com/konsorten/go-windows-terminal-sequences v1.0.1 // indirect
+	github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515 // indirect
+	github.com/magiconair/properties v1.8.0 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
+	github.com/mongodb/mongo-go-driver v0.2.0 // indirect
+	github.com/pelletier/go-toml v1.2.0 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/spf13/cast v1.3.0 // indirect
+	github.com/spf13/pflag v1.0.3 // indirect
+	github.com/streadway/amqp v0.0.0-20180806233856-70e15c650864 // indirect
+	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
+	github.com/xdg/stringprep v1.0.0 // indirect
+	go.elastic.co/fastjson v1.0.0 // indirect
+	go.opencensus.io v0.18.0 // indirect
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
+	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
+	golang.org/x/text v0.3.6 // indirect
+	google.golang.org/appengine v1.4.0 // indirect
+	gopkg.in/yaml.v2 v2.2.2 // indirect
+	howett.net/plist v0.0.0-20181124034731-591f970eefbb // indirect
 )
