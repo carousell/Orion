@@ -11,6 +11,9 @@ import (
 
 func BenchmarkFromContext(b *testing.B) {
 	ctx := context.Background()
+	for i := 0; i < 10000; i++ {
+		s.AddToLogContext(ctx, fmt.Sprintf("key%d", i), "good value")
+	}
 	for i := 0; i < b.N; i++ {
 		s.FromContext(ctx)
 	}

@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const readWorkerCount = 5
-const writeWorkerCount = 5
+const readWorkerCount = 50
+const writeWorkerCount = 50
 
 func readWorker(idx int, ctx context.Context) {
 	lf := s.FromContext(ctx)
@@ -64,7 +64,7 @@ func TestParallelWrite(t *testing.T) {
 	wg.Wait()
 
 	lf := s.FromContext(ctx)
-	fmt.Println(lf)
+	fmt.Println("lf", lf)
 
 	assert.Contains(t, lf, "test-key")
 	for i := 1; i <= writeWorkerCount; i++ {

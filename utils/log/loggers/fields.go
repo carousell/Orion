@@ -2,6 +2,7 @@ package loggers
 
 import (
 	"context"
+	"sync"
 )
 
 type logsContext string
@@ -12,6 +13,10 @@ var (
 
 //LogFields contains all fields that have to be added to logs
 type LogFields map[string]interface{}
+type ProtectedLogFields struct {
+	Content LogFields
+	mtx     sync.RWMutex
+}
 
 // Add or modify log fields
 func (o LogFields) Add(key string, value interface{}) {
@@ -28,14 +33,19 @@ func (o LogFields) Del(key string) {
 //AddToLogContext adds log fields to context.
 // Any info added here will be added to all logs using this context
 func AddToLogContext(ctx context.Context, key string, value interface{}) context.Context {
-	data := FromContext(ctx)
+	data := fromContext(ctx)
+	//Initialize if key doesn't exist
 	if data == nil {
-		ctx = context.WithValue(ctx, contextKey, make(LogFields))
-		data = FromContext(ctx)
+		ctx = context.WithValue(ctx, contextKey, &ProtectedLogFields{Content: make(LogFields)})
+		data = fromContext(ctx)
 	}
 	m := ctx.Value(contextKey)
-	if data, ok := m.(LogFields); ok {
-		data.Add(key, value)
+	if data, ok := m.(*ProtectedLogFields); ok {
+		data.mtx.Lock()
+		defer data.mtx.Unlock()
+		// d := data.Content
+		// fmt.Printf("Address %p\n", d)
+		data.Content.Add(key, value)
 	}
 	return ctx
 }
@@ -46,8 +56,26 @@ func FromContext(ctx context.Context) LogFields {
 		return nil
 	}
 	if h := ctx.Value(contextKey); h != nil {
-		if logData, ok := h.(LogFields); ok {
-			return logData
+		if plf, ok := h.(*ProtectedLogFields); ok {
+			plf.mtx.RLock()
+			defer plf.mtx.RUnlock()
+			content := make(LogFields)
+			for k, v := range plf.Content {
+				content[k] = v
+			}
+			return content
+		}
+	}
+	return nil
+}
+
+func fromContext(ctx context.Context) *ProtectedLogFields {
+	if ctx == nil {
+		return nil
+	}
+	if h := ctx.Value(contextKey); h != nil {
+		if plf, ok := h.(*ProtectedLogFields); ok {
+			return plf
 		}
 	}
 	return nil
