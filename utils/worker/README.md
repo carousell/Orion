@@ -25,6 +25,7 @@
 * [type RabbitMQConfig](#RabbitMQConfig)
 * [type ScheduleConfig](#ScheduleConfig)
 * [type ScheduleOption](#ScheduleOption)
+  * [func WithETA(eta \*time.Time) ScheduleOption](#WithETA)
   * [func WithQueueName(queueName string) ScheduleOption](#WithQueueName)
   * [func WithRetry(n int) ScheduleOption](#WithRetry)
 * [type Work](#Work)
@@ -34,7 +35,7 @@
 #### <a name="pkg-files">Package files</a>
 [config.go](./config.go) [types.go](./types.go) [worker.go](./worker.go) [workerinfo.go](./workerinfo.go) 
 
-## <a name="Config">type</a> [Config](./types.go#L18-L21)
+## <a name="Config">type</a> [Config](./types.go#L20-L23)
 ``` go
 type Config struct {
     LocalMode    bool
@@ -44,7 +45,7 @@ type Config struct {
 ```
 Config is the config used to intialize workers
 
-## <a name="RabbitMQConfig">type</a> [RabbitMQConfig](./types.go#L24-L31)
+## <a name="RabbitMQConfig">type</a> [RabbitMQConfig](./types.go#L26-L33)
 ``` go
 type RabbitMQConfig struct {
     UserName    string
@@ -58,7 +59,7 @@ type RabbitMQConfig struct {
 ```
 RabbitMQConfig is the config used for scheduling tasks through rabbitmq
 
-## <a name="ScheduleConfig">type</a> [ScheduleConfig](./types.go#L38-L41)
+## <a name="ScheduleConfig">type</a> [ScheduleConfig](./types.go#L40-L44)
 ``` go
 type ScheduleConfig struct {
     // contains filtered or unexported fields
@@ -67,31 +68,37 @@ type ScheduleConfig struct {
 ```
 ScheduleConfig is the config used when scheduling a task
 
-## <a name="ScheduleOption">type</a> [ScheduleOption](./types.go#L44)
+## <a name="ScheduleOption">type</a> [ScheduleOption](./types.go#L47)
 ``` go
 type ScheduleOption func(*ScheduleConfig)
 ```
 ScheduleOption represents different options available for Schedule
 
-### <a name="WithQueueName">func</a> [WithQueueName](./worker.go#L39)
+### <a name="WithETA">func</a> [WithETA](./worker.go#L47)
+``` go
+func WithETA(eta *time.Time) ScheduleOption
+```
+WithETA sets the delay for this task
+
+### <a name="WithQueueName">func</a> [WithQueueName](./worker.go#L40)
 ``` go
 func WithQueueName(queueName string) ScheduleOption
 ```
 WithQueueName sets the destination queue for this task
 
-### <a name="WithRetry">func</a> [WithRetry](./worker.go#L32)
+### <a name="WithRetry">func</a> [WithRetry](./worker.go#L33)
 ``` go
 func WithRetry(n int) ScheduleOption
 ```
 WithRetry sets the number of Retries for this task
 
-## <a name="Work">type</a> [Work](./types.go#L34)
+## <a name="Work">type</a> [Work](./types.go#L36)
 ``` go
 type Work func(ctx context.Context, payload string) error
 ```
 Work is the type of task that can be exeucted by Worker
 
-## <a name="Worker">type</a> [Worker](./types.go#L10-L15)
+## <a name="Worker">type</a> [Worker](./types.go#L12-L17)
 ``` go
 type Worker interface {
     Schedule(ctx context.Context, name, payload string, options ...ScheduleOption) error
@@ -102,7 +109,7 @@ type Worker interface {
 ```
 Worker is the interface for worker
 
-### <a name="NewWorker">func</a> [NewWorker](./worker.go#L17)
+### <a name="NewWorker">func</a> [NewWorker](./worker.go#L18)
 ``` go
 func NewWorker(config Config) Worker
 ```

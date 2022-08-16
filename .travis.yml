@@ -2,17 +2,19 @@ language: go
 sudo: false
 
 go:
-  - "1.12.x"
-
-env:
-  - GO111MODULE=on
+  - "1.17.x"
+  - "1.18.x"
+  - master
 
 install: true
 
 script:
-  - GO111MODULE=auto go get -u golang.org/x/lint/golint
+  - go get -u golang.org/x/lint/golint
   - make ci
 
 matrix:
   allow_failures:
     - go: master
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)

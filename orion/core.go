@@ -11,14 +11,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/spf13/viper"
+	"google.golang.org/grpc"
+
 	"github.com/carousell/Orion/orion/handlers"
 	grpcHandler "github.com/carousell/Orion/orion/handlers/grpc"
 	"github.com/carousell/Orion/orion/handlers/http"
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/listenerutils"
 	"github.com/carousell/Orion/utils/log"
-	"github.com/spf13/viper"
-	"google.golang.org/grpc"
 )
 
 var (
@@ -68,10 +69,11 @@ type middlewareInfo struct {
 
 //DefaultServerImpl provides a default implementation of orion.Server this can be embedded in custom orion.Server implementations
 type DefaultServerImpl struct {
-	config Config
-	mu     sync.Mutex
-	wg     sync.WaitGroup
-	inited bool
+	config                    Config
+	mu                        sync.Mutex
+	wg                        sync.WaitGroup
+	grpcUnknownServiceHandler grpc.StreamHandler
+	inited                    bool
 
 	services     map[string]*svcInfo
 	encoders     map[string]*encoderInfo
@@ -236,10 +238,14 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		if err != nil {
 			log.Error(context.Background(), "httpListener", "could not create listener", "error", err)
 		}
-		log.Info(context.Background(), "HTTPListnerPort", httpPort)
+		log.Info(context.Background(), "HTTPListenerPort", httpPort)
 		config := http.Config{
-			EnableProtoURL: d.config.EnableProtoURL,
-			DefaultJSONPB:  d.config.DefaultJSONPB,
+			CommonConfig: handlers.CommonConfig{
+				DisableDefaultInterceptors: d.config.DisableDefaultInterceptors,
+			},
+			EnableProtoURL:   d.config.EnableProtoURL,
+			DefaultJSONPB:    d.config.DefaultJSONPB,
+			NRHttpTxNameType: d.config.NewRelicConfig.HttpTxNameType,
 		}
 		handler := http.NewHTTPHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
@@ -253,8 +259,14 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 		if err != nil {
 			log.Info(context.Background(), "grpcListener", "could not create listener", "error", err)
 		}
-		log.Info(context.Background(), "gRPCListnerPort", grpcPort)
-		handler := grpcHandler.NewGRPCHandler(grpcHandler.Config{})
+		log.Info(context.Background(), "gRPCListenerPort", grpcPort)
+		config := grpcHandler.Config{
+			CommonConfig: handlers.CommonConfig{
+				DisableDefaultInterceptors: d.config.DisableDefaultInterceptors,
+			},
+			UnknownServiceHandler: d.grpcUnknownServiceHandler,
+		}
+		handler := grpcHandler.NewGRPCHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
 			handler:  handler,
 			listener: grpcListener,
@@ -270,9 +282,13 @@ func (d *DefaultServerImpl) initHandlers() {
 func (d *DefaultServerImpl) signalWatcher() {
 	// Setup interrupt handler.
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGHUP)
+	signal.Notify(c, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
 	for sig := range c {
 		if sig == syscall.SIGHUP { // only reload config for sighup
+			if !d.config.HotReload {
+				log.Warn(context.Background(), "signal", "config reload SKIPPED (Hot reload disabled) on "+sig.String())
+				continue
+			}
 			d.version++
 			log.Info(context.Background(), "signal", "config reloaded on "+sig.String())
 			// relaod config
@@ -306,6 +322,10 @@ func (d *DefaultServerImpl) signalWatcher() {
 				}
 				info.sf.DisposeService(info.ss, params)
 			}
+		} else if sig == syscall.SIGTERM || sig == syscall.SIGINT {
+			log.Info(context.Background(), "signal", "starting shutdown on "+sig.String())
+			d.Stop(30 * time.Second)
+			break
 		} else {
 			// should not happen!
 			for _, h := range d.handlers {
@@ -328,9 +348,7 @@ func (d *DefaultServerImpl) Start() {
 	for _, h := range d.handlers {
 		d.startHandler(h, false)
 	}
-	if d.config.HotReload {
-		go d.signalWatcher()
-	}
+	go d.signalWatcher()
 }
 
 func (d *DefaultServerImpl) startHandler(h *handlerInfo, reload bool) {
@@ -470,6 +488,7 @@ func (d *DefaultServerImpl) GetConfig() map[string]interface{} {
 func (d *DefaultServerImpl) Stop(timeout time.Duration) error {
 	var wg sync.WaitGroup
 	for _, h := range d.handlers {
+		h.listener.CanClose(true)
 		wg.Add(1)
 		go func(h *handlerInfo, timeout time.Duration) {
 			defer wg.Done()
@@ -481,13 +500,45 @@ func (d *DefaultServerImpl) Stop(timeout time.Duration) error {
 }
 
 //GetDefaultServer returns a default server object that can be directly used to start orion server
-func GetDefaultServer(name string) Server {
-	return GetDefaultServerWithConfig(BuildDefaultConfig(name))
+func GetDefaultServer(name string, opts ...DefaultServerOption) Server {
+	server := &DefaultServerImpl{
+		config: BuildDefaultConfig(name),
+	}
+	for _, opt := range opts {
+		opt.apply(server)
+	}
+	return server
 }
 
 //GetDefaultServerWithConfig returns a default server object that uses provided configuration
 func GetDefaultServerWithConfig(config Config) Server {
 	return &DefaultServerImpl{
 		config: config,
+	}
+}
+
+type DefaultServerOption interface {
+	apply(*DefaultServerImpl)
+}
+
+// WithGrpcUnknownHandler returns a DefaultServerOption which sets
+// UnknownServiceHandler option in grpc server
+func WithGrpcUnknownHandler(grpcUnknownServiceHandler grpc.StreamHandler) DefaultServerOption {
+	return newFuncDefaultServerOption(func(h *DefaultServerImpl) {
+		h.grpcUnknownServiceHandler = grpcUnknownServiceHandler
+	})
+}
+
+type funcDefaultServerOption struct {
+	f func(options *DefaultServerImpl)
+}
+
+func (fdso *funcDefaultServerOption) apply(ds *DefaultServerImpl) {
+	fdso.f(ds)
+}
+
+func newFuncDefaultServerOption(f func(options *DefaultServerImpl)) *funcDefaultServerOption {
+	return &funcDefaultServerOption{
+		f: f,
 	}
 }
