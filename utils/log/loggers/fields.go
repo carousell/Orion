@@ -43,8 +43,6 @@ func AddToLogContext(ctx context.Context, key string, value interface{}) context
 	if data, ok := m.(*ProtectedLogFields); ok {
 		data.mtx.Lock()
 		defer data.mtx.Unlock()
-		// d := data.Content
-		// fmt.Printf("Address %p\n", d)
 		data.Content.Add(key, value)
 	}
 	return ctx
