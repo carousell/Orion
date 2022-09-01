@@ -16,8 +16,26 @@ var _ = orion.ProtoGenVersion1_0
 
 // Decoders
 
-// RegisterSimpleServiceOrionServer registers SimpleService to Orion server
-func RegisterSimpleServiceOrionServer(srv orion.ServiceFactory, orionServer orion.Server) {
-	orionServer.RegisterService(&_SimpleService_serviceDesc, srv)
+//Streams
 
+// RegisterSimpleServiceOrionServer registers SimpleService to Orion server
+// Services need to pass either ServiceFactory or ServiceFactoryV2 implementation
+func RegisterSimpleServiceOrionServer(sf interface{}, orionServer orion.Server) error {
+	err := orionServer.RegisterService(&SimpleService_ServiceDesc, sf)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
+
+// DefaultEncoder
+func RegisterSimpleServiceDefaultEncoder(svr orion.Server, encoder orion.Encoder) {
+	orion.RegisterDefaultEncoder(svr, "SimpleService", encoder)
+}
+
+// DefaultDecoder
+func RegisterSimpleServiceDefaultDecoder(svr orion.Server, decoder orion.Decoder) {
+	orion.RegisterDefaultDecoder(svr, "SimpleService", decoder)
+}
+

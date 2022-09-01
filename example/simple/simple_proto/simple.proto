@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package simple_proto;
 
+option go_package = "github.com/carousell/Orion/example/simple_proto";
+
 service SimpleService{
     rpc Echo (EchoRequest) returns (EchoResponse){
     }
