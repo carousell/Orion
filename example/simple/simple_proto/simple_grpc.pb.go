@@ -4,7 +4,7 @@
 // - protoc             v3.17.3
 // source: simple.proto
 
-package simplepb
+package simple_proto
 
 import (
 	context "context"
