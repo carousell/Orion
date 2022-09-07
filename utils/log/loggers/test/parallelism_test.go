@@ -17,10 +17,9 @@ const readWorkerCount = 50
 const writeWorkerCount = 50
 
 func readWorker(idx int, ctx context.Context) {
-	lf := s.FromContext(ctx)
+	s.FromContext(ctx)
 	// simulate reading task
 	time.Sleep(time.Millisecond * 250)
-	fmt.Printf("Reader %d read from logfields %+v\n", idx, lf)
 }
 
 func writeWorker(idx int, ctx context.Context) context.Context {
@@ -28,7 +27,6 @@ func writeWorker(idx int, ctx context.Context) context.Context {
 	val := fmt.Sprintf("val%d", rand.Intn(10000))
 	ctx = s.AddToLogContext(ctx, key, val)
 	time.Sleep(time.Millisecond * 250)
-	fmt.Printf("Writer %d wrote %s:%s\n", idx, key, val)
 	return ctx
 }
 
@@ -64,7 +62,6 @@ func TestParallelWrite(t *testing.T) {
 	wg.Wait()
 
 	lf := s.FromContext(ctx)
-	fmt.Println("lf", lf)
 
 	assert.Contains(t, lf, "test-key")
 	for i := 1; i <= writeWorkerCount; i++ {
@@ -97,7 +94,6 @@ func TestParallelReadAndWrite(t *testing.T) {
 	wgWrite.Wait()
 
 	lf := s.FromContext(ctx)
-	fmt.Println(lf)
 
 	assert.Contains(t, lf, "test-key")
 	for i := 1; i <= writeWorkerCount; i++ {
