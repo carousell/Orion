@@ -131,7 +131,7 @@ func Register{{.SvcName}}{{.MethodName}}Decoder(svr orion.Server, decoder orion.
 	orion.RegisterDecoder(svr, "{{.SvcName}}", "{{.MethodName}}", decoder)
 }
 {{ end }}
-//Streams
+// Streams
 {{ range .Streams }}
 // {{ . }}
 {{ end }}
@@ -206,7 +206,7 @@ func main() {
 		if _, ok := filesToGenerate[file.GetName()]; ok {
 			// check if file has any service
 			if len(file.Service) > 0 {
-				f := generateFile(populate(file))
+				f := generateFile(populate(NewProtoFile(file)))
 				response.File = append(response.File, f)
 			}
 		}
@@ -242,22 +242,21 @@ func generateFile(d *data) *plugin.CodeGeneratorResponse_File {
 	return file
 }
 
-func populate(file *descriptor.FileDescriptorProto) *data {
-	d := new(data)
-	d.FileName = *file.Name
-	d.PackageName = strings.Replace(file.GetPackage(), ".", "_", 10)
-
-	d.Services = make([]*service, 0)
-	generate(d, file)
-
-	return d
+func populate(pf ProtoFile) *data {
+	return &data{
+		FileName:    pf.Name,
+		PackageName: pf.PackageName,
+		Services:    generateService(pf),
+	}
 }
 
-func generate(d *data, file *descriptor.FileDescriptorProto) {
-	comments := extractComments(file)
-	for index, svc := range file.GetService() {
+func generateService(pf ProtoFile) []*service {
+	var services []*service
 
-		origServName := svc.GetName()
+	commentPathMap := extractComments(pf)
+	for index, svc := range pf.Service {
+
+		origServName := svc.Name
 		servName := generator.CamelCase(origServName) // use the same logic from go-grpc generator
 		serviceDescVar := "_" + servName + "_serviceDesc"
 
@@ -270,24 +269,23 @@ func generate(d *data, file *descriptor.FileDescriptorProto) {
 		s.Streams = make([]*stream, 0)
 		s.ServiceDescVar = serviceDescVar
 		s.ServName = servName
-		d.Services = append(d.Services, s)
+		services = append(services, s)
 
 		// ** --- START -- Find comments in grpc services
 		path := fmt.Sprintf("6,%d", index) // 6 means service.
-		for i, method := range svc.GetMethod() {
+		for i, method := range svc.Method {
 			commentPath := fmt.Sprintf("%s,2,%d", path, i) // 2 means method in a service.
-			if loc, ok := comments[commentPath]; ok {
-				text := strings.TrimSuffix(loc.GetLeadingComments(), "\n")
-				for _, line := range strings.Split(text, "\n") {
+			if comments, ok := commentPathMap[commentPath]; ok {
+				for _, comment := range comments {
 					// ** --- END -- Find comments in grpc services
 
-					if option := parseComments(line); option != nil {
-						if method.GetClientStreaming() || method.GetServerStreaming() {
+					if option := parseComment(comment); option != nil {
+						if method.ClientStreaming || method.ServerStreaming {
 							str := new(stream)
-							str.SvcName = svc.GetName()
-							str.MethodName = method.GetName()
-							str.ClientStream = method.GetClientStreaming()
-							str.ServerStream = method.GetServerStreaming()
+							str.SvcName = svc.Name
+							str.MethodName = method.Name
+							str.ClientStream = method.ClientStreaming
+							str.ServerStream = method.ServerStreaming
 							if option.Encoder || option.Decoder {
 								str.Path = option.Path
 								str.Methods = option.Method
@@ -305,16 +303,16 @@ func generate(d *data, file *descriptor.FileDescriptorProto) {
 
 								// populate encoder
 								enc := new(encoder)
-								enc.SvcName = svc.GetName()
-								enc.MethodName = method.GetName()
+								enc.SvcName = svc.Name
+								enc.MethodName = method.Name
 								enc.Path = option.Path
 								enc.Methods = methodsString
 								s.Encoders = append(s.Encoders, enc)
 
 								// popluate handler
 								han := new(handler)
-								han.SvcName = svc.GetName()
-								han.MethodName = method.GetName()
+								han.SvcName = svc.Name
+								han.MethodName = method.Name
 								han.Path = option.Path
 								s.Handlers = append(s.Handlers, han)
 							}
@@ -322,23 +320,23 @@ func generate(d *data, file *descriptor.FileDescriptorProto) {
 							if option.Decoder {
 								// popluate decoder
 								dec := new(decoder)
-								dec.SvcName = svc.GetName()
-								dec.MethodName = method.GetName()
+								dec.SvcName = svc.Name
+								dec.MethodName = method.Name
 								s.Decoders = append(s.Decoders, dec)
 							}
 
 							if option.Option {
 								opt := new(orionOption)
-								opt.SvcName = svc.GetName()
-								opt.MethodName = method.GetName()
+								opt.SvcName = svc.Name
+								opt.MethodName = method.Name
 								opt.OptionType = strings.TrimSpace(option.Value)
 								s.Options = append(s.Options, opt)
 							}
 
 							if option.Middleware {
 								mid := new(orionMiddleware)
-								mid.SvcName = svc.GetName()
-								mid.MethodName = method.GetName()
+								mid.SvcName = svc.Name
+								mid.MethodName = method.Name
 								names := strings.Split(option.Value, ",")
 								for i := range names {
 									names[i] = "\"" + strings.TrimSpace(names[i]) + "\""
@@ -352,6 +350,8 @@ func generate(d *data, file *descriptor.FileDescriptorProto) {
 			}
 		}
 	}
+
+	return services
 }
 
 func parseCommentURL(parts []string) *commentsInfo {
@@ -397,8 +397,8 @@ func parseCommentOptions(parts []string) *commentsInfo {
 	return nil
 }
 
-func parseComments(line string) *commentsInfo {
-	parts := strings.SplitN(line, DELIM, 3)
+func parseComment(comment string) *commentsInfo {
+	parts := strings.SplitN(comment, DELIM, 3)
 	if len(parts) > 1 {
 		if ORION == strings.ToUpper(strings.TrimSpace(parts[0])) {
 			switch strings.ToUpper(strings.TrimSpace(parts[1])) {
@@ -416,17 +416,75 @@ func parseComments(line string) *commentsInfo {
 	return nil
 }
 
-func extractComments(file *descriptor.FileDescriptorProto) map[string]*descriptor.SourceCodeInfo_Location {
-	comments := make(map[string]*descriptor.SourceCodeInfo_Location)
-	for _, loc := range file.GetSourceCodeInfo().GetLocation() {
-		if loc.LeadingComments == nil {
-			continue
-		}
+type CommentPathMap map[string]LeadingComments
+
+type LeadingComments = []string
+
+func extractComments(pf ProtoFile) CommentPathMap {
+	comments := make(CommentPathMap)
+	for _, loc := range pf.Location {
 		var p []string
 		for _, n := range loc.Path {
 			p = append(p, strconv.Itoa(int(n)))
 		}
-		comments[strings.Join(p, ",")] = loc
+		comments[strings.Join(p, ",")] = strings.Split(loc.Comments, "\n")
 	}
 	return comments
+}
+
+type ProtoFile struct {
+	Name        string
+	PackageName string
+	Service     []ProtoFileService
+	Location    []ProtoFileLocation
+}
+
+type ProtoFileService struct {
+	Name   string
+	Method []ProtoFileServiceMethod
+}
+
+type ProtoFileServiceMethod struct {
+	Name            string
+	ClientStreaming bool
+	ServerStreaming bool
+}
+
+type ProtoFileLocation struct {
+	Comments string
+	Path     []int32
+}
+
+func NewProtoFile(file *descriptor.FileDescriptorProto) ProtoFile {
+	pf := ProtoFile{
+		Name:        file.GetName(),
+		PackageName: strings.Replace(file.GetPackage(), ".", "_", 10),
+	}
+	for _, loc := range file.GetSourceCodeInfo().GetLocation() {
+		if loc.LeadingComments == nil {
+			continue
+		}
+		path := make([]int32, len(loc.GetPath()))
+		copy(path, loc.GetPath())
+		pfl := ProtoFileLocation{
+			Comments: strings.TrimSuffix(loc.GetLeadingComments(), "\n"),
+			Path:     path,
+		}
+		pf.Location = append(pf.Location, pfl)
+	}
+	for _, svc := range file.GetService() {
+		pfs := ProtoFileService{
+			Name: svc.GetName(),
+		}
+		for _, method := range svc.GetMethod() {
+			pfsm := ProtoFileServiceMethod{
+				Name:            method.GetName(),
+				ClientStreaming: method.GetClientStreaming(),
+				ServerStreaming: method.GetServerStreaming(),
+			}
+			pfs.Method = append(pfs.Method, pfsm)
+		}
+		pf.Service = append(pf.Service, pfs)
+	}
+	return pf
 }
