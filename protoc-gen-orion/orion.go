@@ -206,7 +206,11 @@ func main() {
 		if _, ok := filesToGenerate[file.GetName()]; ok {
 			// check if file has any service
 			if len(file.Service) > 0 {
-				f := generateFile(populate(NewProtoFile(file)))
+				gr := generateFile(populate(NewProtoFile(file)))
+				f := &plugin.CodeGeneratorResponse_File{
+					Name:    proto.String(gr.Name),
+					Content: proto.String(gr.Content),
+				}
 				response.File = append(response.File, f)
 			}
 		}
@@ -223,7 +227,12 @@ func main() {
 	}
 }
 
-func generateFile(d *data) *plugin.CodeGeneratorResponse_File {
+type GeneratorResponse struct {
+	Name    string
+	Content string
+}
+
+func generateFile(d *data) GeneratorResponse {
 	t := template.New("file")
 	t, err := t.Parse(tmpl)
 	if err != nil {
@@ -236,10 +245,10 @@ func generateFile(d *data) *plugin.CodeGeneratorResponse_File {
 		logError(err, "failed parsing template")
 	}
 
-	file := new(plugin.CodeGeneratorResponse_File)
-	file.Content = proto.String(buf.String())
-	file.Name = proto.String(d.FileName + ".orion.pb.go")
-	return file
+	return GeneratorResponse{
+		Name:    d.FileName + ".orion.pb.go",
+		Content: buf.String(),
+	}
 }
 
 func populate(pf ProtoFile) *data {
