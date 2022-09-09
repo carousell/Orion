@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package example;
+
+option go_package = "github.com/carousell/Orion/protoc-gen-orion/internal/testprotos/example;example";
+
+service ExampleService {
+  // Normal endpoint
+  rpc NormalGet(GetRequest) returns (GetResponse);
+
+  // HTTP endpoint
+  // ORION:URL: GET /example
+  rpc HttpGet(GetRequest) returns (GetResponse);
+
+  // HTTP endpoint with middleware
+  // ORION:URL: GET /auth/example
+  // ORION:MIDDLEWRE: auth
+  rpc AuthGet(GetRequest) returns (GetResponse);
+
+  // HTTP endpoint with middleware
+  // ORION:URL: GET /option/example
+  // ORION:OPTION: IGNORE_NR
+  rpc OptionGet(GetRequest) returns (GetResponse);
+
+  // HTTP endpoint with options
+  // ORION:URL: GET /auth/option/example
+  // ORION:MIDDLEWRE: auth
+  // ORION:OPTION: IGNORE_NR
+  rpc AuthOptionGet(GetRequest) returns (GetResponse);
+
+  // ORION:URL: GET /stream/example
+  rpc StreamGet(stream GetRequest) returns (stream GetResponse);
+}
+
+message GetRequest {}
+
+message GetResponse {}

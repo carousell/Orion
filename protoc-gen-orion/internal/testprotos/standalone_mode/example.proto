@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package example;
+
+option go_package = "github.com/carousell/Orion/protoc-gen-orion/internal/testprotos/standalone_mode;example";
+
+service ExampleService {
+  // Normal endpoint
+  rpc NormalGet(GetRequest) returns (GetResponse);
+}
+
+message GetRequest {}
+
+message GetResponse {}
