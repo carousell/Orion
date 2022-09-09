@@ -3,34 +3,10 @@ package inputs
 import (
 	"strings"
 
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"github.com/golang/protobuf/protoc-gen-go/generator"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-type ProtoFile struct {
-	Name        string
-	PackageName string
-	Service     []ProtoFileService
-	Location    []ProtoFileLocation
-}
-
-type ProtoFileService struct {
-	Name   string
-	Method []ProtoFileServiceMethod
-}
-
-type ProtoFileServiceMethod struct {
-	Name            string
-	ClientStreaming bool
-	ServerStreaming bool
-}
-
-type ProtoFileLocation struct {
-	Comments string
-	Path     []int32
-}
-
-func NewProtoFileV1(file *descriptor.FileDescriptorProto) ProtoFile {
+func NewProtoFileV1(file *descriptorpb.FileDescriptorProto) ProtoFile {
 	pf := ProtoFile{
 		Name:        file.GetName(),
 		PackageName: strings.Replace(file.GetPackage(), ".", "_", 10),
@@ -49,7 +25,7 @@ func NewProtoFileV1(file *descriptor.FileDescriptorProto) ProtoFile {
 	}
 	for _, svc := range file.GetService() {
 		pfs := ProtoFileService{
-			Name: generator.CamelCase(svc.GetName()),
+			Name: svc.GetName(),
 		}
 		for _, method := range svc.GetMethod() {
 			pfsm := ProtoFileServiceMethod{

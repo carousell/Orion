@@ -188,7 +188,7 @@ func generateService(pf inputs.ProtoFile) []*service {
 	commentPathMap := extractComments(pf)
 	for index, svc := range pf.Service {
 
-		servName := svc.Name
+		servName := GoCamelCase(svc.Name)
 		serviceDescVar := "_" + servName + "_serviceDesc"
 
 		s := new(service)

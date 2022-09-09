@@ -15,8 +15,8 @@ import (
 
 	"github.com/carousell/Orion/protoc-gen-orion/internal/generator"
 	"github.com/carousell/Orion/protoc-gen-orion/internal/ports/inputs"
-	"github.com/golang/protobuf/proto"
-	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 // Error reports a problem, including an error, and exits the program.
@@ -39,7 +39,7 @@ func main() {
 		logError(err, "reading input")
 	}
 
-	request := new(plugin.CodeGeneratorRequest)
+	request := new(pluginpb.CodeGeneratorRequest)
 	if err := proto.Unmarshal(data, request); err != nil {
 		logError(err, "parsing input proto")
 	}
@@ -52,8 +52,8 @@ func main() {
 		filesToGenerate[v] = true
 	}
 
-	response := new(plugin.CodeGeneratorResponse)
-	response.File = make([]*plugin.CodeGeneratorResponse_File, 0)
+	response := new(pluginpb.CodeGeneratorResponse)
+	response.File = make([]*pluginpb.CodeGeneratorResponse_File, 0)
 
 	for _, file := range request.GetProtoFile() {
 		if _, ok := filesToGenerate[file.GetName()]; ok {
@@ -64,7 +64,7 @@ func main() {
 					logError(err, "failed to generate file")
 					continue
 				}
-				f := &plugin.CodeGeneratorResponse_File{
+				f := &pluginpb.CodeGeneratorResponse_File{
 					Name:    proto.String(gr.Name),
 					Content: proto.String(gr.Content),
 				}
