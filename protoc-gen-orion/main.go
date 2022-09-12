@@ -52,6 +52,11 @@ func main() {
 		filesToGenerate[v] = true
 	}
 
+	protoParams, err := inputs.NewProtoParams(request.GetParameter())
+	if err != nil {
+		logError(err, "new proto params")
+	}
+
 	response := new(pluginpb.CodeGeneratorResponse)
 	response.File = make([]*pluginpb.CodeGeneratorResponse_File, 0)
 
@@ -59,14 +64,17 @@ func main() {
 		if _, ok := filesToGenerate[file.GetName()]; ok {
 			// check if file has any service
 			if len(file.Service) > 0 {
-				gr, err := generator.GenerateFile(inputs.NewProtoFileV1(file))
+				req := inputs.ProtoRequest{
+					ProtoFile:   inputs.NewProtoFile(file),
+					ProtoParams: protoParams,
+				}
+				resp, err := generator.GenerateFile(req)
 				if err != nil {
 					logError(err, "failed to generate file")
-					continue
 				}
 				f := &pluginpb.CodeGeneratorResponse_File{
-					Name:    proto.String(gr.Name),
-					Content: proto.String(gr.Content),
+					Name:    proto.String(resp.Name),
+					Content: proto.String(resp.Content),
 				}
 				response.File = append(response.File, f)
 			}

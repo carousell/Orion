@@ -31,9 +31,10 @@ type commentsInfo struct {
 }
 
 type data struct {
-	FileName    string
-	PackageName string
-	Services    []*service
+	FileName      string
+	PackageName   string
+	GoPackagePath string
+	Services      []*service
 }
 
 type service struct {
@@ -90,6 +91,9 @@ package {{ .PackageName }}
 {{ if .Services }}
 import (
 	orion "github.com/carousell/Orion/orion"
+	{{- if .GoPackagePath}}
+    {{ .PackageName }} "{{ .GoPackagePath }}"
+	{{- end }}
 )
 
 // If you see error please update your orion-protoc-gen by running 'go get -u github.com/carousell/Orion/protoc-gen-orion'
@@ -158,11 +162,14 @@ type GeneratorResponse struct {
 	Content string
 }
 
-func GenerateFile(pf inputs.ProtoFile) (GeneratorResponse, error) {
+func GenerateFile(req inputs.ProtoRequest) (GeneratorResponse, error) {
 	d := &data{
-		FileName:    pf.Name,
-		PackageName: pf.PackageName,
-		Services:    generateService(pf),
+		FileName:    req.ProtoFile.Name,
+		PackageName: req.ProtoFile.PackageName,
+		Services:    generateService(req),
+	}
+	if req.ProtoParams.StandAloneMode {
+		d.GoPackagePath = req.ProtoFile.GoPackagePath
 	}
 
 	t := template.New("file")
@@ -182,14 +189,13 @@ func GenerateFile(pf inputs.ProtoFile) (GeneratorResponse, error) {
 	}, nil
 }
 
-func generateService(pf inputs.ProtoFile) []*service {
+func generateService(req inputs.ProtoRequest) []*service {
 	var services []*service
 
-	commentPathMap := extractComments(pf)
-	for index, svc := range pf.Service {
+	commentPathMap := extractComments(req.ProtoFile)
+	for index, svc := range req.ProtoFile.Service {
 
 		servName := GoCamelCase(svc.Name)
-		serviceDescVar := "_" + servName + "_serviceDesc"
 
 		s := new(service)
 		s.Encoders = make([]*encoder, 0)
@@ -198,7 +204,7 @@ func generateService(pf inputs.ProtoFile) []*service {
 		s.Options = make([]*orionOption, 0)
 		s.Middlewares = make([]*orionMiddleware, 0)
 		s.Streams = make([]*stream, 0)
-		s.ServiceDescVar = serviceDescVar
+		s.ServiceDescVar = getServiceDescVar(req.ProtoFile.PackageName, servName, req.ProtoParams.ExportedServiceDesc, req.ProtoParams.StandAloneMode)
 		s.ServName = servName
 		services = append(services, s)
 
@@ -361,4 +367,14 @@ func extractComments(pf inputs.ProtoFile) commentPathMap {
 		comments[strings.Join(p, ",")] = strings.Split(loc.Comments, "\n")
 	}
 	return comments
+}
+
+func getServiceDescVar(packageName string, serviceName string, exportedServiceDesc bool, standAlone bool) string {
+	if standAlone {
+		return packageName + "." + serviceName + "_ServiceDesc"
+	}
+	if exportedServiceDesc {
+		return serviceName + "_ServiceDesc"
+	}
+	return "_" + serviceName + "_serviceDesc"
 }
