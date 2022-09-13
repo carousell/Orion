@@ -10,6 +10,9 @@ cleanall: clean dockerclean
 
 ci: clean vet bench build
 
+mod:
+	go mod tidy
+
 vet:
 	go vet ./orion/... ./utils/...
 
@@ -26,7 +29,7 @@ build-linux:
 	GOOS=linux GOARCH=amd64 go build $(OPTS) ./orion/...
 
 bench:
-	go test -cover --bench ./orion/... ./utils/...
+	go test -cover -race -coverprofile=coverage.txt -covermode=atomic --bench ./orion/... ./utils/... ./interceptors/...
 
 benchmark: bench
 

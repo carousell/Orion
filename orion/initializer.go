@@ -3,14 +3,15 @@ package orion
 import (
 	"context"
 	"errors"
-	"github.com/carousell/Orion/utils/hystrixprometheus"
-	"github.com/prometheus/client_golang/prometheus"
 	"net"
 	"net/http"
 	_ "net/http/pprof" // import pprof
 	"os"
 	"strings"
 	"time"
+
+	"github.com/carousell/Orion/utils/hystrixprometheus"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/afex/hystrix-go/hystrix"
 	metricCollector "github.com/afex/hystrix-go/hystrix/metric_collector"
@@ -22,7 +23,7 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	newrelic "github.com/newrelic/go-agent"
 	stdopentracing "github.com/opentracing/opentracing-go"
-	zipkin "github.com/openzipkin/zipkin-go-opentracing"
+	zipkin "github.com/openzipkin-contrib/zipkin-go-opentracing"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -73,11 +74,12 @@ type hystrixInitializer struct {
 
 func (h *hystrixInitializer) Init(svr Server) error {
 	config := svr.GetOrionConfig()
-	hystrix.DefaultTimeout = 1000 // one sec
-	hystrix.DefaultMaxConcurrent = 300
-	hystrix.DefaultErrorPercentThreshold = 75
-	hystrix.DefaultSleepWindow = 1000
-	hystrix.DefaultVolumeThreshold = 75
+
+	hystrix.DefaultTimeout = config.HystrixConfig.DefaultTimeout
+	hystrix.DefaultMaxConcurrent = config.HystrixConfig.DefaultMaxConcurrent
+	hystrix.DefaultErrorPercentThreshold = config.HystrixConfig.DefaultErrorPercentThreshold
+	hystrix.DefaultSleepWindow = config.HystrixConfig.DefaultSleepWindow
+	hystrix.DefaultVolumeThreshold = config.HystrixConfig.DefaultVolumeThreshold
 
 	if strings.TrimSpace(config.HystrixConfig.StatsdAddr) != "" {
 		name := config.OrionServerName + ".hystrix"

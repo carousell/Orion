@@ -19,8 +19,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"github.com/golang/protobuf/protoc-gen-go/generator"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
-	"github.com/micro/protobuf/protoc-gen-go/generator"
 )
 
 // constants for Orion protoc generator
@@ -238,7 +238,7 @@ func generateFile(d *data) *plugin.CodeGeneratorResponse_File {
 
 	file := new(plugin.CodeGeneratorResponse_File)
 	file.Content = proto.String(buf.String())
-	file.Name = proto.String(strings.ToLower(d.FileName) + ".orion.pb.go")
+	file.Name = proto.String(d.FileName + ".orion.pb.go")
 	return file
 }
 

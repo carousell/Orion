@@ -4,6 +4,8 @@ import (
 	"context"
 	"reflect"
 
+	"google.golang.org/grpc"
+
 	"github.com/carousell/Orion/interceptors"
 	"github.com/carousell/Orion/orion/modifiers"
 	"github.com/carousell/Orion/utils/errors"
@@ -11,7 +13,6 @@ import (
 	"github.com/carousell/Orion/utils/log"
 	"github.com/carousell/Orion/utils/log/loggers"
 	"github.com/carousell/Orion/utils/options"
-	"google.golang.org/grpc"
 )
 
 // ChainUnaryServer creates a single interceptor out of a chain of many interceptors.
@@ -111,7 +112,7 @@ func getInterceptors(svc interface{}, config CommonConfig, middlewares []string)
 	opts := []grpc.UnaryServerInterceptor{optionsInterceptor}
 
 	// check and add default interceptors
-	if !config.NoDefaultInterceptors {
+	if !config.DisableDefaultInterceptors {
 		// Add default interceptors
 		opts = append(opts, interceptors.DefaultInterceptors()...)
 	}
@@ -132,7 +133,7 @@ func getStreamInterceptors(svc interface{}, config CommonConfig) []grpc.StreamSe
 	opts := []grpc.StreamServerInterceptor{optionsStreamInterceptor}
 
 	// check and add default interceptors
-	if !config.NoDefaultInterceptors {
+	if !config.DisableDefaultInterceptors {
 		// Add default interceptors
 		opts = append(opts, interceptors.DefaultStreamInterceptors()...)
 	}

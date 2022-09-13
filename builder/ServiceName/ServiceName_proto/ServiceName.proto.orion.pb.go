@@ -48,10 +48,28 @@ func RegisterServiceNameUpperProxyDecoder(svr orion.Server, decoder orion.Decode
 	orion.RegisterDecoder(svr, "ServiceName", "UpperProxy", decoder)
 }
 
+//Streams
+
 // RegisterServiceNameOrionServer registers ServiceName to Orion server
-func RegisterServiceNameOrionServer(srv orion.ServiceFactory, orionServer orion.Server) {
-	orionServer.RegisterService(&_ServiceName_serviceDesc, srv)
+// Services need to pass either ServiceFactory or ServiceFactoryV2 implementation
+func RegisterServiceNameOrionServer(sf interface{}, orionServer orion.Server) error {
+	err := orionServer.RegisterService(&_ServiceName_serviceDesc, sf)
+	if err != nil {
+		return err
+	}
 
 	RegisterServiceNameUpperEncoder(orionServer, nil)
 	RegisterServiceNameUpperProxyEncoder(orionServer, nil)
+	return nil
 }
+
+// DefaultEncoder
+func RegisterServiceNameDefaultEncoder(svr orion.Server, encoder orion.Encoder) {
+	orion.RegisterDefaultEncoder(svr, "ServiceName", encoder)
+}
+
+// DefaultDecoder
+func RegisterServiceNameDefaultDecoder(svr orion.Server, decoder orion.Decoder) {
+	orion.RegisterDefaultDecoder(svr, "ServiceName", decoder)
+}
+
