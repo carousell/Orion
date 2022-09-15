@@ -74,24 +74,22 @@ func TestParallelReadAndWrite(t *testing.T) {
 	ctx := context.Background()
 	ctx = s.AddToLogContext(ctx, "test-key", "test-value")
 
-	var wgRead sync.WaitGroup
+	var wg sync.WaitGroup
 	for i := 1; i <= readWorkerCount; i++ {
-		wgRead.Add(1)
+		wg.Add(1)
 		go func(j int) {
-			defer wgRead.Done()
+			defer wg.Done()
 			readWorker(j, ctx)
 		}(i)
 	}
-	var wgWrite sync.WaitGroup
 	for i := 1; i <= writeWorkerCount; i++ {
-		wgWrite.Add(1)
+		wg.Add(1)
 		go func(j int) {
-			defer wgWrite.Done()
+			defer wg.Done()
 			writeWorker(j, ctx)
 		}(i)
 	}
-	wgRead.Wait()
-	wgWrite.Wait()
+	wg.Wait()
 
 	lf := s.FromContext(ctx)
 
