@@ -60,11 +60,11 @@ func NewLogger(log loggers.BaseLogger) Logger {
 
 //GetLogger returns the global logger
 func GetLogger() Logger {
-	if defaultLogger == nil {
-		once.Do(func() {
+	once.Do(func() {
+		if defaultLogger == nil {
 			defaultLogger = NewLogger(gokit.NewLogger())
-		})
-	}
+		}
+	})
 	return defaultLogger
 }
 
