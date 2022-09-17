@@ -67,3 +67,18 @@ func WithErrorHandler(errorHandler func(error)) Option {
 		errorHandler: errorHandler,
 	}
 }
+
+type versionOption struct {
+	version sarama.KafkaVersion
+}
+
+func (opt *versionOption) apply(cfg *config) {
+	cfg.saramaConfig.Version = opt.version
+}
+
+// WithVersion specified the kafka cluster version to connect to
+func WithVersion(version sarama.KafkaVersion) Option {
+	return &versionOption{
+		version: version,
+	}
+}
