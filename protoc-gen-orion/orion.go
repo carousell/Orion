@@ -98,7 +98,7 @@ type orionMiddleware struct {
 }
 
 type ProtocParams struct {
-	StandAloneMode      bool
+	StandaloneMode      bool
 	ExportedServiceDesc bool
 }
 
@@ -260,7 +260,7 @@ func populate(file *descriptor.FileDescriptorProto, params ProtocParams) *data {
 	d := new(data)
 	d.FileName = *file.Name
 	d.PackageName = strings.Replace(file.GetPackage(), ".", "_", 10)
-	if params.StandAloneMode {
+	if params.StandaloneMode {
 		d.GoPackagePath = parseGoPackage(file.GetOptions().GetGoPackage())
 	}
 	d.Services = make([]*service, 0)
@@ -275,7 +275,7 @@ func generate(d *data, file *descriptor.FileDescriptorProto, params ProtocParams
 
 		origServName := svc.GetName()
 		servName := generator.CamelCase(origServName) // use the same logic from go-grpc generator
-		serviceDescVar := getServiceDescVar(d.PackageName, servName, params.ExportedServiceDesc, params.StandAloneMode)
+		serviceDescVar := getServiceDescVar(d.PackageName, servName, params.ExportedServiceDesc, params.StandaloneMode)
 
 		s := new(service)
 		s.Encoders = make([]*encoder, 0)
@@ -461,7 +461,7 @@ func parseProtocParams(reqParam string) (ProtocParams, error) {
 			if err != nil {
 				return ProtocParams{}, fmt.Errorf(`bad value for parameter %q: %w`, param, err)
 			}
-			pp.StandAloneMode = boolValue
+			pp.StandaloneMode = boolValue
 		case "exported-service-desc":
 			boolValue, err := parseBoolValue(value)
 			if err != nil {
