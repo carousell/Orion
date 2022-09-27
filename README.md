@@ -79,6 +79,69 @@ install the protoc plugin for orion
 go get -u github.com/carousell/Orion/protoc-gen-orion
 ```
 
+## protoc-gen-orion
+
+### Installation
+
+Install the binary from source for golang version >= 1.17.
+```bash
+go install github.com/carousell/Orion/protoc-gen-orion@latest
+```
+Or, golang version < 1.17.
+```bash
+go get github.com/carousell/Orion/protoc-gen-orion 
+```
+
+Install the dependencies tools.
+- `protoc-gen-go` is for generating the message structure which has two different repo.
+  - For version lower and equal than v1.5.2
+    ```bash
+    go install github.com/golang/protobuf@latest
+    ```
+  - For version higher and equal than v1.20.0.
+    ```bash
+    go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+    ```
+- `protoc-gen-go-grpc` is for generating the grpc service which works with the version of `protoc-gen-go` higher and equal than v1.20.0
+  ```bash
+  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+  ```
+
+### Usage
+
+#### (Default) Working with version of `protoc-gen-go` lower and equal than v1.5.2.
+
+1. Define your protocol buffers. Reference to the [example/example.proto](https://github.com/carousell/Orion/blob/master/protoc-gen-orion/testprotos/example/example.proto).
+2. Generate the stubs by `protoc`.
+```bash
+protoc \
+  --go_out="paths=source_relative:." \
+  --orion_out="." example/example.proto
+```
+3. The [sample](https://github.com/carousell/Orion/blob/master/protoc-gen-orion/testprotos/example/example.proto.orion.pb.go) of the result after you execute the command.
+
+#### For version of `protoc-gen-go` higher and equal than v1.20.0.
+You should enable the **exported-service-desc** flag to get the correct service description.
+1. Define your protocol buffers. Reference to the [exported_service_desc/example.proto](https://github.com/carousell/Orion/blob/master/protoc-gen-orion/testprotos/exported_service_desc/example.proto)
+2. Generate the stubs by `protoc`. 
+```bash
+protoc \
+  --go_out="paths=source_relative:." \
+  --orion_out="exported-service-desc=true:." exported_service_desc/example.proto
+```
+Note: The complicate rpc defination in `example/example.proto` is also supported by exported-service-desc flag.
+
+If you want to place the *.orion.pb.go and *.pb.go into different folder. You can enable the **standalone-mode** flag.
+1. Define your protocol buffers. Reference to the [standalone_mode/example.proto](https://github.com/carousell/Orion/blob/master/protoc-gen-orion/testprotos/standalone_mode/example.proto)
+2. Generate the stubs by `protoc`.
+```bash
+protoc \
+  --go_out="paths=source_relative:." \
+  --orion_out="standalone-mode=true:." exported_service_desc/example.proto
+``` 
+3. Move the *.orion.pb.go to another place.
+Note: The *.orion.pb.go will import the service description from the package where you place the *.pg.go. 
+
 ## Project Status
 Orion is in use at production at Carousell and powers multiple (100+) services serving thousands of requests per second,
 we ensure all updates are backward compatible unless it involves a major bug or security issue.
