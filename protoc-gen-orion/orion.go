@@ -110,7 +110,7 @@ package {{ .PackageName }}
 import (
 	orion "github.com/carousell/Orion/orion"
 	{{- if .GoPackagePath}}
-    {{ .PackageName }} "{{ .GoPackagePath }}"
+	{{ .PackageName }} "{{ .GoPackagePath }}"
 	{{- end }}
 )
 
