@@ -13,8 +13,8 @@ var (
 
 //LogFields contains all fields that have to be added to logs
 type LogFields map[string]interface{}
-type ProtectedLogFields struct {
-	Content LogFields
+type protectedLogFields struct {
+	content LogFields
 	mtx     sync.RWMutex
 }
 
@@ -36,14 +36,14 @@ func AddToLogContext(ctx context.Context, key string, value interface{}) context
 	data := fromContext(ctx)
 	//Initialize if key doesn't exist
 	if data == nil {
-		ctx = context.WithValue(ctx, contextKey, &ProtectedLogFields{Content: make(LogFields)})
+		ctx = context.WithValue(ctx, contextKey, &protectedLogFields{content: make(LogFields)})
 		data = fromContext(ctx)
 	}
 	m := ctx.Value(contextKey)
-	if data, ok := m.(*ProtectedLogFields); ok {
+	if data, ok := m.(*protectedLogFields); ok {
 		data.mtx.Lock()
 		defer data.mtx.Unlock()
-		data.Content.Add(key, value)
+		data.content.Add(key, value)
 	}
 	return ctx
 }
@@ -54,11 +54,11 @@ func FromContext(ctx context.Context) LogFields {
 		return nil
 	}
 	if h := ctx.Value(contextKey); h != nil {
-		if plf, ok := h.(*ProtectedLogFields); ok {
+		if plf, ok := h.(*protectedLogFields); ok {
 			plf.mtx.RLock()
 			defer plf.mtx.RUnlock()
 			content := make(LogFields)
-			for k, v := range plf.Content {
+			for k, v := range plf.content {
 				content[k] = v
 			}
 			return content
@@ -67,12 +67,12 @@ func FromContext(ctx context.Context) LogFields {
 	return nil
 }
 
-func fromContext(ctx context.Context) *ProtectedLogFields {
+func fromContext(ctx context.Context) *protectedLogFields {
 	if ctx == nil {
 		return nil
 	}
 	if h := ctx.Value(contextKey); h != nil {
-		if plf, ok := h.(*ProtectedLogFields); ok {
+		if plf, ok := h.(*protectedLogFields); ok {
 			return plf
 		}
 	}
