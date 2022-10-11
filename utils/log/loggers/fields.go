@@ -50,19 +50,14 @@ func AddToLogContext(ctx context.Context, key string, value interface{}) context
 
 //FromContext fetchs log fields from provided context
 func FromContext(ctx context.Context) LogFields {
-	if ctx == nil {
-		return nil
-	}
-	if h := ctx.Value(contextKey); h != nil {
-		if plf, ok := h.(*protectedLogFields); ok {
-			plf.mtx.RLock()
-			defer plf.mtx.RUnlock()
-			content := make(LogFields)
-			for k, v := range plf.content {
-				content[k] = v
-			}
-			return content
+	if plf := fromContext(ctx); plf != nil {
+		plf.mtx.RLock()
+		defer plf.mtx.RUnlock()
+		content := make(LogFields)
+		for k, v := range plf.content {
+			content[k] = v
 		}
+		return content
 	}
 	return nil
 }
