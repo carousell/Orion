@@ -36,15 +36,12 @@ func AddToLogContext(ctx context.Context, key string, value interface{}) context
 	data := fromContext(ctx)
 	//Initialize if key doesn't exist
 	if data == nil {
-		ctx = context.WithValue(ctx, contextKey, &protectedLogFields{content: make(LogFields)})
-		data = fromContext(ctx)
+		data = &protectedLogFields{content: make(LogFields)}
+		ctx = context.WithValue(ctx, contextKey, data)
 	}
-	m := ctx.Value(contextKey)
-	if data, ok := m.(*protectedLogFields); ok {
-		data.mtx.Lock()
-		defer data.mtx.Unlock()
-		data.content.Add(key, value)
-	}
+	data.mtx.Lock()
+	defer data.mtx.Unlock()
+	data.content.Add(key, value)
 	return ctx
 }
 
