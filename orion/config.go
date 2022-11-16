@@ -53,6 +53,8 @@ type Config struct {
 	DefaultJSONPB bool
 	// DisableDefaultInterceptors disables the default interceptors for all handlers
 	DisableDefaultInterceptors bool
+	// Receive message Size is used to update the default limit of message that can be received
+	MaxRecvMsgSize int
 }
 
 // HystrixConfig is configuration used by hystrix
@@ -114,6 +116,7 @@ func BuildDefaultConfig(name string) Config {
 		NewRelicConfig:             BuildDefaultNewRelicConfig(),
 		DefaultJSONPB:              viper.GetBool("orion.DefaultJSONPB"),
 		DisableDefaultInterceptors: viper.GetBool("orion.DisableDefaultInterceptors"),
+		MaxRecvMsgSize:             viper.GetInt("orion.MaxRecvMsgSize"),
 	}
 }
 

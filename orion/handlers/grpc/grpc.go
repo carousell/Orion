@@ -10,13 +10,13 @@ import (
 	"github.com/carousell/Orion/utils/log"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
-
 )
 
 // Config is the configuration for GRPC Handler
 type Config struct {
 	handlers.CommonConfig
 	UnknownServiceHandler grpc.StreamHandler
+	MaxRecvMsgSize        int
 }
 
 //NewGRPCHandler creates a new GRPC handler
@@ -42,6 +42,9 @@ func (g *grpcHandler) init() {
 		}
 		if g.config.UnknownServiceHandler != nil {
 			opts = append(opts, grpc.UnknownServiceHandler(g.config.UnknownServiceHandler))
+		}
+		if g.config.MaxRecvMsgSize != 0 {
+			opts = append(opts, grpc.MaxRecvMsgSize(g.config.MaxRecvMsgSize))
 		}
 		g.grpcServer = grpc.NewServer(opts...)
 	}

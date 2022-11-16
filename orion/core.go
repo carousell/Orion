@@ -265,6 +265,7 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 				DisableDefaultInterceptors: d.config.DisableDefaultInterceptors,
 			},
 			UnknownServiceHandler: d.grpcUnknownServiceHandler,
+			MaxRecvMsgSize:        d.config.MaxRecvMsgSize,
 		}
 		handler := grpcHandler.NewGRPCHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
