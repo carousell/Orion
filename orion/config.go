@@ -174,7 +174,7 @@ func setConfigDefaults() {
 	viper.SetDefault("orion.HystrixDefaultVolumeThreshold", 75)
 	viper.SetDefault("orion.HystrixDefaultSleepWindow", 1000)
 	viper.SetDefault("orion.HystrixDefaultErrorPercentThreshold", 75)
-	viper.SetDefault("orion.MaxRecvMsgSize", 4194304)
+	viper.SetDefault("orion.MaxRecvMsgSize", -1)
 
 }
 

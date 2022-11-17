@@ -43,7 +43,11 @@ func (g *grpcHandler) init() {
 		if g.config.UnknownServiceHandler != nil {
 			opts = append(opts, grpc.UnknownServiceHandler(g.config.UnknownServiceHandler))
 		}
-		if g.config.MaxRecvMsgSize != 0 {
+		/*
+			In the case where its greater than 0 , we will use the updated size
+			else we will use the default size
+		*/
+		if g.config.MaxRecvMsgSize > 0 {
 			opts = append(opts, grpc.MaxRecvMsgSize(g.config.MaxRecvMsgSize))
 		}
 		g.grpcServer = grpc.NewServer(opts...)
