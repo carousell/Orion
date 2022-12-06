@@ -49,8 +49,6 @@ func GRPCLoggingInterceptor(enableRequestLog, enableResponseLog bool) grpc.Unary
 		if !modifiers.IsHTTPRequest(ctx) {
 			defer func(begin time.Time) {
 				args := []interface{}{
-					"method",
-					info.FullMethod,
 					"took",
 					time.Since(begin),
 				}
