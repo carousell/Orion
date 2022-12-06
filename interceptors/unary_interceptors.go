@@ -19,7 +19,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-//DebugLoggingInterceptor is the interceptor that logs all request/response from a handler
+// DebugLoggingInterceptor is the interceptor that logs all request/response from a handler
 func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		fmt.Println(info, "requst", req)
@@ -29,7 +29,7 @@ func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-//ResponseTimeLoggingInterceptor logs response time for each request on server
+// ResponseTimeLoggingInterceptor logs response time for each request on server
 func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		// dont log for HTTP request, let HTTP Handler manage it
@@ -43,7 +43,47 @@ func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-//NewRelicInterceptor intercepts all server actions and reports them to newrelic
+func GRPCLoggingInterceptor(enableRequestLog, enableResponseLog bool) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		// dont log for HTTP request, let HTTP Handler manage it
+		if !modifiers.IsHTTPRequest(ctx) {
+			defer func(begin time.Time) {
+				args := []interface{}{
+					"method",
+					info.FullMethod,
+					"took",
+					time.Since(begin),
+				}
+				hasErr := err != nil
+				enableRequestLog = enableRequestLog || hasErr
+				enableResponseLog = enableResponseLog || hasErr
+
+				if enableRequestLog {
+					args = append(args, "req", req)
+				}
+
+				if enableResponseLog {
+					args = append(args, "resp", resp)
+				}
+
+				if hasErr {
+					args = append(args, "error", err)
+				}
+
+				if hasErr {
+					log.Warn(ctx, args)
+				} else {
+					log.Info(ctx, args)
+				}
+
+			}(time.Now())
+		}
+		resp, err = handler(ctx, req)
+		return resp, err
+	}
+}
+
+// NewRelicInterceptor intercepts all server actions and reports them to newrelic
 func NewRelicInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		// dont log NR for HTTP request, let HTTP Handler manage it
@@ -62,7 +102,7 @@ func NewRelicInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-//ServerErrorInterceptor intercepts all server actions and reports them to error notifier
+// ServerErrorInterceptor intercepts all server actions and reports them to error notifier
 func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		// set trace id if not set
@@ -107,7 +147,7 @@ func PanicRecoveryInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-//NewRelicClientInterceptor intercepts all client actions and reports them to newrelic
+// NewRelicClientInterceptor intercepts all client actions and reports them to newrelic
 func NewRelicClientInterceptor(address string) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		txn := utils.GetNewRelicTransactionFromContext(ctx)
@@ -120,12 +160,12 @@ func NewRelicClientInterceptor(address string) grpc.UnaryClientInterceptor {
 	}
 }
 
-//GRPCClientInterceptor is the interceptor that intercepts all cleint requests and adds tracing info to them
+// GRPCClientInterceptor is the interceptor that intercepts all cleint requests and adds tracing info to them
 func GRPCClientInterceptor() grpc.UnaryClientInterceptor {
 	return grpc_opentracing.UnaryClientInterceptor()
 }
 
-//HystrixClientInterceptor is the interceptor that intercepts all cleint requests and adds hystrix info to them
+// HystrixClientInterceptor is the interceptor that intercepts all cleint requests and adds hystrix info to them
 func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		options := hystrixOptions{
