@@ -57,11 +57,11 @@ func GRPCLoggingInterceptor(enableRequestLog, enableResponseLog bool) grpc.Unary
 				enableResponseLog = enableResponseLog || hasErr
 
 				if enableRequestLog {
-					args = append(args, "req", req)
+					args = append(args, "req", utils.ToJSONString(req))
 				}
 
 				if enableResponseLog {
-					args = append(args, "resp", resp)
+					args = append(args, "resp", utils.ToJSONString(resp))
 				}
 
 				if hasErr {
