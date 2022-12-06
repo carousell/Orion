@@ -93,17 +93,17 @@ func chainStreamServer(interceptors ...grpc.StreamServerInterceptor) grpc.Stream
 	}
 }
 
-//GetInterceptors fetches interceptors from a given GRPC service
+// GetInterceptors fetches interceptors from a given GRPC service
 func GetInterceptors(svc interface{}, config CommonConfig) grpc.UnaryServerInterceptor {
 	return chainUnaryServer(getInterceptors(svc, config, []string{})...)
 }
 
-//GetStreamInterceptors fetches stream interceptors from a given GRPC service
+// GetStreamInterceptors fetches stream interceptors from a given GRPC service
 func GetStreamInterceptors(svc interface{}, config CommonConfig) grpc.StreamServerInterceptor {
 	return chainStreamServer(getStreamInterceptors(svc, config)...)
 }
 
-//GetInterceptorsWithMethodMiddlewares fetchs all middleware including those provided by method middlewares
+// GetInterceptorsWithMethodMiddlewares fetchs all middleware including those provided by method middlewares
 func GetInterceptorsWithMethodMiddlewares(svc interface{}, config CommonConfig, middlewares []string) grpc.UnaryServerInterceptor {
 	return chainUnaryServer(getInterceptors(svc, config, middlewares)...)
 }
@@ -116,6 +116,8 @@ func getInterceptors(svc interface{}, config CommonConfig, middlewares []string)
 		// Add default interceptors
 		opts = append(opts, interceptors.DefaultInterceptors()...)
 	}
+
+	opts = append(opts, interceptors.GRPCLoggingInterceptor(config.EnableGRPCRequestLog, config.EnableGRPCResponseLog))
 
 	// check and add service interceptors
 	interceptor, ok := svc.(Interceptor)
@@ -162,7 +164,7 @@ func getMiddleware(svc interface{}, middleware string) (grpc.UnaryServerIntercep
 	return nil, errors.New("could not find middleware " + middleware)
 }
 
-//GetMethodInterceptors fetches all interceptors including method middlewares
+// GetMethodInterceptors fetches all interceptors including method middlewares
 func GetMethodInterceptors(svc interface{}, config CommonConfig, middlewares []string) []grpc.UnaryServerInterceptor {
 	interceptors := make([]grpc.UnaryServerInterceptor, 0)
 	for _, middleware := range middlewares {

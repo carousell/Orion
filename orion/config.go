@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/spf13/viper"
 
@@ -55,6 +56,13 @@ type Config struct {
 	DisableDefaultInterceptors bool
 	// Receive message Size is used to update the default limit of message that can be received
 	MaxRecvMsgSize int
+
+	GRPCConfig GRPCConfig
+}
+
+type GRPCConfig struct {
+	EnableRequestLog  bool
+	EnableResponseLog bool
 }
 
 // HystrixConfig is configuration used by hystrix
@@ -77,13 +85,13 @@ type HystrixConfig struct {
 	DefaultErrorPercentThreshold int
 }
 
-//ZipkinConfig is the configuration for the zipkin collector
+// ZipkinConfig is the configuration for the zipkin collector
 type ZipkinConfig struct {
 	//Addr is the address of the zipkin collector
 	Addr string
 }
 
-//NewRelicConfig is the configuration for newrelic
+// NewRelicConfig is the configuration for newrelic
 type NewRelicConfig struct {
 	APIKey      string
 	ServiceName string
@@ -93,7 +101,7 @@ type NewRelicConfig struct {
 	ExcludeAttributes []string
 }
 
-//BuildDefaultConfig builds a default config object for Orion
+// BuildDefaultConfig builds a default config object for Orion
 func BuildDefaultConfig(name string) Config {
 	setup(name)
 	readConfig(name)
@@ -117,10 +125,19 @@ func BuildDefaultConfig(name string) Config {
 		DefaultJSONPB:              viper.GetBool("orion.DefaultJSONPB"),
 		DisableDefaultInterceptors: viper.GetBool("orion.DisableDefaultInterceptors"),
 		MaxRecvMsgSize:             viper.GetInt("orion.MaxRecvMsgSize"),
+		GRPCConfig:                 BuildGRPCConfig(),
 	}
 }
 
-//BuildDefaultHystrixConfig builds a default config for hystrix
+// BuildDefaultZipkinConfig builds a default config for zipkin
+func BuildGRPCConfig() GRPCConfig {
+	return GRPCConfig{
+		EnableRequestLog:  viper.GetBool("orion.GRPC.EnableRequestLog"),
+		EnableResponseLog: viper.GetBool("orion.GRPC.EnableResponseLog"),
+	}
+}
+
+// BuildDefaultHystrixConfig builds a default config for hystrix
 func BuildDefaultHystrixConfig() HystrixConfig {
 	return HystrixConfig{
 		Port:                         viper.GetString("orion.HystrixPort"),
@@ -134,14 +151,14 @@ func BuildDefaultHystrixConfig() HystrixConfig {
 	}
 }
 
-//BuildDefaultZipkinConfig builds a default config for zipkin
+// BuildDefaultZipkinConfig builds a default config for zipkin
 func BuildDefaultZipkinConfig() ZipkinConfig {
 	return ZipkinConfig{
 		Addr: viper.GetString("orion.ZipkinAddr"),
 	}
 }
 
-//BuildDefaultNewRelicConfig builds a default config for newrelic
+// BuildDefaultNewRelicConfig builds a default config for newrelic
 func BuildDefaultNewRelicConfig() NewRelicConfig {
 	return NewRelicConfig{
 		ServiceName:       viper.GetString("orion.NewRelicServiceName"),

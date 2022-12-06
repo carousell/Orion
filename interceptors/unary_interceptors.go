@@ -71,9 +71,9 @@ func GRPCLoggingInterceptor(enableRequestLog, enableResponseLog bool) grpc.Unary
 				}
 
 				if hasErr {
-					log.Warn(ctx, args)
+					log.Warn(ctx, args...)
 				} else {
-					log.Info(ctx, args)
+					log.Info(ctx, args...)
 				}
 
 			}(time.Now())

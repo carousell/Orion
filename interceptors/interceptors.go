@@ -26,10 +26,10 @@ func filterFromZipkin(ctx context.Context, fullMethodName string) bool {
 	return true
 }
 
-//DefaultInterceptors are the set of default interceptors that are applied to all Orion methods
+// DefaultInterceptors are the set of default interceptors that are applied to all Orion methods
 func DefaultInterceptors() []grpc.UnaryServerInterceptor {
 	return []grpc.UnaryServerInterceptor{
-		ResponseTimeLoggingInterceptor(),
+		//ResponseTimeLoggingInterceptor(),
 		grpc_ctxtags.UnaryServerInterceptor(),
 		grpc_opentracing.UnaryServerInterceptor(grpc_opentracing.WithFilterFunc(filterFromZipkin)),
 		grpc_prometheus.UnaryServerInterceptor,
@@ -39,7 +39,7 @@ func DefaultInterceptors() []grpc.UnaryServerInterceptor {
 	}
 }
 
-//DefaultClientInterceptors are the set of default interceptors that should be applied to all client calls
+// DefaultClientInterceptors are the set of default interceptors that should be applied to all client calls
 func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 	return []grpc.UnaryClientInterceptor{
 		grpc_retry.UnaryClientInterceptor(),
@@ -53,7 +53,7 @@ func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 	}
 }
 
-//DefaultStreamClientInterceptors are the set of default interceptors that should be applied to all client streaming calls
+// DefaultStreamClientInterceptors are the set of default interceptors that should be applied to all client streaming calls
 func DefaultStreamClientInterceptors() []grpc.StreamClientInterceptor {
 	/*
 		compare to DefaultClientInterceptors, we don't have hystrix and newrelic interceptors here
@@ -67,7 +67,7 @@ func DefaultStreamClientInterceptors() []grpc.StreamClientInterceptor {
 	}
 }
 
-//DefaultStreamInterceptors are the set of default interceptors that should be applied to all Orion streams
+// DefaultStreamInterceptors are the set of default interceptors that should be applied to all Orion streams
 func DefaultStreamInterceptors() []grpc.StreamServerInterceptor {
 	return []grpc.StreamServerInterceptor{
 		ResponseTimeLoggingStreamInterceptor(),
@@ -78,12 +78,12 @@ func DefaultStreamInterceptors() []grpc.StreamServerInterceptor {
 	}
 }
 
-//DefaultClientInterceptor are the set of default interceptors that should be applied to all client calls
+// DefaultClientInterceptor are the set of default interceptors that should be applied to all client calls
 func DefaultClientInterceptor(address string) grpc.UnaryClientInterceptor {
 	return grpc_middleware.ChainUnaryClient(DefaultClientInterceptors(address)...)
 }
 
-//DefaultStreamClientInterceptor are the set of default interceptors that should be applied to all client calls
+// DefaultStreamClientInterceptor are the set of default interceptors that should be applied to all client calls
 func DefaultStreamClientInterceptor() grpc.StreamClientInterceptor {
 	return grpc_middleware.ChainStreamClient(DefaultStreamClientInterceptors()...)
 }
