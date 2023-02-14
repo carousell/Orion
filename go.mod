@@ -48,7 +48,7 @@ require (
 	github.com/patrickmn/go-cache v0.0.0-20180815053127-5633e0862627
 	github.com/pborman/uuid v1.2.0
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v0.9.2
 	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90 // indirect
 	github.com/prometheus/common v0.2.0 // indirect
@@ -62,7 +62,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/objx v0.2.0 // indirect
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.5.1
 	github.com/stvp/rollbar v0.0.0-20171113052335-4a50daf855af
 	go.elastic.co/apm v1.4.0
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
@@ -78,7 +78,7 @@ require (
 require (
 	github.com/RichardKnop/redsync v1.2.0 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
-	github.com/aws/aws-sdk-go v1.15.66 // indirect
+	github.com/aws/aws-sdk-go v1.34.0 // indirect
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -92,7 +92,7 @@ require (
 	github.com/googleapis/gax-go v2.0.0+incompatible // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af // indirect
+	github.com/jmespath/go-jmespath v0.3.0 // indirect
 	github.com/joeshaw/multierror v0.0.0-20140124173710-69b34d4ec901 // indirect
 	github.com/kelseyhightower/envconfig v1.3.0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.1 // indirect
