@@ -1,4 +1,4 @@
-module github.com/carousell/Orion
+module github.com/carousell/Orion/v2
 
 go 1.17
 
