@@ -29,7 +29,7 @@ After you have generated the code from protoc (using grpc and orion plugin), you
 
 How do i use it
 
-Lets go through the example defined at https://github.com/carousell/Orion/tree/master/example/simple , It covers the minimum required implementation for orion. It has the following structure
+Lets go through the example defined at https://github.com/carousell/Orion/v2/tree/master/example/simple , It covers the minimum required implementation for orion. It has the following structure
 	.
 	├── cmd
 	│   ├── client
@@ -85,17 +85,17 @@ Orion comes included with.
 	Prometheus (http://github.com/grpc-ecosystem/go-grpc-prometheus)
 	Pprof (https://golang.org/pkg/net/http/pprof/))
 	Configuration (http://github.com/spf13/viper)
-	Live Configuration Reload (http://github.com/carousell/Orion/utils/listenerutils)
+	Live Configuration Reload (http://github.com/carousell/Orion/v2/utils/listenerutils)
 	And much more...
 
 Getting Started
 
-First follow the install guide at https://github.com/carousell/Orion/blob/master/README.md
+First follow the install guide at https://github.com/carousell/Orion/v2/blob/master/README.md
 */
 package orion
 
 // This comment block (re)generates the documentation.
-//go:generate godoc2ghmd -ex -file=README.md github.com/carousell/Orion/orion
-//go:generate godoc2ghmd -ex -file=handlers/README.md github.com/carousell/Orion/orion/handlers
-//go:generate godoc2ghmd -ex -file=modifiers/README.md github.com/carousell/Orion/orion/modifiers
-//go:generate godoc2ghmd -ex -file=helpers/README.md github.com/carousell/Orion/orion/helpers
+//go:generate godoc2ghmd -ex -file=README.md github.com/carousell/Orion/v2/orion
+//go:generate godoc2ghmd -ex -file=handlers/README.md github.com/carousell/Orion/v2/orion/handlers
+//go:generate godoc2ghmd -ex -file=modifiers/README.md github.com/carousell/Orion/v2/orion/modifiers
+//go:generate godoc2ghmd -ex -file=helpers/README.md github.com/carousell/Orion/v2/orion/helpers

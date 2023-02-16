@@ -3,7 +3,7 @@ package modifiers
 import (
 	"context"
 
-	"github.com/carousell/Orion/utils/options"
+	"github.com/carousell/Orion/v2/utils/options"
 )
 
 // constatnts for specific serializers

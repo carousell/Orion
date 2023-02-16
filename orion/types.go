@@ -3,7 +3,7 @@ package orion
 import (
 	"time"
 
-	"github.com/carousell/Orion/orion/handlers"
+	"github.com/carousell/Orion/v2/orion/handlers"
 	"google.golang.org/grpc"
 )
 

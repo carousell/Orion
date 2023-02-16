@@ -1,9 +1,9 @@
 package main
 
 import (
-	proto "github.com/carousell/Orion/builder/ServiceName/ServiceName_proto"
-	"github.com/carousell/Orion/builder/ServiceName/service"
-	"github.com/carousell/Orion/orion"
+	proto "github.com/carousell/Orion/v2/builder/ServiceName/ServiceName_proto"
+	"github.com/carousell/Orion/v2/builder/ServiceName/service"
+	"github.com/carousell/Orion/v2/orion"
 )
 
 func main() {

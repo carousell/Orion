@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	proto "github.com/carousell/Orion/example/echo/echo_proto"
-	"github.com/carousell/Orion/example/echo/service"
-	"github.com/carousell/Orion/orion"
+	proto "github.com/carousell/Orion/v2/example/echo/echo_proto"
+	"github.com/carousell/Orion/v2/example/echo/service"
+	"github.com/carousell/Orion/v2/orion"
 	"github.com/gorilla/mux"
 	"github.com/mitchellh/mapstructure"
 )

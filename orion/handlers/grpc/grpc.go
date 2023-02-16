@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/carousell/Orion/orion/handlers"
-	"github.com/carousell/Orion/utils/log"
+	"github.com/carousell/Orion/v2/orion/handlers"
+	"github.com/carousell/Orion/v2/utils/log"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
 )

@@ -7,7 +7,7 @@ import (
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/spf13/viper"
 
-	"github.com/carousell/Orion/utils/log"
+	"github.com/carousell/Orion/v2/utils/log"
 )
 
 var (

@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	proto "github.com/carousell/Orion/example/simple/simple_proto"
+	proto "github.com/carousell/Orion/v2/example/simple/simple_proto"
 )
 
 func GetService() proto.SimpleServiceServer {

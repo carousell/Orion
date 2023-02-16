@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/afex/hystrix-go/hystrix"
-	"github.com/carousell/Orion/utils/errors"
+	"github.com/carousell/Orion/v2/utils/errors"
 	"google.golang.org/grpc"
 )
 

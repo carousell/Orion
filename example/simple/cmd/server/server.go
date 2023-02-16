@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/carousell/Orion/example/simple/service"
-	proto "github.com/carousell/Orion/example/simple/simple_proto"
-	"github.com/carousell/Orion/orion"
+	"github.com/carousell/Orion/v2/example/simple/service"
+	proto "github.com/carousell/Orion/v2/example/simple/simple_proto"
+	"github.com/carousell/Orion/v2/orion"
 )
 
 type svcFactory struct {

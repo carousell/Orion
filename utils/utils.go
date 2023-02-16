@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/carousell/Orion/utils/log"
+	"github.com/carousell/Orion/v2/utils/log"
 	newrelic "github.com/newrelic/go-agent"
 	"go.elastic.co/apm"
 )

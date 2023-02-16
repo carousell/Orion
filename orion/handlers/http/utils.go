@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/carousell/Orion/utils/headers"
-	"github.com/carousell/Orion/utils/log"
+	"github.com/carousell/Orion/v2/utils/headers"
+	"github.com/carousell/Orion/v2/utils/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

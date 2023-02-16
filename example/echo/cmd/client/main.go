@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	proto "github.com/carousell/Orion/example/echo/echo_proto"
+	proto "github.com/carousell/Orion/v2/example/echo/echo_proto"
 	"google.golang.org/grpc"
 )
 

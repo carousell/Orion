@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/carousell/Orion/orion/handlers"
-	"github.com/carousell/Orion/orion/modifiers"
+	"github.com/carousell/Orion/v2/orion/handlers"
+	"github.com/carousell/Orion/v2/orion/modifiers"
 	"github.com/golang/protobuf/jsonpb"
 	"google.golang.org/grpc"
 )
@@ -40,16 +40,16 @@ const (
 )
 
 const (
-	NRTxNameTypeMethod = "method"
+	NRTxNameTypeMethod     = "method"
 	NRTxNameTypeFullMethod = "fullmethod"
-	NRTxNameTypeRoute = "route"
+	NRTxNameTypeRoute      = "route"
 )
 
 //Config is the configuration for HTTP Handler
 type Config struct {
 	handlers.CommonConfig
-	EnableProtoURL bool
-	DefaultJSONPB  bool
+	EnableProtoURL   bool
+	DefaultJSONPB    bool
 	NRHttpTxNameType string
 }
 

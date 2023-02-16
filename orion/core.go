@@ -14,12 +14,12 @@ import (
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 
-	"github.com/carousell/Orion/orion/handlers"
-	grpcHandler "github.com/carousell/Orion/orion/handlers/grpc"
-	"github.com/carousell/Orion/orion/handlers/http"
-	"github.com/carousell/Orion/utils/errors/notifier"
-	"github.com/carousell/Orion/utils/listenerutils"
-	"github.com/carousell/Orion/utils/log"
+	"github.com/carousell/Orion/v2/orion/handlers"
+	grpcHandler "github.com/carousell/Orion/v2/orion/handlers/grpc"
+	"github.com/carousell/Orion/v2/orion/handlers/http"
+	"github.com/carousell/Orion/v2/utils/errors/notifier"
+	"github.com/carousell/Orion/v2/utils/listenerutils"
+	"github.com/carousell/Orion/v2/utils/log"
 )
 
 var (

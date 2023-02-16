@@ -6,10 +6,10 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
-	"github.com/carousell/Orion/orion/modifiers"
-	"github.com/carousell/Orion/utils/errors/notifier"
-	"github.com/carousell/Orion/utils/log"
-	"github.com/carousell/Orion/utils/log/loggers"
+	"github.com/carousell/Orion/v2/orion/modifiers"
+	"github.com/carousell/Orion/v2/utils/errors/notifier"
+	"github.com/carousell/Orion/v2/utils/log"
+	"github.com/carousell/Orion/v2/utils/log/loggers"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"google.golang.org/grpc"
 )

@@ -1,7 +1,7 @@
 package notifier
 
 import (
-	"github.com/carousell/Orion/utils/log/loggers"
+	"github.com/carousell/Orion/v2/utils/log/loggers"
 )
 
 func (s severity) String() string {

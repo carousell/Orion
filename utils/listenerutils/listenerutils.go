@@ -7,7 +7,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/carousell/Orion/utils/log"
+	"github.com/carousell/Orion/v2/utils/log"
 )
 
 //CustomListener provides an implementation for a custom net.Listener

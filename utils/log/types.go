@@ -3,7 +3,7 @@ package log
 import (
 	"context"
 
-	"github.com/carousell/Orion/utils/log/loggers"
+	"github.com/carousell/Orion/v2/utils/log/loggers"
 )
 
 // Logger interface is implemnted by the log implementation

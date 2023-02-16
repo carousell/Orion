@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	proto "github.com/carousell/Orion/builder/ServiceName/ServiceName_proto"
+	proto "github.com/carousell/Orion/v2/builder/ServiceName/ServiceName_proto"
 	"google.golang.org/grpc"
 )
 

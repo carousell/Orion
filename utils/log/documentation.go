@@ -26,6 +26,6 @@ Orion also generates a 'trace' ID per request, this can be used to trace an enti
 */
 package log
 
-//go:generate godoc2ghmd -ex -file=log/loggers/README.md github.com/carousell/Orion/utils/log/loggers
-//go:generate godoc2ghmd -ex -file=log/loggers/gokit/README.md github.com/carousell/Orion/utils/log/loggers/gokit
-//go:generate godoc2ghmd -ex -file=log/loggers/logrus/README.md github.com/carousell/Orion/utils/log/loggers/logrus
+//go:generate godoc2ghmd -ex -file=log/loggers/README.md github.com/carousell/Orion/v2/utils/log/loggers
+//go:generate godoc2ghmd -ex -file=log/loggers/gokit/README.md github.com/carousell/Orion/v2/utils/log/loggers/gokit
+//go:generate godoc2ghmd -ex -file=log/loggers/logrus/README.md github.com/carousell/Orion/v2/utils/log/loggers/logrus

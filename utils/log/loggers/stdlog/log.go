@@ -5,7 +5,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/carousell/Orion/utils/log/loggers"
+	"github.com/carousell/Orion/v2/utils/log/loggers"
 )
 
 type logger struct {

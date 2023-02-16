@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 
-	proto "github.com/carousell/Orion/builder/ServiceName/ServiceName_proto"
-	"github.com/carousell/Orion/orion"
+	proto "github.com/carousell/Orion/v2/builder/ServiceName/ServiceName_proto"
+	"github.com/carousell/Orion/v2/orion"
 	"github.com/mitchellh/mapstructure"
 )
 

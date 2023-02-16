@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	proto "github.com/carousell/Orion/example/stringsvc/stringproto"
+	proto "github.com/carousell/Orion/v2/example/stringsvc/stringproto"
 )
 
 // svc implements proto.StringServiceServer

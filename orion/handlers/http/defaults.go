@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/carousell/Orion/orion/modifiers"
+	"github.com/carousell/Orion/v2/orion/modifiers"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/mux"

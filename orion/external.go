@@ -1,7 +1,7 @@
 package orion
 
 import (
-	"github.com/carousell/Orion/orion/handlers"
+	"github.com/carousell/Orion/v2/orion/handlers"
 )
 
 //RegisterEncoder allows for registering an HTTP request encoder to arbitrary urls

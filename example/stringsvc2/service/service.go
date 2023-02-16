@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	proto "github.com/carousell/Orion/example/stringsvc2/stringproto"
+	proto "github.com/carousell/Orion/v2/example/stringsvc2/stringproto"
 	"google.golang.org/grpc"
 )
 

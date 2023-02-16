@@ -3,7 +3,7 @@ package http
 import (
 	"net/http"
 
-	"github.com/carousell/Orion/utils/log"
+	"github.com/carousell/Orion/v2/utils/log"
 )
 
 type notFoundHandler struct{}

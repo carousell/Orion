@@ -4,11 +4,11 @@
 package example
 
 import (
-	orion "github.com/carousell/Orion/orion"
-	example "github.com/carousell/Orion/protoc-gen-orion/testprotos/standalone_mode"
+	orion "github.com/carousell/Orion/v2/orion"
+	example "github.com/carousell/Orion/v2/protoc-gen-orion/testprotos/standalone_mode"
 )
 
-// If you see error please update your orion-protoc-gen by running 'go get -u github.com/carousell/Orion/protoc-gen-orion'
+// If you see error please update your orion-protoc-gen by running 'go get -u github.com/carousell/Orion/v2/protoc-gen-orion'
 var _ = orion.ProtoGenVersion1_0
 
 // Encoders

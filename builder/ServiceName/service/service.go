@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"strings"
 
-	proto "github.com/carousell/Orion/builder/ServiceName/ServiceName_proto"
-	"github.com/carousell/Orion/interceptors"
-	"github.com/carousell/Orion/utils/headers"
+	proto "github.com/carousell/Orion/v2/builder/ServiceName/ServiceName_proto"
+	"github.com/carousell/Orion/v2/interceptors"
+	"github.com/carousell/Orion/v2/utils/headers"
 	"github.com/gorilla/mux"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"

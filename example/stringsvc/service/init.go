@@ -1,6 +1,6 @@
 package service
 
-import "github.com/carousell/Orion/orion"
+import "github.com/carousell/Orion/v2/orion"
 
 type svcFactory struct{}
 

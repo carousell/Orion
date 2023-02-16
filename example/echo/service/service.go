@@ -12,9 +12,9 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 
-	proto "github.com/carousell/Orion/example/echo/echo_proto"
-	"github.com/carousell/Orion/interceptors"
-	"github.com/carousell/Orion/utils/headers"
+	proto "github.com/carousell/Orion/v2/example/echo/echo_proto"
+	"github.com/carousell/Orion/v2/interceptors"
+	"github.com/carousell/Orion/v2/utils/headers"
 )
 
 const (

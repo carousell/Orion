@@ -7,7 +7,7 @@ import (
 	stdlog "log"
 	"os"
 
-	"github.com/carousell/Orion/utils/log/loggers"
+	"github.com/carousell/Orion/v2/utils/log/loggers"
 	log "github.com/sirupsen/logrus"
 )
 
