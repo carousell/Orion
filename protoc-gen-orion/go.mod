@@ -1,4 +1,4 @@
-module github.com/carousell/Orion/protoc-gen-orion
+module github.com/carousell/Orion/protoc-gen-orion/v2
 
 go 1.17
 

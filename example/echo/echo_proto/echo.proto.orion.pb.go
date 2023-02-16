@@ -7,7 +7,7 @@ import (
 	orion "github.com/carousell/Orion/v2/orion"
 )
 
-// If you see error please update your orion-protoc-gen by running 'go get -u github.com/carousell/Orion/v2/protoc-gen-orion'
+// If you see error please update your orion-protoc-gen by running 'go get -u github.com/carousell/Orion/protoc-gen-orion/v2'
 var _ = orion.ProtoGenVersion1_0
 
 // Encoders
