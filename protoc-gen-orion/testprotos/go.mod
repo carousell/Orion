@@ -1,4 +1,4 @@
-module github.com/carousell/Orion/protoc-gen-orion/testprotos
+module github.com/carousell/Orion/protoc-gen-orion/v2/testprotos
 
 go 1.18
 

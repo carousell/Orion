@@ -46,7 +46,7 @@ list-updates:
 	go list -u -m all
 
 update:
-	go get -u github.com/carousell/Orion/protoc-gen-orion
+	go get -u github.com/carousell/Orion/protoc-gen-orion/v2
 	go get -u -m
 	go mod tidy
 	go mod vendor
@@ -67,7 +67,7 @@ goinstall:
 	go get -u github.com/golang/lint/golint
 	go get -u google.golang.org/grpc
 	go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
-	go get -u github.com/carousell/Orion/protoc-gen-orion
+	go get -u github.com/carousell/Orion/protoc-gen-orion/v2
 
 macinstall:
 	brew install protobuf

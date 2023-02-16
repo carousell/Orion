@@ -56,7 +56,7 @@ echo "creating $SVC project"
 for file in $(grep -rl "Orion/builder" * | grep -v vendor| grep -v rename)
 do
     echo $file
-    sed -i "" "s|github.com/carousell/Orion/builder|$PKG/Orion/builder|g" $file
+    sed -i "" "s|github.com/carousell/Orion/v2/builder|$PKG/Orion/v2/builder|g" $file
     sed -i "" "s|Orion/builder|$SVC|g" $file
 done
 

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package example;
 
-option go_package = "github.com/carousell/Orion/protoc-gen-orion/testprotos/exported_service_desc;example";
+option go_package = "github.com/carousell/Orion/protoc-gen-orion/v2/testprotos/exported_service_desc;example";
 
 service ExampleService {
   // Normal endpoint

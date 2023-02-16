@@ -64,7 +64,7 @@ go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
 
 install the protoc plugin for orion
 ```
-go get -u github.com/carousell/Orion/protoc-gen-orion
+go get -u github.com/carousell/Orion/protoc-gen-orion/v2
 ```
 
 ## Creating Service
