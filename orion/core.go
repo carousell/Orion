@@ -121,13 +121,6 @@ func (d *DefaultServerImpl) init() {
 
 func (d *DefaultServerImpl) initInitializers() {
 	if d.initializers == nil {
-		d.initializers = DefaultInitializers
-	}
-	d.processInitializers()
-}
-
-func (d *DefaultServerImpl) processInitializers() {
-	if d.initializers == nil {
 		return
 	}
 	for _, in := range d.initializers {
