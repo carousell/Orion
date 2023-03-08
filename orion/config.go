@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/afex/hystrix-go/hystrix"
+
 	"github.com/spf13/viper"
 
 	"github.com/carousell/Orion/v2/utils/log"
@@ -26,27 +26,6 @@ type Config struct {
 	HTTPPort string
 	// GRPCPost id the port to bind for gRPC requests
 	GRPCPort string
-	//PprofPort is the port to use for pprof
-	PProfport string
-	// HotReload when set reloads the service when it receives SIGHUP
-	HotReload bool
-	//EnableProtoURL adds gRPC generated urls in HTTP handler
-	EnableProtoURL bool
-	//EnablePrometheus enables prometheus metric for services on path '/metrics' on pprof port
-	EnablePrometheus bool
-	//EnablePrometheusHistograms enables request histograms for services
-	//ref: https://github.com/grpc-ecosystem/go-grpc-prometheus#histograms
-	EnablePrometheusHistogram bool
-	//HystrixConfig is the configuration options for hystrix
-	HystrixConfig HystrixConfig
-	//ZipkinConfig is the configuration options for zipkin
-	ZipkinConfig ZipkinConfig
-	//NewRelicConfig is the configuration options for new relic
-	NewRelicConfig NewRelicConfig
-	//RollbarToken is the token to be used in rollbar
-	RollbarToken string
-	//SentryDSN is the token used by sentry for error reporting
-	SentryDSN string
 	//Env is the environment this service is running in
 	Env string
 	// DefaultJSONPB sets jsonpb as the encoder/decoder for application/json request/response bodies
@@ -55,42 +34,6 @@ type Config struct {
 	DisableDefaultInterceptors bool
 	// Receive message Size is used to update the default limit of message that can be received
 	MaxRecvMsgSize int
-}
-
-// HystrixConfig is configuration used by hystrix
-type HystrixConfig struct {
-	//Port is the port to start hystrix stream handler on
-	Port string
-	//CommandConfig is configuration for individual commands
-	CommandConfig map[string]hystrix.CommandConfig
-	//StatsdAddr is the address of the statsd hosts to send hystrix data to
-	StatsdAddr string
-	// DefaultTimeout is how long to wait for command to complete, in milliseconds
-	DefaultTimeout int
-	// DefaultMaxConcurrent is how many commands of the same type can run at the same time
-	DefaultMaxConcurrent int
-	// DefaultVolumeThreshold is the minimum number of requests needed before a circuit can be tripped due to health
-	DefaultVolumeThreshold int
-	// DefaultSleepWindow is how long, in milliseconds, to wait after a circuit opens before testing for recovery
-	DefaultSleepWindow int
-	// DefaultErrorPercentThreshold causes circuits to open once the rolling measure of errors exceeds this percent of requests
-	DefaultErrorPercentThreshold int
-}
-
-//ZipkinConfig is the configuration for the zipkin collector
-type ZipkinConfig struct {
-	//Addr is the address of the zipkin collector
-	Addr string
-}
-
-//NewRelicConfig is the configuration for newrelic
-type NewRelicConfig struct {
-	APIKey      string
-	ServiceName string
-	//HttpTxNameType decides the transaction name logged in NR. Options are "fullmethod" (default), "method" , "route".
-	HttpTxNameType    string
-	IncludeAttributes []string
-	ExcludeAttributes []string
 }
 
 //BuildDefaultConfig builds a default config object for Orion
@@ -102,78 +45,22 @@ func BuildDefaultConfig(name string) Config {
 		HTTPOnly:                   viper.GetBool("orion.HTTPOnly"),
 		GRPCPort:                   viper.GetString("orion.GRPCPort"),
 		HTTPPort:                   viper.GetString("orion.HTTPPort"),
-		PProfport:                  viper.GetString("orion.PprofPort"),
-		HotReload:                  viper.GetBool("orion.HotReload"),
-		EnableProtoURL:             viper.GetBool("orion.EnableProtoURL"),
-		EnablePrometheus:           viper.GetBool("orion.EnablePrometheus"),
-		EnablePrometheusHistogram:  viper.GetBool("orion.EnablePrometheusHistogram"),
-		RollbarToken:               viper.GetString("orion.rollbar-token"),
 		Env:                        viper.GetString("orion.Env"),
-		SentryDSN:                  viper.GetString("orion.SentryDSN"),
 		OrionServerName:            name,
-		HystrixConfig:              BuildDefaultHystrixConfig(),
-		ZipkinConfig:               BuildDefaultZipkinConfig(),
-		NewRelicConfig:             BuildDefaultNewRelicConfig(),
 		DefaultJSONPB:              viper.GetBool("orion.DefaultJSONPB"),
 		DisableDefaultInterceptors: viper.GetBool("orion.DisableDefaultInterceptors"),
 		MaxRecvMsgSize:             viper.GetInt("orion.MaxRecvMsgSize"),
 	}
 }
 
-//BuildDefaultHystrixConfig builds a default config for hystrix
-func BuildDefaultHystrixConfig() HystrixConfig {
-	return HystrixConfig{
-		Port:                         viper.GetString("orion.HystrixPort"),
-		CommandConfig:                make(map[string]hystrix.CommandConfig),
-		StatsdAddr:                   viper.GetString("orion.HystrixStatsd"),
-		DefaultTimeout:               viper.GetInt("orion.HystrixDefaultTimeout"),
-		DefaultMaxConcurrent:         viper.GetInt("orion.HystrixDefaultMaxConcurrent"),
-		DefaultVolumeThreshold:       viper.GetInt("orion.HystrixDefaultVolumeThreshold"),
-		DefaultSleepWindow:           viper.GetInt("orion.HystrixDefaultSleepWindow"),
-		DefaultErrorPercentThreshold: viper.GetInt("orion.HystrixDefaultErrorPercentThreshold"),
-	}
-}
-
-//BuildDefaultZipkinConfig builds a default config for zipkin
-func BuildDefaultZipkinConfig() ZipkinConfig {
-	return ZipkinConfig{
-		Addr: viper.GetString("orion.ZipkinAddr"),
-	}
-}
-
-//BuildDefaultNewRelicConfig builds a default config for newrelic
-func BuildDefaultNewRelicConfig() NewRelicConfig {
-	return NewRelicConfig{
-		ServiceName:       viper.GetString("orion.NewRelicServiceName"),
-		APIKey:            viper.GetString("orion.NewRelicApiKey"),
-		HttpTxNameType:    viper.GetString("orion.NewRelicHttpTxNameType"),
-		ExcludeAttributes: viper.GetStringSlice("orion.NewRelicExclude"),
-		IncludeAttributes: viper.GetStringSlice("orion.NewRelicInclude"),
-	}
-}
-
 func setConfigDefaults() {
 	viper.SetDefault("orion.GRPCPort", "9281")
 	viper.SetDefault("orion.HttpPort", "9282")
-	viper.SetDefault("orion.HystrixPort", "9283")
-	viper.SetDefault("orion.PprofPort", "9284")
 	viper.SetDefault("orion.GRPCOnly", false)
 	viper.SetDefault("orion.HTTPOnly", false)
-	viper.SetDefault("orion.EnableProtoURL", false)
-	viper.SetDefault("orion.ZipkinAddr", "")
 	viper.SetDefault("orion.env", "dev")
-	viper.SetDefault("orion.rollbar-token", "")
-	viper.SetDefault("orion.HotReload", true)
-	viper.SetDefault("orion.EnablePrometheus", true)
-	viper.SetDefault("orion.EnablePrometheusHistogram", false)
 	viper.SetDefault("orion.Env", "development")
 	viper.SetDefault("orion.DefaultJSONPB", false)
-
-	viper.SetDefault("orion.HystrixDefaultTimeout", 1000)
-	viper.SetDefault("orion.HystrixDefaultMaxConcurrent", 300)
-	viper.SetDefault("orion.HystrixDefaultVolumeThreshold", 75)
-	viper.SetDefault("orion.HystrixDefaultSleepWindow", 1000)
-	viper.SetDefault("orion.HystrixDefaultErrorPercentThreshold", 75)
 	viper.SetDefault("orion.MaxRecvMsgSize", -1)
 
 }
