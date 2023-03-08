@@ -16,7 +16,6 @@ import (
 
 	"github.com/carousell/Orion/v2/orion/handlers"
 	grpcHandler "github.com/carousell/Orion/v2/orion/handlers/grpc"
-	"github.com/carousell/Orion/v2/orion/handlers/http"
 	"github.com/carousell/Orion/v2/utils/listenerutils"
 	"github.com/carousell/Orion/v2/utils/log"
 )
@@ -35,21 +34,6 @@ type svcInfo struct {
 type handlerInfo struct {
 	handler  handlers.Handler
 	listener listenerutils.CustomListener
-}
-
-type encoderInfo struct {
-	serviceName string
-	method      string
-	httpMethod  []string
-	path        string
-	encoder     Encoder
-	handler     HTTPHandler
-}
-
-type decoderInfo struct {
-	serviceName string
-	method      string
-	decoder     handlers.Decoder
 }
 
 type optionInfo struct {
@@ -73,10 +57,6 @@ type DefaultServerImpl struct {
 	inited                    bool
 
 	services     map[string]*svcInfo
-	encoders     map[string]*encoderInfo
-	decoders     map[string]*decoderInfo
-	defDecoders  map[string]handlers.Decoder
-	defEncoders  map[string]handlers.Encoder
 	options      map[string]*optionInfo
 	middlewares  map[string]*middlewareInfo
 	handlers     []*handlerInfo
@@ -109,71 +89,6 @@ func (d *DefaultServerImpl) AddMiddleware(serviceName string, method string, mid
 
 func getSvcKey(serviceName, method string) string {
 	return serviceName + "-" + method
-}
-
-//AddEncoder is the implementation of handlers.Encodable
-func (d *DefaultServerImpl) AddEncoder(serviceName, method string, httpMethod []string, path string, encoder handlers.Encoder) {
-	if d.encoders == nil {
-		d.encoders = make(map[string]*encoderInfo)
-	}
-	key := getSvcKey(serviceName, method)
-	ei := new(encoderInfo)
-	if info, ok := d.encoders[key]; ok {
-		ei = info
-	} else {
-		d.encoders[key] = ei
-	}
-	ei.serviceName = serviceName
-	ei.method = method
-	ei.httpMethod = httpMethod
-	ei.path = path
-	ei.encoder = encoder
-}
-
-//AddDefaultEncoder is the implementation of handlers.Encodable
-func (d *DefaultServerImpl) AddDefaultEncoder(serviceName string, encoder Encoder) {
-	if d.defEncoders == nil {
-		d.defEncoders = make(map[string]handlers.Encoder)
-	}
-	d.defEncoders[serviceName] = encoder
-}
-
-//AddHTTPHandler is the implementation of handlers.HTTPInterceptor
-func (d *DefaultServerImpl) AddHTTPHandler(serviceName string, method string, path string, handler handlers.HTTPHandler) {
-	if d.encoders == nil {
-		d.encoders = make(map[string]*encoderInfo)
-	}
-	key := getSvcKey(serviceName, method)
-	ei := new(encoderInfo)
-	if info, ok := d.encoders[key]; ok {
-		ei = info
-	} else {
-		d.encoders[key] = ei
-	}
-	ei.serviceName = serviceName
-	ei.method = method
-	ei.path = path
-	ei.handler = handler
-}
-
-//AddDecoder is the implementation of handlers.Decodable
-func (d *DefaultServerImpl) AddDecoder(serviceName, method string, decoder handlers.Decoder) {
-	if d.decoders == nil {
-		d.decoders = make(map[string]*decoderInfo)
-	}
-	d.decoders[serviceName+":"+method] = &decoderInfo{
-		serviceName: serviceName,
-		method:      method,
-		decoder:     decoder,
-	}
-}
-
-//AddDefaultDecoder is the implementation of handlers.Decodable
-func (d *DefaultServerImpl) AddDefaultDecoder(serviceName string, decoder Decoder) {
-	if d.defDecoders == nil {
-		d.defDecoders = make(map[string]handlers.Decoder)
-	}
-	d.defDecoders[serviceName] = decoder
 }
 
 //AddOption adds a option for the particular service/method
@@ -224,47 +139,24 @@ func (d *DefaultServerImpl) processInitializers() {
 
 func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 	hlrs := []*handlerInfo{}
-	if !d.config.GRPCOnly {
-		httpPort := d.config.HTTPPort
-		httpListener, err := listenerutils.NewListener("tcp", ":"+httpPort)
-		if err != nil {
-			log.Error(context.Background(), "httpListener", "could not create listener", "error", err)
-		}
-		log.Info(context.Background(), "HTTPListenerPort", httpPort)
-		config := http.Config{
-			CommonConfig: handlers.CommonConfig{
-				DisableDefaultInterceptors: d.config.DisableDefaultInterceptors,
-			},
-			EnableProtoURL:   d.config.EnableProtoURL,
-			DefaultJSONPB:    d.config.DefaultJSONPB,
-			NRHttpTxNameType: d.config.NewRelicConfig.HttpTxNameType,
-		}
-		handler := http.NewHTTPHandler(config)
-		hlrs = append(hlrs, &handlerInfo{
-			handler:  handler,
-			listener: httpListener,
-		})
+	grpcPort := d.config.GRPCPort
+	grpcListener, err := listenerutils.NewListener("tcp", ":"+grpcPort)
+	if err != nil {
+		log.Info(context.Background(), "grpcListener", "could not create listener", "error", err)
 	}
-	if !d.config.HTTPOnly {
-		grpcPort := d.config.GRPCPort
-		grpcListener, err := listenerutils.NewListener("tcp", ":"+grpcPort)
-		if err != nil {
-			log.Info(context.Background(), "grpcListener", "could not create listener", "error", err)
-		}
-		log.Info(context.Background(), "gRPCListenerPort", grpcPort)
-		config := grpcHandler.Config{
-			CommonConfig: handlers.CommonConfig{
-				DisableDefaultInterceptors: d.config.DisableDefaultInterceptors,
-			},
-			UnknownServiceHandler: d.grpcUnknownServiceHandler,
-			MaxRecvMsgSize:        d.config.MaxRecvMsgSize,
-		}
-		handler := grpcHandler.NewGRPCHandler(config)
-		hlrs = append(hlrs, &handlerInfo{
-			handler:  handler,
-			listener: grpcListener,
-		})
+	log.Info(context.Background(), "gRPCListenerPort", grpcPort)
+	config := grpcHandler.Config{
+		CommonConfig: handlers.CommonConfig{
+			DisableDefaultInterceptors: d.config.DisableDefaultInterceptors,
+		},
+		UnknownServiceHandler: d.grpcUnknownServiceHandler,
+		MaxRecvMsgSize:        d.config.MaxRecvMsgSize,
 	}
+	handler := grpcHandler.NewGRPCHandler(config)
+	hlrs = append(hlrs, &handlerInfo{
+		handler:  handler,
+		listener: grpcListener,
+	})
 	return hlrs
 }
 
@@ -296,9 +188,6 @@ func (d *DefaultServerImpl) signalWatcher() {
 //Start starts the orion server
 func (d *DefaultServerImpl) Start() {
 	fmt.Println(BANNER)
-	if d.config.HTTPOnly && d.config.GRPCOnly {
-		panic("Error: at least one GRPC or HTTP server needs to be initialized")
-	}
 
 	for _, h := range d.handlers {
 		d.startHandler(h)
@@ -312,43 +201,10 @@ func (d *DefaultServerImpl) startHandler(h *handlerInfo) {
 		h.handler.Add(info.sd, info.ss)
 	}
 
-	//Add all encoders
-	if e, ok := h.handler.(handlers.Encodeable); ok {
-		for _, ei := range d.encoders {
-			e.AddEncoder(ei.serviceName, ei.method, ei.httpMethod, ei.path, ei.encoder)
-			if ei.handler != nil {
-				if i, ok := h.handler.(handlers.HTTPInterceptor); ok {
-					i.AddHTTPHandler(ei.serviceName, ei.method, ei.path, ei.handler)
-				}
-			}
-		}
-	}
-
 	//Add all options
 	if e, ok := h.handler.(handlers.Optionable); ok {
 		for _, oi := range d.options {
 			e.AddOption(oi.serviceName, oi.method, oi.option)
-		}
-	}
-
-	//Add all default encoders
-	if e, ok := h.handler.(handlers.Encodeable); ok {
-		for svc, enc := range d.defEncoders {
-			e.AddDefaultEncoder(svc, enc)
-		}
-	}
-
-	//Add all decoders
-	if e, ok := h.handler.(handlers.Decodable); ok {
-		for _, di := range d.decoders {
-			e.AddDecoder(di.serviceName, di.method, di.decoder)
-		}
-	}
-
-	//Add all default decoders
-	if e, ok := h.handler.(handlers.Decodable); ok {
-		for svc, dec := range d.defDecoders {
-			e.AddDefaultDecoder(svc, dec)
 		}
 	}
 

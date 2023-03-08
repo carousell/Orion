@@ -7,7 +7,6 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/carousell/Orion/v2/interceptors"
-	"github.com/carousell/Orion/v2/orion/modifiers"
 	"github.com/carousell/Orion/v2/utils/errors"
 	"github.com/carousell/Orion/v2/utils/errors/notifier"
 	"github.com/carousell/Orion/v2/utils/log"
@@ -205,9 +204,5 @@ func optionsStreamInterceptor(srv interface{}, ss grpc.ServerStream, info *grpc.
 func optionsInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	ctx = options.AddToOptions(ctx, "", "")
 	ctx = loggers.AddToLogContext(ctx, "grpcMethod", info.FullMethod)
-	if !modifiers.IsHTTPRequest(ctx) {
-		loggers.AddToLogContext(ctx, "transport", "gRPC")
-		options.AddToOptions(ctx, modifiers.RequestGRPC, true)
-	}
 	return handler(ctx, req)
 }

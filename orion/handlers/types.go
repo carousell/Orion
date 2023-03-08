@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"net"
-	"net/http"
 	"time"
 
 	"google.golang.org/grpc"
@@ -24,11 +23,6 @@ type StreamInterceptor interface {
 	GetStreamInterceptors() []grpc.StreamServerInterceptor
 }
 
-//CustomHTTPHandler interface when implemented by service allows that service to provide custom http handlers for a method
-type CustomHTTPHandler interface {
-	GetHTTPHandler(method string) HTTPHandler
-}
-
 //WhitelistedHeaders is the interface that needs to be implemented by clients that need request/response headers to be passed in through the context
 type WhitelistedHeaders interface {
 	//GetRequestHeaders returns a list of all whitelisted request headers
@@ -37,36 +31,10 @@ type WhitelistedHeaders interface {
 	GetResponseHeaders() []string
 }
 
-//Encoder is the function type needed for request encoders
-type Encoder func(req *http.Request, reqObject interface{}) error
-
-//Decoder is the function type needed for response decoders
-type Decoder func(ctx context.Context, w http.ResponseWriter, encodeError, endpointError error, respObject interface{})
-
-//Encodeable interface that is implemented by a handler that supports custom HTTP encoder
-type Encodeable interface {
-	AddEncoder(serviceName, method string, httpMethod []string, path string, encoder Encoder)
-	AddDefaultEncoder(serviceName string, encoder Encoder)
-}
-
-//Decodable interface that is implemented by a handler that supports custom HTTP decoder
-type Decodable interface {
-	AddDecoder(serviceName, method string, decoder Decoder)
-	AddDefaultDecoder(serviceName string, decoder Decoder)
-}
-
 //Optionable interface that is implemented by a handler that support custom Orion options
 type Optionable interface {
 	AddOption(ServiceName, method, option string)
 }
-
-//HTTPInterceptor allows intercepting an HTTP connection
-type HTTPInterceptor interface {
-	AddHTTPHandler(serviceName, method string, path string, handler HTTPHandler)
-}
-
-// HTTPHandler is the function that handles HTTP request
-type HTTPHandler func(http.ResponseWriter, *http.Request) bool
 
 //Handler implements a service handler that is used by orion server
 type Handler interface {

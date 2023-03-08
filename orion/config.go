@@ -18,18 +18,10 @@ var (
 type Config struct {
 	//OrionServerName is the name of this orion server that is tracked
 	OrionServerName string
-	// GRPCOnly tells orion not to build HTTP/1.1 server and only initializes gRPC server
-	GRPCOnly bool
-	//HTTPOnly tells orion not to build gRPC server and only initializes HTTP/1.1 server
-	HTTPOnly bool
-	// HTTPPort is the port to bind for HTTP requests
-	HTTPPort string
 	// GRPCPost id the port to bind for gRPC requests
 	GRPCPort string
 	//Env is the environment this service is running in
 	Env string
-	// DefaultJSONPB sets jsonpb as the encoder/decoder for application/json request/response bodies
-	DefaultJSONPB bool
 	// DisableDefaultInterceptors disables the default interceptors for all handlers
 	DisableDefaultInterceptors bool
 	// Receive message Size is used to update the default limit of message that can be received
@@ -41,26 +33,17 @@ func BuildDefaultConfig(name string) Config {
 	setup(name)
 	readConfig(name)
 	return Config{
-		GRPCOnly:                   viper.GetBool("orion.GRPCOnly"),
-		HTTPOnly:                   viper.GetBool("orion.HTTPOnly"),
-		GRPCPort:                   viper.GetString("orion.GRPCPort"),
-		HTTPPort:                   viper.GetString("orion.HTTPPort"),
-		Env:                        viper.GetString("orion.Env"),
-		OrionServerName:            name,
-		DefaultJSONPB:              viper.GetBool("orion.DefaultJSONPB"),
+		GRPCPort:        viper.GetString("orion.GRPCPort"),
+		Env:             viper.GetString("orion.Env"),
+		OrionServerName: name,
 		DisableDefaultInterceptors: viper.GetBool("orion.DisableDefaultInterceptors"),
-		MaxRecvMsgSize:             viper.GetInt("orion.MaxRecvMsgSize"),
+		MaxRecvMsgSize:  viper.GetInt("orion.MaxRecvMsgSize"),
 	}
 }
 
 func setConfigDefaults() {
 	viper.SetDefault("orion.GRPCPort", "9281")
-	viper.SetDefault("orion.HttpPort", "9282")
-	viper.SetDefault("orion.GRPCOnly", false)
-	viper.SetDefault("orion.HTTPOnly", false)
-	viper.SetDefault("orion.env", "dev")
 	viper.SetDefault("orion.Env", "development")
-	viper.SetDefault("orion.DefaultJSONPB", false)
 	viper.SetDefault("orion.MaxRecvMsgSize", -1)
 
 }

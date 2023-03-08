@@ -4,8 +4,6 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-
-	"github.com/carousell/Orion/v2/orion/handlers"
 )
 
 const (
@@ -63,12 +61,3 @@ type ServiceFactoryV2 interface {
 	//DisposeService function disposes the service object
 	DisposeService(svc interface{}, params FactoryParams)
 }
-
-//Encoder is the function type needed for request encoders
-type Encoder = handlers.Encoder
-
-//Decoder is the function type needed for request decoders
-type Decoder = handlers.Decoder
-
-//HTTPHandler is the http interceptor
-type HTTPHandler = handlers.HTTPHandler

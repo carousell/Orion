@@ -6,17 +6,18 @@ import (
 	"time"
 
 	"github.com/afex/hystrix-go/hystrix"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
+	newrelic "github.com/newrelic/go-agent"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
 	"github.com/carousell/Orion/v2/orion/modifiers"
 	"github.com/carousell/Orion/v2/utils"
 	"github.com/carousell/Orion/v2/utils/errors"
 	"github.com/carousell/Orion/v2/utils/errors/notifier"
 	"github.com/carousell/Orion/v2/utils/log"
 	"github.com/carousell/Orion/v2/utils/log/loggers"
-	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
-	newrelic "github.com/newrelic/go-agent"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 //DebugLoggingInterceptor is the interceptor that logs all request/response from a handler
@@ -32,12 +33,9 @@ func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 //ResponseTimeLoggingInterceptor logs response time for each request on server
 func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		// dont log for HTTP request, let HTTP Handler manage it
-		if !modifiers.IsHTTPRequest(ctx) {
-			defer func(begin time.Time) {
-				log.Info(ctx, "method", info.FullMethod, "error", err, "took", time.Since(begin))
-			}(time.Now())
-		}
+		defer func(begin time.Time) {
+			log.Info(ctx, "method", info.FullMethod, "error", err, "took", time.Since(begin))
+		}(time.Now())
 		resp, err = handler(ctx, req)
 		return resp, err
 	}
@@ -46,10 +44,6 @@ func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 //NewRelicInterceptor intercepts all server actions and reports them to newrelic
 func NewRelicInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		// dont log NR for HTTP request, let HTTP Handler manage it
-		if modifiers.IsHTTPRequest(ctx) {
-			return handler(ctx, req)
-		}
 		ctx = utils.StartNRTransaction(info.FullMethod, ctx, nil, nil)
 		resp, err = handler(ctx, req)
 		if modifiers.HasDontLogError(ctx) {
@@ -73,10 +67,6 @@ func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 			traceID := notifier.GetTraceId(ctx)
 			t.Set("trace", traceID)
 			ctx = loggers.AddToLogContext(ctx, "trace", traceID)
-		}
-		// dont log Error for HTTP request, let HTTP Handler manage it
-		if modifiers.IsHTTPRequest(ctx) {
-			return handler(ctx, req)
 		}
 		resp, err = handler(ctx, req)
 		if !modifiers.HasDontLogError(ctx) {
