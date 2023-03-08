@@ -145,8 +145,8 @@ func Register{{.SvcName}}{{.MethodName}}Decoder(svr orion.Server, decoder orion.
 // {{ . }}
 {{ end }}
 // Register{{.ServName}}OrionServer registers {{.ServName}} to Orion server
-// Services need to pass either ServiceFactory or ServiceFactoryV2 implementation
-func Register{{.ServName}}OrionServer(sf interface{}, orionServer orion.Server) error {
+// Services need to pass a ServiceFactoryV2 implementation
+func Register{{.ServName}}OrionServer(sf ServiceFactoryV2, orionServer orion.Server) error {
 	err := orionServer.RegisterService(&{{.ServiceDescVar}}, sf)
 	if err != nil {
 		return err

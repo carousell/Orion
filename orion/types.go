@@ -3,8 +3,9 @@ package orion
 import (
 	"time"
 
-	"github.com/carousell/Orion/v2/orion/handlers"
 	"google.golang.org/grpc"
+
+	"github.com/carousell/Orion/v2/orion/handlers"
 )
 
 const (
@@ -26,7 +27,7 @@ type Server interface {
 	//Start starts the orion server, this is non blocking call
 	Start()
 	//RegisterService registers the service to origin server
-	RegisterService(sd *grpc.ServiceDesc, sf interface{}) error
+	RegisterService(sd *grpc.ServiceDesc, sf ServiceFactoryV2) error
 	//Wait waits for the Server loop to exit
 	Wait() error
 	//Stop stops the Server
@@ -43,14 +44,6 @@ type Server interface {
 type Initializer interface {
 	Init(svr Server) error
 	ReInit(svr Server) error
-}
-
-// ServiceFactory is the interface that need to be implemented by client that provides with a new service object
-type ServiceFactory interface {
-	// NewService function receives the server object for which service has to be initialized
-	NewService(Server) interface{}
-	//DisposeService function disposes the service object
-	DisposeService(svc interface{})
 }
 
 // FactoryParams are the parameters used by the ServiceFactoryV2
