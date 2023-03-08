@@ -34,7 +34,6 @@ func DefaultInterceptors() []grpc.UnaryServerInterceptor {
 		grpc_opentracing.UnaryServerInterceptor(grpc_opentracing.WithFilterFunc(filterFromZipkin)),
 		grpc_prometheus.UnaryServerInterceptor,
 		ServerErrorInterceptor(),
-		NewRelicInterceptor(),
 		PanicRecoveryInterceptor(),
 	}
 }
@@ -43,7 +42,6 @@ func DefaultInterceptors() []grpc.UnaryServerInterceptor {
 func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
 	return []grpc.UnaryClientInterceptor{
 		grpc_retry.UnaryClientInterceptor(),
-		NewRelicClientInterceptor(address),
 		HystrixClientInterceptor(),
 		ForwardMetadataInterceptor(),
 		// ForwardMetadataInterceptor should come before GRPCClientInterceptor

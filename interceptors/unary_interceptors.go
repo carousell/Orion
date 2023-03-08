@@ -8,12 +8,10 @@ import (
 	"github.com/afex/hystrix-go/hystrix"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
-	newrelic "github.com/newrelic/go-agent"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
 	"github.com/carousell/Orion/v2/orion/modifiers"
-	"github.com/carousell/Orion/v2/utils"
 	"github.com/carousell/Orion/v2/utils/errors"
 	"github.com/carousell/Orion/v2/utils/errors/notifier"
 	"github.com/carousell/Orion/v2/utils/log"
@@ -37,21 +35,6 @@ func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 			log.Info(ctx, "method", info.FullMethod, "error", err, "took", time.Since(begin))
 		}(time.Now())
 		resp, err = handler(ctx, req)
-		return resp, err
-	}
-}
-
-//NewRelicInterceptor intercepts all server actions and reports them to newrelic
-func NewRelicInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		ctx = utils.StartNRTransaction(info.FullMethod, ctx, nil, nil)
-		resp, err = handler(ctx, req)
-		if modifiers.HasDontLogError(ctx) {
-			// dont report error to NR
-			utils.FinishNRTransaction(ctx, nil)
-		} else {
-			utils.FinishNRTransaction(ctx, err)
-		}
 		return resp, err
 	}
 }
@@ -87,26 +70,12 @@ func PanicRecoveryInterceptor() grpc.UnaryServerInterceptor {
 				} else {
 					err = errors.New(fmt.Sprintf("panic: %s", r))
 				}
-				utils.FinishNRTransaction(ctx, err)
 				notifier.NotifyWithLevel(err, "critical", info.FullMethod, ctx)
 			}
 		}(ctx)
 
 		resp, err = handler(ctx, req)
 		return resp, err
-	}
-}
-
-//NewRelicClientInterceptor intercepts all client actions and reports them to newrelic
-func NewRelicClientInterceptor(address string) grpc.UnaryClientInterceptor {
-	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		txn := utils.GetNewRelicTransactionFromContext(ctx)
-		seg := newrelic.ExternalSegment{
-			StartTime: newrelic.StartSegmentNow(txn),
-			URL:       "http://" + address + "/" + method,
-		}
-		defer seg.End()
-		return invoker(ctx, method, req, reply, cc, opts...)
 	}
 }
 
