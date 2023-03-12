@@ -2,12 +2,12 @@ package grpc
 
 import (
 	"context"
+	"github.com/carousell/logging"
 	"net"
 	"sync"
 	"time"
 
 	"github.com/carousell/Orion/v2/orion/handlers"
-	"github.com/carousell/Orion/v2/utils/log"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
 )
@@ -19,7 +19,7 @@ type Config struct {
 	MaxRecvMsgSize        int
 }
 
-//NewGRPCHandler creates a new GRPC handler
+// NewGRPCHandler creates a new GRPC handler
 func NewGRPCHandler(config Config) handlers.Handler {
 	return &grpcHandler{config: config}
 }
@@ -73,7 +73,7 @@ func (g *grpcHandler) AddMiddleware(serviceName string, method string, middlewar
 }
 
 func (g *grpcHandler) Run(grpcListener net.Listener) error {
-	log.Info(context.Background(), "GRPC", "server starting")
+	logging.Info(context.Background(), "GRPC", "server starting")
 	grpc_prometheus.Register(g.grpcServer)
 	return g.grpcServer.Serve(grpcListener)
 }
@@ -94,12 +94,12 @@ func timedCall(f func(), timeout time.Duration) {
 func (g *grpcHandler) Stop(timeout time.Duration) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	log.Info(context.Background(), "GRPC", "stopping server")
+	logging.Info(context.Background(), "GRPC", "stopping server")
 	timedCall(g.grpcServer.GracefulStop, timeout)
 	g.grpcServer.Stop()
 	g.grpcServer = nil
 	g.middlewares = nil
-	log.Info(context.Background(), "GRPC", "stopped server")
+	logging.Info(context.Background(), "GRPC", "stopped server")
 	return nil
 }
 

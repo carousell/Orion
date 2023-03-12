@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/carousell/logging"
 	"net/http"
 	"net/textproto"
 	"strconv"
@@ -14,11 +15,9 @@ import (
 	"github.com/carousell/Orion/v2/orion/modifiers"
 	"github.com/carousell/Orion/v2/utils"
 	"github.com/carousell/Orion/v2/utils/errors"
-	"github.com/carousell/Orion/v2/utils/errors/notifier"
 	"github.com/carousell/Orion/v2/utils/headers"
-	"github.com/carousell/Orion/v2/utils/log"
-	"github.com/carousell/Orion/v2/utils/log/loggers"
 	"github.com/carousell/Orion/v2/utils/options"
+	"github.com/carousell/notifier"
 	"github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -57,10 +56,10 @@ func (h *httpHandler) getHTTPHandler(serviceName, methodName, routeURL string) h
 func (h *httpHandler) httpHandler(resp http.ResponseWriter, req *http.Request, service, method, routeURL string) {
 	nrTxName := h.getNRTxName(req, service, method, routeURL)
 	ctx := utils.StartNRTransaction(nrTxName, req.Context(), req, resp)
-	ctx = loggers.AddToLogContext(ctx, "transport", "http")
+	ctx = logging.AddToLogContext(ctx, "transport", "http")
 	var err error
 	defer func(ctx context.Context, t time.Time) {
-		log.Info(ctx, "path", req.URL.Path, "method", req.Method, "error", err, "took", time.Since(t))
+		logging.Info(ctx, "path", req.URL.Path, "method", req.Method, "error", err, "took", time.Since(t))
 	}(ctx, time.Now())
 	req = req.WithContext(ctx)
 	ctx, err = h.serveHTTP(resp, req, service, method)
