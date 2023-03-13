@@ -2,16 +2,16 @@ package http
 
 import (
 	"context"
+	"github.com/carousell/logging"
 	"net/http"
 	"strings"
 
 	"github.com/carousell/Orion/v2/utils/headers"
-	"github.com/carousell/Orion/v2/utils/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-//ContentTypeFromHeaders searches for a matching content type
+// ContentTypeFromHeaders searches for a matching content type
 func ContentTypeFromHeaders(ctx context.Context) string {
 	hdrs := headers.RequestHeadersFromContext(ctx)
 	if values, found := hdrs["Content-Type"]; found {
@@ -24,7 +24,7 @@ func ContentTypeFromHeaders(ctx context.Context) string {
 	return ""
 }
 
-//AcceptTypeFromHeaders searches for a mathing accept type
+// AcceptTypeFromHeaders searches for a mathing accept type
 func AcceptTypeFromHeaders(ctx context.Context) string {
 	hdrs := headers.RequestHeadersFromContext(ctx)
 	if values, found := hdrs["Accept"]; found {
@@ -96,7 +96,7 @@ func processWhitelist(ctx context.Context, data map[string][]string, allowedKeys
 		if _, found := whitelistedKeys[strings.ToLower(k)]; found {
 			whitelistedMap[k] = v
 		} else {
-			log.Warn(ctx, "error", "rejected headers not in whitelist", k, v)
+			logging.Warn(ctx, "error", "rejected headers not in whitelist", k, v)
 		}
 	}
 

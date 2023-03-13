@@ -3,15 +3,14 @@ package interceptors
 import (
 	"context"
 	"fmt"
+	"github.com/carousell/logging"
+	"github.com/carousell/notifier"
 	"time"
 
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/carousell/Orion/v2/orion/modifiers"
 	"github.com/carousell/Orion/v2/utils"
 	"github.com/carousell/Orion/v2/utils/errors"
-	"github.com/carousell/Orion/v2/utils/errors/notifier"
-	"github.com/carousell/Orion/v2/utils/log"
-	"github.com/carousell/Orion/v2/utils/log/loggers"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	newrelic "github.com/newrelic/go-agent"
@@ -19,7 +18,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-//DebugLoggingInterceptor is the interceptor that logs all request/response from a handler
+// DebugLoggingInterceptor is the interceptor that logs all request/response from a handler
 func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		fmt.Println(info, "requst", req)
@@ -29,13 +28,13 @@ func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-//ResponseTimeLoggingInterceptor logs response time for each request on server
+// ResponseTimeLoggingInterceptor logs response time for each request on server
 func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		// dont log for HTTP request, let HTTP Handler manage it
 		if !modifiers.IsHTTPRequest(ctx) {
 			defer func(begin time.Time) {
-				log.Info(ctx, "method", info.FullMethod, "error", err, "took", time.Since(begin))
+				logging.Info(ctx, "method", info.FullMethod, "error", err, "took", time.Since(begin))
 			}(time.Now())
 		}
 		resp, err = handler(ctx, req)
@@ -43,7 +42,7 @@ func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-//NewRelicInterceptor intercepts all server actions and reports them to newrelic
+// NewRelicInterceptor intercepts all server actions and reports them to newrelic
 func NewRelicInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		// dont log NR for HTTP request, let HTTP Handler manage it
@@ -62,7 +61,7 @@ func NewRelicInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-//ServerErrorInterceptor intercepts all server actions and reports them to error notifier
+// ServerErrorInterceptor intercepts all server actions and reports them to error notifier
 func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		// set trace id if not set
@@ -72,7 +71,7 @@ func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 		if t != nil {
 			traceID := notifier.GetTraceId(ctx)
 			t.Set("trace", traceID)
-			ctx = loggers.AddToLogContext(ctx, "trace", traceID)
+			ctx = logging.AddToLogContext(ctx, "trace", traceID)
 		}
 		// dont log Error for HTTP request, let HTTP Handler manage it
 		if modifiers.IsHTTPRequest(ctx) {
@@ -91,7 +90,7 @@ func PanicRecoveryInterceptor() grpc.UnaryServerInterceptor {
 		defer func(ctx context.Context) {
 			// panic handler
 			if r := recover(); r != nil {
-				log.Error(ctx, "panic", r, "method", info.FullMethod)
+				logging.Error(ctx, "panic", r, "method", info.FullMethod)
 				if e, ok := r.(error); ok {
 					err = e
 				} else {
@@ -107,7 +106,7 @@ func PanicRecoveryInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-//NewRelicClientInterceptor intercepts all client actions and reports them to newrelic
+// NewRelicClientInterceptor intercepts all client actions and reports them to newrelic
 func NewRelicClientInterceptor(address string) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		txn := utils.GetNewRelicTransactionFromContext(ctx)
@@ -120,12 +119,12 @@ func NewRelicClientInterceptor(address string) grpc.UnaryClientInterceptor {
 	}
 }
 
-//GRPCClientInterceptor is the interceptor that intercepts all cleint requests and adds tracing info to them
+// GRPCClientInterceptor is the interceptor that intercepts all cleint requests and adds tracing info to them
 func GRPCClientInterceptor() grpc.UnaryClientInterceptor {
 	return grpc_opentracing.UnaryClientInterceptor()
 }
 
-//HystrixClientInterceptor is the interceptor that intercepts all cleint requests and adds hystrix info to them
+// HystrixClientInterceptor is the interceptor that intercepts all cleint requests and adds hystrix info to them
 func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		options := hystrixOptions{
@@ -145,7 +144,7 @@ func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 			defer func() {
 				if r := recover(); r != nil {
 					err = errors.Wrap(fmt.Errorf("panic inside hystrix Method: %s, req: %v, reply: %v", method, req, reply), "Hystrix")
-					log.Error(ctx, "panic", r, "method", method, "req", req, "reply", reply)
+					logging.Error(ctx, "panic", r, "method", method, "req", req, "reply", reply)
 				}
 			}()
 			// error assigns back to the err object out of hystrix anyway

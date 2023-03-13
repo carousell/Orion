@@ -2,14 +2,13 @@ package http
 
 import (
 	"context"
+	"github.com/carousell/logging"
 	"io"
 	"net/http"
 	"time"
 
 	"github.com/carousell/Orion/v2/utils/errors"
-	"github.com/carousell/Orion/v2/utils/errors/notifier"
-	"github.com/carousell/Orion/v2/utils/log"
-	"github.com/carousell/Orion/v2/utils/log/loggers"
+	"github.com/carousell/notifier"
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 	"google.golang.org/grpc/metadata"
@@ -26,18 +25,18 @@ func (h *httpHandler) wsHandler(resp http.ResponseWriter, req *http.Request, ser
 	var ctx context.Context
 	defer func(t time.Time) {
 		notifier.Notify(err, ctx, req.URL.String())
-		log.Info(ctx, "path", req.URL.String(), "duration", time.Since(t), "err", err)
+		logging.Info(ctx, "path", req.URL.String(), "duration", time.Since(t), "err", err)
 	}(time.Now())
 	info, ok := h.mapping.Get(service, method)
 	if ok {
 		//setup context
 		ctx = prepareContext(req, info)
 		ctx = processOptions(ctx, req, info)
-		ctx = loggers.AddToLogContext(ctx, "transport", "ws")
+		ctx = logging.AddToLogContext(ctx, "transport", "ws")
 		req = req.WithContext(ctx)
 
 		notifier.SetTraceId(ctx)
-		log.Info(ctx, "path", req.URL.String(), "msg", "new websocket connection")
+		logging.Info(ctx, "path", req.URL.String(), "msg", "new websocket connection")
 
 		// httpHandler allows handling entire http request
 		if info.httpHandler != nil {
@@ -49,14 +48,14 @@ func (h *httpHandler) wsHandler(resp http.ResponseWriter, req *http.Request, ser
 		}
 
 		if info.stream == nil {
-			log.Error(ctx, "ws", "no stream registered", "url", req.URL.String())
+			logging.Error(ctx, "ws", "no stream registered", "url", req.URL.String())
 			err = errors.New("No stream registered")
 		}
 
 		var con *websocket.Conn
 		con, err = DefaultWSUpgrader(resp, req, http.Header{})
 		if err != nil {
-			log.Error(ctx, "wsUpgrade", "failed", "err", err, "url", req.URL.String())
+			logging.Error(ctx, "wsUpgrade", "failed", "err", err, "url", req.URL.String())
 			return
 		}
 		defer con.Close()

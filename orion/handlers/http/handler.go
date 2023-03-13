@@ -3,18 +3,18 @@ package http
 import (
 	"context"
 	"fmt"
+	"github.com/carousell/logging"
 	"net"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/carousell/Orion/v2/orion/handlers"
-	"github.com/carousell/Orion/v2/utils/log"
 	"github.com/gorilla/mux"
 	"google.golang.org/grpc"
 )
 
-//NewHTTPHandler creates a new HTTP handler
+// NewHTTPHandler creates a new HTTP handler
 func NewHTTPHandler(config Config) handlers.Handler {
 	return &httpHandler{
 		config:      config,
@@ -89,7 +89,7 @@ func (h *httpHandler) AddEncoder(serviceName, method string, httpMethod []string
 				info.encoderPath = url
 			}
 		} else {
-			log.Warn(context.Background(), "error", "Service and Method NOT found!", "service", serviceName,
+			logging.Warn(context.Background(), "error", "Service and Method NOT found!", "service", serviceName,
 				"method", method, "mapping", h.mapping)
 		}
 	}
@@ -109,7 +109,7 @@ func (h *httpHandler) AddHTTPHandler(serviceName string, method string, path str
 		if info, ok := h.mapping.Get(serviceName, method); ok {
 			info.httpHandler = handler
 		} else {
-			log.Warn(context.Background(), "error", "Service and Method NOT found!", "service", serviceName,
+			logging.Warn(context.Background(), "error", "Service and Method NOT found!", "service", serviceName,
 				"method", method, "mapping", h.mapping)
 		}
 	}
@@ -120,7 +120,7 @@ func (h *httpHandler) AddDecoder(serviceName, method string, decoder handlers.De
 		if info, ok := h.mapping.Get(serviceName, method); ok {
 			info.decoder = decoder
 		} else {
-			log.Warn(context.Background(), "error", "Service and Method NOT found!", "service", serviceName,
+			logging.Warn(context.Background(), "error", "Service and Method NOT found!", "service", serviceName,
 				"method", method, "mapping", h.mapping)
 		}
 	}

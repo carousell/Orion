@@ -3,6 +3,8 @@ package orion
 import (
 	"context"
 	"errors"
+	"github.com/carousell/logging"
+	"github.com/carousell/notifier/sentry"
 	"net"
 	"net/http"
 	_ "net/http/pprof" // import pprof
@@ -17,8 +19,8 @@ import (
 	metricCollector "github.com/afex/hystrix-go/hystrix/metric_collector"
 	"github.com/afex/hystrix-go/plugins"
 	"github.com/carousell/Orion/v2/utils"
-	"github.com/carousell/Orion/v2/utils/errors/notifier"
-	"github.com/carousell/Orion/v2/utils/log"
+	"github.com/carousell/notifier"
+	"github.com/carousell/notifier/rollbar"
 	logg "github.com/go-kit/kit/log"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	newrelic "github.com/newrelic/go-agent"
@@ -39,32 +41,32 @@ var (
 	}
 )
 
-//HystrixInitializer returns a Initializer implementation for Hystrix
+// HystrixInitializer returns a Initializer implementation for Hystrix
 func HystrixInitializer() Initializer {
 	return &hystrixInitializer{}
 }
 
-//ErrorLoggingInitializer returns a Initializer implementation for error notifier
+// ErrorLoggingInitializer returns a Initializer implementation for error notifier
 func ErrorLoggingInitializer() Initializer {
 	return &errorLoggingInitializer{}
 }
 
-//ZipkinInitializer returns a Initializer implementation for Zipkin
+// ZipkinInitializer returns a Initializer implementation for Zipkin
 func ZipkinInitializer() Initializer {
 	return &zipkinInitializer{}
 }
 
-//NewRelicInitializer returns a Initializer implementation for NewRelic
+// NewRelicInitializer returns a Initializer implementation for NewRelic
 func NewRelicInitializer() Initializer {
 	return &newRelicInitializer{}
 }
 
-//PrometheusInitializer returns a Initializer implementation for Prometheus
+// PrometheusInitializer returns a Initializer implementation for Prometheus
 func PrometheusInitializer() Initializer {
 	return &prometheusInitializer{}
 }
 
-//PprofInitializer returns a Initializer implementation for Pprof
+// PprofInitializer returns a Initializer implementation for Pprof
 func PprofInitializer() Initializer {
 	return &pprofInitializer{}
 }
@@ -91,9 +93,9 @@ func (h *hystrixInitializer) Init(svr Server) error {
 		})
 		if err == nil {
 			metricCollector.Registry.Register(c.NewStatsdCollector)
-			log.Info(context.Background(), "HystrixStatsd", config.HystrixConfig.StatsdAddr)
+			logging.Info(context.Background(), "HystrixStatsd", config.HystrixConfig.StatsdAddr)
 		} else {
-			log.Info(context.Background(), "Hystrix", err.Error())
+			logging.Info(context.Background(), "Hystrix", err.Error())
 		}
 
 	}
@@ -104,7 +106,7 @@ func (h *hystrixInitializer) Init(svr Server) error {
 	hystrixStreamHandler := hystrix.NewStreamHandler()
 	hystrixStreamHandler.Start()
 	port := config.HystrixConfig.Port
-	log.Info(context.Background(), "HystrixPort", port)
+	logging.Info(context.Background(), "HystrixPort", port)
 	go http.ListenAndServe(net.JoinHostPort("", port), hystrixStreamHandler)
 	return nil
 }
@@ -138,11 +140,11 @@ func (n *newRelicInitializer) Init(svr Server) error {
 	}
 	app, err := newrelic.NewApplication(nrConfig)
 	if err != nil {
-		log.Error(context.Background(), "nr-error", err)
+		logging.Error(context.Background(), "nr-error", err)
 		return err
 	}
 	utils.NewRelicApp = app
-	log.Info(context.Background(), "NR", "initialized with "+serviceName)
+	logging.Info(context.Background(), "NR", "initialized with "+serviceName)
 	return nil
 }
 
@@ -235,7 +237,7 @@ func (p *pprofInitializer) Init(svr Server) error {
 
 	go func(svr Server) {
 		pprofport := svr.GetOrionConfig().PProfport
-		log.Info(context.Background(), "PprofPort", pprofport)
+		logging.Info(context.Background(), "PprofPort", pprofport)
 		http.ListenAndServe(":"+pprofport, nil)
 	}(svr)
 	return nil
@@ -249,21 +251,29 @@ type errorLoggingInitializer struct{}
 
 func (e *errorLoggingInitializer) Init(svr Server) error {
 	env := svr.GetOrionConfig().Env
-	// environment for error notification
-	notifier.SetEnvironemnt(env)
 
 	// rollbar
 	rToken := svr.GetOrionConfig().RollbarToken
 	if strings.TrimSpace(rToken) != "" {
-		notifier.InitRollbar(rToken, env)
-		log.Debug(context.Background(), "rollbarToken", rToken, "env", env)
+		rollbarNotifier, err := rollbar.InitRollbar(rToken, env)
+		if err != nil {
+			logging.Error(context.Background(), "msg", "error initializing rollbar notifier")
+			return err
+		}
+		notifier.SetNotifier(rollbarNotifier)
+		logging.Debug(context.Background(), "rollbarToken", rToken, "env", env)
 	}
 
 	//sentry
 	sToken := svr.GetOrionConfig().SentryDSN
 	if strings.TrimSpace(sToken) != "" {
-		notifier.InitSentry(sToken)
-		log.Debug(context.Background(), "sentryDSN", rToken, "env", env)
+		sentryNotifier, err := sentry.InitSentry(sToken)
+		if err != nil {
+			logging.Error(context.Background(), "msg", "error initializing sentry notifier")
+			return err
+		}
+		notifier.SetNotifier(sentryNotifier)
+		logging.Debug(context.Background(), "sentryDSN", rToken, "env", env)
 	}
 	return nil
 }

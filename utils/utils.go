@@ -2,11 +2,11 @@ package utils
 
 import (
 	"context"
+	"github.com/carousell/logging"
 	"net/http"
 	"os"
 	"strings"
 
-	"github.com/carousell/Orion/v2/utils/log"
 	newrelic "github.com/newrelic/go-agent"
 	"go.elastic.co/apm"
 )
@@ -20,17 +20,17 @@ var (
 	NewRelicApp newrelic.Application
 )
 
-//GetHostname fetches the hostname of the system
+// GetHostname fetches the hostname of the system
 func GetHostname() string {
 	host := os.Getenv("HOST")
 	if host == "" {
 		host = "localhost"
 	}
-	log.Info(context.Background(), "HOST", host)
+	logging.Info(context.Background(), "HOST", host)
 	return host
 }
 
-//GetNewRelicTransactionFromContext fetches the new relic transaction that is stored in the context
+// GetNewRelicTransactionFromContext fetches the new relic transaction that is stored in the context
 func GetNewRelicTransactionFromContext(ctx context.Context) newrelic.Transaction {
 	t := ctx.Value(newRelicTransactionID)
 	if t != nil {
@@ -42,12 +42,12 @@ func GetNewRelicTransactionFromContext(ctx context.Context) newrelic.Transaction
 	return nil
 }
 
-//StoreNewRelicTransactionToContext stores a new relic transaction object to context
+// StoreNewRelicTransactionToContext stores a new relic transaction object to context
 func StoreNewRelicTransactionToContext(ctx context.Context, t newrelic.Transaction) context.Context {
 	return context.WithValue(ctx, newRelicTransactionID, t)
 }
 
-//StartNRTransaction starts a new newrelic transaction
+// StartNRTransaction starts a new newrelic transaction
 func StartNRTransaction(path string, ctx context.Context, req *http.Request, w http.ResponseWriter) context.Context {
 	if req == nil {
 		if !strings.HasPrefix(path, "/") {
@@ -72,7 +72,7 @@ func StartNRTransaction(path string, ctx context.Context, req *http.Request, w h
 	return ctx
 }
 
-//FinishNRTransaction finishes an existing transaction
+// FinishNRTransaction finishes an existing transaction
 func FinishNRTransaction(ctx context.Context, err error) {
 	t := GetNewRelicTransactionFromContext(ctx)
 	if t != nil {
@@ -86,7 +86,7 @@ func FinishNRTransaction(ctx context.Context, err error) {
 	}
 }
 
-//IgnoreNRTransaction ignores this NR trasaction and prevents it from being reported
+// IgnoreNRTransaction ignores this NR trasaction and prevents it from being reported
 func IgnoreNRTransaction(ctx context.Context) error {
 	t := GetNewRelicTransactionFromContext(ctx)
 	if t != nil {

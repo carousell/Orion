@@ -7,9 +7,8 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/carousell/Orion/v2/orion/modifiers"
-	"github.com/carousell/Orion/v2/utils/errors/notifier"
-	"github.com/carousell/Orion/v2/utils/log"
-	"github.com/carousell/Orion/v2/utils/log/loggers"
+	"github.com/carousell/logging"
+	"github.com/carousell/notifier"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"google.golang.org/grpc"
 )
@@ -18,7 +17,7 @@ import (
 func ResponseTimeLoggingStreamInterceptor() grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
 		defer func(begin time.Time) {
-			log.Info(stream.Context(), "method", info.FullMethod, "error", err, "took", time.Since(begin))
+			logging.Info(stream.Context(), "method", info.FullMethod, "error", err, "took", time.Since(begin))
 		}(time.Now())
 		err = handler(srv, stream)
 		return err
@@ -35,7 +34,7 @@ func ServerErrorStreamInterceptor() grpc.StreamServerInterceptor {
 		if t != nil {
 			traceID := notifier.GetTraceId(ctx)
 			t.Set("trace", traceID)
-			ctx = loggers.AddToLogContext(ctx, "trace", traceID)
+			ctx = logging.AddToLogContext(ctx, "trace", traceID)
 		}
 		err = handler(srv, stream)
 		if !modifiers.HasDontLogError(ctx) {
