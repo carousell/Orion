@@ -19,8 +19,8 @@ github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 h1:xJ4a3vCFaGF/jqvzLM
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/cactus/go-statsd-client/statsd v0.0.0-20190805010426-5089fcbbe532 h1:/Etyacb4vN0EH9edp+lNhcaSWOZBUOuURr6wvIXt5gI=
 github.com/cactus/go-statsd-client/statsd v0.0.0-20190805010426-5089fcbbe532/go.mod h1:3/sdo8I67TaOslRGJ6FqQC/ynu+wg7H6IE4WYtr51hk=
-github.com/carousell/logging v0.0.0-20230313142407-88bedd60da11 h1:cvAX7LAQan7OldkT2pfpijBW3NGYAv2evOZNAykVYW4=
-github.com/carousell/logging v0.0.0-20230313142407-88bedd60da11/go.mod h1:dZGZ2h6oCq6pTeiAkzUb787AVaJkj7K5KunorOa9wG4=
+github.com/carousell/logging v0.0.0-20230313163045-6275076962d6 h1:VzjHganhjvN5RT4RLlDVlT7HRGgg3yv/LerkMVjncx0=
+github.com/carousell/logging v0.0.0-20230313163045-6275076962d6/go.mod h1:dZGZ2h6oCq6pTeiAkzUb787AVaJkj7K5KunorOa9wG4=
 github.com/carousell/notifier v0.0.0-20230312070525-56b87600ad58 h1:UfqM27sb5e2YxaW/xwOw3IKCdGbwyNyu1irE3fS/R1U=
 github.com/carousell/notifier v0.0.0-20230312070525-56b87600ad58/go.mod h1:VqGHLu9C/UZnmaEd5v7P1ccJgcw6Hu+f5D2HodxnJ/s=
 github.com/carousell/notifier/rollbar v0.0.0-20230312070525-56b87600ad58 h1:uaBQii2+lbn04ZvUDuvoSEIbq2NFSxcC+MIDvWs0LtI=
