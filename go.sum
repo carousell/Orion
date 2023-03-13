@@ -21,6 +21,8 @@ github.com/cactus/go-statsd-client/statsd v0.0.0-20190805010426-5089fcbbe532 h1:
 github.com/cactus/go-statsd-client/statsd v0.0.0-20190805010426-5089fcbbe532/go.mod h1:3/sdo8I67TaOslRGJ6FqQC/ynu+wg7H6IE4WYtr51hk=
 github.com/carousell/logging v0.0.0-20230309075505-59a42bd52f4d h1:ZcJQIaTWq3GnyHGI85qeJ4rzXtOZlWqZW+c+a5YlD68=
 github.com/carousell/logging v0.0.0-20230309075505-59a42bd52f4d/go.mod h1:dZGZ2h6oCq6pTeiAkzUb787AVaJkj7K5KunorOa9wG4=
+github.com/carousell/logging/stdlog v0.0.0-20230309075505-59a42bd52f4d h1:vmQrmq5UQLx2jBv/+z0KKu6s6zQhhoxFQrvWanwMkes=
+github.com/carousell/logging/stdlog v0.0.0-20230309075505-59a42bd52f4d/go.mod h1:Fr9+AXkbJjCH3rtF9fwx04FRmYDgSgajMy3WLzbeOjs=
 github.com/carousell/notifier v0.0.0-20230312070525-56b87600ad58 h1:UfqM27sb5e2YxaW/xwOw3IKCdGbwyNyu1irE3fS/R1U=
 github.com/carousell/notifier v0.0.0-20230312070525-56b87600ad58/go.mod h1:VqGHLu9C/UZnmaEd5v7P1ccJgcw6Hu+f5D2HodxnJ/s=
 github.com/carousell/notifier/rollbar v0.0.0-20230312070525-56b87600ad58 h1:uaBQii2+lbn04ZvUDuvoSEIbq2NFSxcC+MIDvWs0LtI=

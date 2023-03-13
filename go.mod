@@ -47,12 +47,12 @@ require (
 	go.elastic.co/apm v1.4.0
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
-	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
 	google.golang.org/grpc v1.53.0
 )
 
 require (
 	github.com/carousell/logging v0.0.0-20230309075505-59a42bd52f4d
+	github.com/carousell/logging/stdlog v0.0.0-20230309075505-59a42bd52f4d
 	github.com/carousell/notifier v0.0.0-20230312070525-56b87600ad58
 	github.com/carousell/notifier/rollbar v0.0.0-20230312070525-56b87600ad58
 	github.com/carousell/notifier/sentry v0.0.0-20230312070525-56b87600ad58
@@ -86,6 +86,7 @@ require (
 	github.com/stvp/rollbar v0.5.1 // indirect
 	go.elastic.co/fastjson v1.0.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
+	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	howett.net/plist v0.0.0-20181124034731-591f970eefbb // indirect
