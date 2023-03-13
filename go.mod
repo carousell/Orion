@@ -51,8 +51,7 @@ require (
 )
 
 require (
-	github.com/carousell/logging v0.0.0-20230309075505-59a42bd52f4d
-	github.com/carousell/logging/stdlog v0.0.0-20230309075505-59a42bd52f4d
+	github.com/carousell/logging v0.0.0-20230313142407-88bedd60da11
 	github.com/carousell/notifier v0.0.0-20230312070525-56b87600ad58
 	github.com/carousell/notifier/rollbar v0.0.0-20230312070525-56b87600ad58
 	github.com/carousell/notifier/sentry v0.0.0-20230312070525-56b87600ad58

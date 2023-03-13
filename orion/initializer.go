@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"github.com/carousell/logging"
-	"github.com/carousell/logging/stdlog"
 	"github.com/carousell/notifier/sentry"
 	"net"
 	"net/http"
@@ -276,10 +275,6 @@ func (e *errorLoggingInitializer) Init(svr Server) error {
 		notifier.SetNotifier(sentryNotifier)
 		logging.Debug(context.Background(), "sentryDSN", rToken, "env", env)
 	}
-
-	// default logger : stdlog
-	logger := stdlog.NewLogger()
-	logging.RegisterLogger(logger)
 	return nil
 }
 
