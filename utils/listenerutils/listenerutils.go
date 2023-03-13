@@ -3,14 +3,13 @@ package listenerutils
 import (
 	"context"
 	"errors"
+	"github.com/carousell/logging"
 	"io"
 	"net"
 	"time"
-
-	"github.com/carousell/Orion/v2/utils/log"
 )
 
-//CustomListener provides an implementation for a custom net.Listener
+// CustomListener provides an implementation for a custom net.Listener
 type CustomListener interface {
 	net.Listener
 	CanClose(bool)
@@ -93,7 +92,7 @@ func (c *customConn) watcher(stop chan struct{}, timeout time.Duration) {
 func (c *customConn) doClose() {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Info(context.Background(), "msg", "panic trying to close channel", "err", err)
+			logging.Info(context.Background(), "msg", "panic trying to close channel", "err", err)
 		}
 	}()
 	select {
@@ -138,7 +137,7 @@ func (c *customListener) GetListener() CustomListener {
 func (c *customListener) StopAccept() {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Info(context.Background(), "msg", "panic trying to close channel", "err", err)
+			logging.Info(context.Background(), "msg", "panic trying to close channel", "err", err)
 		}
 	}()
 	select {
@@ -151,7 +150,7 @@ func (c *customListener) StopAccept() {
 	}
 }
 
-//NewListener creates a new CustomListener
+// NewListener creates a new CustomListener
 func NewListener(network, laddr string) (CustomListener, error) {
 	return NewListenerWithTimeout(network, laddr, time.Second)
 }

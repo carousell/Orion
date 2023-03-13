@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/carousell/Orion/v2/utils/log"
+	"github.com/carousell/logging"
 )
 
 //GetHostname fetches the hostname of the system
@@ -13,6 +13,6 @@ func GetHostname() string {
 	if host == "" {
 		host = "localhost"
 	}
-	log.Info(context.Background(), "HOST", host)
+	logging.Info(context.Background(), "HOST", host)
 	return host
 }

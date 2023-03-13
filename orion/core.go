@@ -14,10 +14,11 @@ import (
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 
+	"github.com/carousell/logging"
+
 	"github.com/carousell/Orion/v2/orion/handlers"
 	grpcHandler "github.com/carousell/Orion/v2/orion/handlers/grpc"
 	"github.com/carousell/Orion/v2/utils/listenerutils"
-	"github.com/carousell/Orion/v2/utils/log"
 )
 
 var (
@@ -48,7 +49,7 @@ type middlewareInfo struct {
 	middlewares []string
 }
 
-//DefaultServerImpl provides a default implementation of orion.Server this can be embedded in custom orion.Server implementations
+// DefaultServerImpl provides a default implementation of orion.Server this can be embedded in custom orion.Server implementations
 type DefaultServerImpl struct {
 	config                    Config
 	mu                        sync.Mutex
@@ -64,7 +65,7 @@ type DefaultServerImpl struct {
 	version      uint64
 }
 
-//AddMiddleware adds middlewares for particular service/method
+// AddMiddleware adds middlewares for particular service/method
 func (d *DefaultServerImpl) AddMiddleware(serviceName string, method string, middlewares ...string) {
 	if d.middlewares == nil {
 		d.middlewares = make(map[string]*middlewareInfo)
@@ -103,8 +104,8 @@ func (d *DefaultServerImpl) AddOption(serviceName, method, option string) {
 	}
 }
 
-//GetOrionConfig returns current orion config
-//NOTE: this config can not be modifies
+// GetOrionConfig returns current orion config
+// NOTE: this config can not be modifies
 func (d *DefaultServerImpl) GetOrionConfig() Config {
 	return d.config
 }
@@ -135,9 +136,9 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 	grpcPort := d.config.GRPCPort
 	grpcListener, err := listenerutils.NewListener("tcp", ":"+grpcPort)
 	if err != nil {
-		log.Info(context.Background(), "grpcListener", "could not create listener", "error", err)
+		logging.Info(context.Background(), "grpcListener", "could not create listener", "error", err)
 	}
-	log.Info(context.Background(), "gRPCListenerPort", grpcPort)
+	logging.Info(context.Background(), "gRPCListenerPort", grpcPort)
 	config := grpcHandler.Config{
 		CommonConfig: handlers.CommonConfig{
 			DisableDefaultInterceptors: d.config.DisableDefaultInterceptors,
@@ -163,7 +164,7 @@ func (d *DefaultServerImpl) signalWatcher() {
 	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
 	for sig := range c {
 		if sig == syscall.SIGTERM || sig == syscall.SIGINT {
-			log.Info(context.Background(), "signal", "starting shutdown on "+sig.String())
+			logging.Info(context.Background(), "signal", "starting shutdown on "+sig.String())
 			d.Stop(30 * time.Second)
 			break
 		} else {
@@ -174,11 +175,11 @@ func (d *DefaultServerImpl) signalWatcher() {
 			}
 			break
 		}
-		log.Info(context.Background(), "signal", "all actions complete")
+		logging.Info(context.Background(), "signal", "all actions complete")
 	}
 }
 
-//Start starts the orion server
+// Start starts the orion server
 func (d *DefaultServerImpl) Start() {
 	fmt.Println(BANNER)
 
@@ -259,7 +260,7 @@ func (d *DefaultServerImpl) RegisterService(sd *grpc.ServiceDesc, sf ServiceFact
 
 }
 
-//AddInitializers adds the initializers to orion server
+// AddInitializers adds the initializers to orion server
 func (d *DefaultServerImpl) AddInitializers(ins ...Initializer) {
 	if d.initializers == nil {
 		d.initializers = make([]Initializer, 0)
@@ -270,12 +271,12 @@ func (d *DefaultServerImpl) AddInitializers(ins ...Initializer) {
 
 }
 
-//GetConfig returns current config as parsed from the file/defaults
+// GetConfig returns current config as parsed from the file/defaults
 func (d *DefaultServerImpl) GetConfig() map[string]interface{} {
 	return viper.AllSettings()
 }
 
-//Stop stops the server
+// Stop stops the server
 func (d *DefaultServerImpl) Stop(timeout time.Duration) error {
 	var wg sync.WaitGroup
 	for _, h := range d.handlers {
@@ -290,7 +291,7 @@ func (d *DefaultServerImpl) Stop(timeout time.Duration) error {
 	return nil
 }
 
-//GetDefaultServer returns a default server object that can be directly used to start orion server
+// GetDefaultServer returns a default server object that can be directly used to start orion server
 func GetDefaultServer(name string, opts ...DefaultServerOption) Server {
 	server := &DefaultServerImpl{
 		config: BuildDefaultConfig(name),
@@ -301,7 +302,7 @@ func GetDefaultServer(name string, opts ...DefaultServerOption) Server {
 	return server
 }
 
-//GetDefaultServerWithConfig returns a default server object that uses provided configuration
+// GetDefaultServerWithConfig returns a default server object that uses provided configuration
 func GetDefaultServerWithConfig(config Config) Server {
 	return &DefaultServerImpl{
 		config: config,

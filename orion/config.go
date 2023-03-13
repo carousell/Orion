@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/carousell/Orion/v2/utils/log"
+	"github.com/carousell/logging"
 )
 
 var (
@@ -33,11 +33,11 @@ func BuildDefaultConfig(name string) Config {
 	setup(name)
 	readConfig(name)
 	return Config{
-		GRPCPort:        viper.GetString("orion.GRPCPort"),
-		Env:             viper.GetString("orion.Env"),
-		OrionServerName: name,
+		GRPCPort:                   viper.GetString("orion.GRPCPort"),
+		Env:                        viper.GetString("orion.Env"),
+		OrionServerName:            name,
 		DisableDefaultInterceptors: viper.GetBool("orion.DisableDefaultInterceptors"),
-		MaxRecvMsgSize:  viper.GetInt("orion.MaxRecvMsgSize"),
+		MaxRecvMsgSize:             viper.GetInt("orion.MaxRecvMsgSize"),
 	}
 }
 
@@ -60,15 +60,15 @@ func setup(name string) {
 
 func readConfig(name string) error {
 	ctx := context.Background()
-	log.Info(ctx, "config", "Reading config")
+	logging.Info(ctx, "config", "Reading config")
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {
 		// do nothing and default everything
-		log.Warn(ctx, "config", "config could not be read "+err.Error())
+		logging.Warn(ctx, "config", "config could not be read "+err.Error())
 		return fmt.Errorf("Config config could not be read %s", err.Error())
 	}
 	data, _ := json.MarshalIndent(viper.AllSettings(), "", "  ")
-	log.Info(ctx, "Config", string(data))
+	logging.Info(ctx, "Config", string(data))
 	return nil
 }
 

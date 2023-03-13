@@ -6,11 +6,11 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/carousell/logging"
+	"github.com/carousell/notifier"
+
 	"github.com/carousell/Orion/v2/interceptors"
 	"github.com/carousell/Orion/v2/utils/errors"
-	"github.com/carousell/Orion/v2/utils/errors/notifier"
-	"github.com/carousell/Orion/v2/utils/log"
-	"github.com/carousell/Orion/v2/utils/log/loggers"
 	"github.com/carousell/Orion/v2/utils/options"
 )
 
@@ -92,17 +92,17 @@ func chainStreamServer(interceptors ...grpc.StreamServerInterceptor) grpc.Stream
 	}
 }
 
-//GetInterceptors fetches interceptors from a given GRPC service
+// GetInterceptors fetches interceptors from a given GRPC service
 func GetInterceptors(svc interface{}, config CommonConfig) grpc.UnaryServerInterceptor {
 	return chainUnaryServer(getInterceptors(svc, config, []string{})...)
 }
 
-//GetStreamInterceptors fetches stream interceptors from a given GRPC service
+// GetStreamInterceptors fetches stream interceptors from a given GRPC service
 func GetStreamInterceptors(svc interface{}, config CommonConfig) grpc.StreamServerInterceptor {
 	return chainStreamServer(getStreamInterceptors(svc, config)...)
 }
 
-//GetInterceptorsWithMethodMiddlewares fetchs all middleware including those provided by method middlewares
+// GetInterceptorsWithMethodMiddlewares fetchs all middleware including those provided by method middlewares
 func GetInterceptorsWithMethodMiddlewares(svc interface{}, config CommonConfig, middlewares []string) grpc.UnaryServerInterceptor {
 	return chainUnaryServer(getInterceptors(svc, config, middlewares)...)
 }
@@ -161,13 +161,13 @@ func getMiddleware(svc interface{}, middleware string) (grpc.UnaryServerIntercep
 	return nil, errors.New("could not find middleware " + middleware)
 }
 
-//GetMethodInterceptors fetches all interceptors including method middlewares
+// GetMethodInterceptors fetches all interceptors including method middlewares
 func GetMethodInterceptors(svc interface{}, config CommonConfig, middlewares []string) []grpc.UnaryServerInterceptor {
 	interceptors := make([]grpc.UnaryServerInterceptor, 0)
 	for _, middleware := range middlewares {
 		interceptor, err := getMiddleware(svc, middleware)
 		if err != nil {
-			log.Error(context.Background(), "error", err, "middleware", "could not fetch middleware")
+			logging.Error(context.Background(), "error", err, "middleware", "could not fetch middleware")
 			notifier.NotifyWithLevel(err, "critical")
 		} else {
 			if interceptor != nil {
@@ -193,7 +193,7 @@ func (ss *streamServer) Context() context.Context {
 func optionsStreamInterceptor(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	ctx := ss.Context()
 	ctx = options.AddToOptions(ctx, "", "")
-	ctx = loggers.AddToLogContext(ctx, "grpcMethod", info.FullMethod)
+	ctx = logging.AddToLogContext(ctx, "grpcMethod", info.FullMethod)
 	newServer := &streamServer{
 		ServerStream: ss,
 		ctx:          ctx,
@@ -203,6 +203,6 @@ func optionsStreamInterceptor(srv interface{}, ss grpc.ServerStream, info *grpc.
 
 func optionsInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	ctx = options.AddToOptions(ctx, "", "")
-	ctx = loggers.AddToLogContext(ctx, "grpcMethod", info.FullMethod)
+	ctx = logging.AddToLogContext(ctx, "grpcMethod", info.FullMethod)
 	return handler(ctx, req)
 }
