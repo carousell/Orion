@@ -175,7 +175,6 @@ func (d *DefaultServerImpl) signalWatcher() {
 			}
 			break
 		}
-		logging.Info(context.Background(), "signal", "all actions complete")
 	}
 }
 
