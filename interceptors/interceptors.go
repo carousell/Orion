@@ -7,14 +7,11 @@ import (
 //DefaultInterceptors are the set of default interceptors that are applied to all Orion methods
 func DefaultInterceptors() []grpc.UnaryServerInterceptor {
 	return []grpc.UnaryServerInterceptor{
-		ServerErrorInterceptor(),
 		PanicRecoveryInterceptor(),
 	}
 }
 
 //DefaultStreamInterceptors are the set of default interceptors that should be applied to all Orion streams
 func DefaultStreamInterceptors() []grpc.StreamServerInterceptor {
-	return []grpc.StreamServerInterceptor{
-		ServerErrorStreamInterceptor(),
-	}
+	return []grpc.StreamServerInterceptor{}
 }
