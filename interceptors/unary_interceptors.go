@@ -3,7 +3,6 @@ package interceptors
 import (
 	"context"
 	"fmt"
-	"time"
 
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"google.golang.org/grpc"
@@ -14,17 +13,6 @@ import (
 	"github.com/carousell/Orion/v2/orion/modifiers"
 	"github.com/carousell/Orion/v2/utils/errors"
 )
-
-//ResponseTimeLoggingInterceptor logs response time for each request on server
-func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		defer func(begin time.Time) {
-			logging.Info(ctx, "method", info.FullMethod, "error", err, "took", time.Since(begin))
-		}(time.Now())
-		resp, err = handler(ctx, req)
-		return resp, err
-	}
-}
 
 //ServerErrorInterceptor intercepts all server actions and reports them to error notifier
 func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
