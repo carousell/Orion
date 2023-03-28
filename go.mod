@@ -20,7 +20,7 @@ require (
 	github.com/eapache/go-resiliency v1.2.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
-	github.com/elastic/go-sysinfo v1.1.0 // indirect
+	github.com/elastic/go-sysinfo v1.1.1 // indirect
 	github.com/frankban/quicktest v1.13.0 // indirect
 	github.com/getsentry/raven-go v0.0.0-20190125112653-238ebd86338d
 	github.com/go-kit/kit v0.8.0
@@ -54,7 +54,7 @@ require (
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.4.0
 	github.com/stvp/rollbar v0.0.0-20171113052335-4a50daf855af
-	go.elastic.co/apm v1.4.0
+	go.elastic.co/apm v1.11.0
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
 	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
@@ -89,7 +89,7 @@ require (
 	github.com/smartystreets/goconvey v0.0.0-20180222194500-ef6db91d284a // indirect
 	github.com/spf13/cast v1.3.0 // indirect
 	github.com/spf13/pflag v1.0.3 // indirect
-	go.elastic.co/fastjson v1.0.0 // indirect
+	go.elastic.co/fastjson v1.1.0 // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
 	golang.org/x/text v0.3.8 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
