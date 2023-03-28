@@ -22,7 +22,7 @@ require (
 	github.com/eapache/go-resiliency v1.2.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
-	github.com/elastic/go-sysinfo v1.1.0 // indirect
+	github.com/elastic/go-sysinfo v1.1.1 // indirect
 	github.com/elastic/go-windows v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/getsentry/raven-go v0.0.0-20190125112653-238ebd86338d // indirect
@@ -69,8 +69,8 @@ require (
 	github.com/spf13/viper v1.3.2 // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
 	github.com/stvp/rollbar v0.0.0-20171113052335-4a50daf855af // indirect
-	go.elastic.co/apm v1.4.0 // indirect
-	go.elastic.co/fastjson v1.0.0 // indirect
+	go.elastic.co/apm v1.11.0 // indirect
+	go.elastic.co/fastjson v1.1.0 // indirect
 	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
 	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	golang.org/x/text v0.3.8 // indirect
