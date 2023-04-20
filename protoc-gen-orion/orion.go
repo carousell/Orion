@@ -448,6 +448,7 @@ func extractComments(file *descriptor.FileDescriptorProto) map[string]*descripto
 }
 
 func parseProtocParams(reqParam string) (ProtocParams, error) {
+	fmt.Println("reqParam", reqParam)
 	pp := ProtocParams{}
 	for _, param := range strings.Split(reqParam, ",") {
 		var value string
