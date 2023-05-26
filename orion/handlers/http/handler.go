@@ -191,7 +191,7 @@ func (h *httpHandler) Run(httpListener net.Listener) error {
 	r.NotFoundHandler = &notFoundHandler{}
 	h.svr = &http.Server{
 		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		WriteTimeout: 0 * time.Second,
 		Handler:      r,
 	}
 	return h.svr.Serve(httpListener)
