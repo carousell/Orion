@@ -2,6 +2,7 @@ package interceptors
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -41,6 +42,7 @@ func DefaultInterceptors() []grpc.UnaryServerInterceptor {
 
 //DefaultClientInterceptors are the set of default interceptors that should be applied to all client calls
 func DefaultClientInterceptors(address string) []grpc.UnaryClientInterceptor {
+	fmt.Println("CONNIE - getting DefaultClientInterceptors")
 	return []grpc.UnaryClientInterceptor{
 		grpc_retry.UnaryClientInterceptor(),
 		NewRelicClientInterceptor(address),

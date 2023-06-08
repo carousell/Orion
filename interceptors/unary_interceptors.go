@@ -128,6 +128,7 @@ func GRPCClientInterceptor() grpc.UnaryClientInterceptor {
 
 //HystrixClientInterceptor is the interceptor that intercepts all cleint requests and adds hystrix info to them
 func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
+	fmt.Println("CONNIE - HystrixClientInterceptor")
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		options := hystrixOptions{
 			cmdName: method,
