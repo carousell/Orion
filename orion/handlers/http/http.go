@@ -10,6 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	opentracing "github.com/opentracing/opentracing-go"
+	"google.golang.org/grpc/metadata"
+
 	"github.com/carousell/Orion/orion/handlers"
 	"github.com/carousell/Orion/orion/modifiers"
 	"github.com/carousell/Orion/utils"
@@ -19,10 +24,6 @@ import (
 	"github.com/carousell/Orion/utils/log"
 	"github.com/carousell/Orion/utils/log/loggers"
 	"github.com/carousell/Orion/utils/options"
-	"github.com/golang/protobuf/proto"
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-	opentracing "github.com/opentracing/opentracing-go"
-	"google.golang.org/grpc/metadata"
 )
 
 // grpcMetadataCarrier satisfies both opentracing.TextMapWriter and opentracing.TextMapReader.
@@ -233,31 +234,42 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, ser
 func (h *httpHandler) serialize(ctx context.Context, msg proto.Message) ([]byte, string, error) {
 	// first check if any serialization is
 	serType, _ := modifiers.GetSerialization(ctx)
+
+	fmt.Println("BOBBY - get from orion modifiers -", serType)
 	if serType == "" {
 		// try and match an accept header
 		serType = AcceptTypeFromHeaders(ctx)
+		fmt.Println("BOBBY - get from accept type -", serType)
 		if serType == "" {
 			// try and match the original content type
 			serType = ContentTypeFromHeaders(ctx)
+			fmt.Println("BOBBY - get from content type -", serType)
 			if serType == "" {
+
+				fmt.Println("BOBBY - Default to json -", serType)
 				serType = modifiers.JSON
 			}
 		}
 		// if server preference is JSONPB, JSONPB should be used instead of JSON for marshalling
 		if serType == modifiers.JSON && h.config.DefaultJSONPB {
 			serType = modifiers.JSONPB
+			fmt.Println("BOBBY - Default to jsonpb -", serType)
 		}
 	}
+	fmt.Println("BOBBY - Final -", serType)
 	switch serType {
 	case modifiers.JSONPB:
+		fmt.Println("LARRY - serializing as PROTOBUF (JSONPB")
 		sData, err := h.mar.MarshalToString(msg)
 		return []byte(sData), ContentTypeJSON, err
 	case modifiers.ProtoBuf:
+		fmt.Println("LARRY - serializing as PROTOBUF (WIRE)")
 		data, err := proto.Marshal(msg)
 		return data, ContentTypeProto, err
 	case modifiers.JSON:
 		fallthrough
 	default:
+		fmt.Println("LARRY - serializing as json")
 		// modifiers.JSON goes in here
 		data, err := json.Marshal(msg)
 		return data, ContentTypeJSON, err
@@ -271,6 +283,7 @@ func (h *httpHandler) serializeOut(ctx context.Context, resp http.ResponseWriter
 		return fmt.Errorf("Internal Server Error")
 	}
 	responseHeaders.Add("Content-Type", contentType)
+	fmt.Println("DANNY - Writing contentType header", contentType)
 	writeRespWithHeaders(resp, http.StatusOK, data, responseHeaders)
 	return nil
 }
