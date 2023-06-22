@@ -201,20 +201,34 @@ func (h *httpHandler) serveHTTP(resp http.ResponseWriter, req *http.Request, ser
 
 		//apply decoder if any
 		if info.decoder != nil {
+			fmt.Println("SALLY - applying endpoint decoder")
 			info.decoder(ctx, resp, encErr, err, protoResponse)
 			if encErr != nil {
 				return ctx, encErr
 			}
+
+			h := headers.ResponseHeadersFromContext(ctx)
+			for k, v := range h {
+				fmt.Println("SALLY - response header", k, ":", v)
+			}
 			return ctx, err
 		} else if dec, ok := h.defDecoders[cleanSvcName(info.svc.desc.ServiceName)]; ok {
+			fmt.Println("SALLY - applying service-level decoder")
 			dec(ctx, resp, encErr, err, protoResponse)
 			if encErr != nil {
 				return ctx, encErr
 			}
+
+			h := headers.ResponseHeadersFromContext(ctx)
+			for k, v := range h {
+				fmt.Println("SALLY - response header", k, ":", v)
+			}
 			return ctx, err
 		}
+		fmt.Println("SALLY - applying default decoder")
 
 		hdr := headers.ResponseHeadersFromContext(ctx)
+
 		responseHeaders := processWhitelist(ctx, hdr, append(info.svc.responseHeaders, DefaultHTTPResponseHeaders...))
 		if err != nil {
 			if encErr != nil {
