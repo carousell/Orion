@@ -51,7 +51,13 @@ func (mc grpcMetadataCarrier) Set(key, value string) {
 
 func (h *httpHandler) getHTTPHandler(serviceName, methodName, routeURL string) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
+		fmt.Println("MANNY - handling request")
 		h.httpHandler(resp, req, serviceName, methodName, routeURL)
+		h := resp.Header().Clone()
+		fmt.Println("MANNY - response headers")
+		for k, v := range h {
+			fmt.Println("MANNY - RESPONSE header -", k, ":", v)
+		}
 	}
 }
 
