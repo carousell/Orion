@@ -304,6 +304,8 @@ func (h *httpHandler) serializeOut(ctx context.Context, resp http.ResponseWriter
 	}
 	responseHeaders.Add("Content-Type", contentType)
 	fmt.Println("DANNY - Writing contentType header", contentType)
+
+	fmt.Printf("DANNY - resp writer type - %T\n", resp)
 	writeRespWithHeaders(resp, http.StatusOK, data, responseHeaders)
 	return nil
 }
