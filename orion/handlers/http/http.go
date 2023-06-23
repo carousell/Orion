@@ -58,6 +58,8 @@ func (h *httpHandler) getHTTPHandler(serviceName, methodName, routeURL string) h
 		for k, v := range h {
 			fmt.Println("MANNY - RESPONSE header -", k, ":", v)
 		}
+
+		fmt.Printf("MANNY - resp writer type - %T\n", resp)
 	}
 }
 
@@ -305,7 +307,6 @@ func (h *httpHandler) serializeOut(ctx context.Context, resp http.ResponseWriter
 	responseHeaders.Add("Content-Type", contentType)
 	fmt.Println("DANNY - Writing contentType header", contentType)
 
-	fmt.Printf("DANNY - resp writer type - %T\n", resp)
 	writeRespWithHeaders(resp, http.StatusOK, data, responseHeaders)
 	return nil
 }
