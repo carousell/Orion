@@ -40,17 +40,19 @@ const (
 )
 
 const (
-	NRTxNameTypeMethod = "method"
+	NRTxNameTypeMethod     = "method"
 	NRTxNameTypeFullMethod = "fullmethod"
-	NRTxNameTypeRoute = "route"
+	NRTxNameTypeRoute      = "route"
 )
 
-//Config is the configuration for HTTP Handler
+// Config is the configuration for HTTP Handler
 type Config struct {
 	handlers.CommonConfig
-	EnableProtoURL bool
-	DefaultJSONPB  bool
+	EnableProtoURL   bool
+	DefaultJSONPB    bool
 	NRHttpTxNameType string
+	ReadTimeout      int
+	WriteTimeout     int
 }
 
 type serviceInfo struct {
