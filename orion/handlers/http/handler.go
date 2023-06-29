@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"fmt"
+	"math"
 	"net"
 	"net/http"
 	"strings"
@@ -14,7 +15,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-//NewHTTPHandler creates a new HTTP handler
+// NewHTTPHandler creates a new HTTP handler
 func NewHTTPHandler(config Config) handlers.Handler {
 	return &httpHandler{
 		config:      config,
@@ -189,9 +190,12 @@ func (h *httpHandler) Run(httpListener net.Listener) error {
 		}
 	}
 	r.NotFoundHandler = &notFoundHandler{}
+
+	readTimeout := math.Min(300, math.Max(5, float64(h.config.ReadTimeout)))
+	writeTimeout := math.Min(300, math.Max(10, float64(h.config.WriteTimeout)))
 	h.svr = &http.Server{
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  time.Duration(readTimeout) * time.Second,
+		WriteTimeout: time.Duration(writeTimeout) * time.Second,
 		Handler:      r,
 	}
 	return h.svr.Serve(httpListener)
