@@ -11,7 +11,7 @@ require (
 	github.com/DataDog/datadog-go v0.0.0-20180822151419-281ae9f2d895 // indirect
 	github.com/Shopify/sarama v1.19.0 // indirect
 	github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5 // indirect
-	github.com/apache/thrift v0.0.0-20190131011427-2ec93c8a2da2 // indirect
+	github.com/apache/thrift v0.13.0 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
 	github.com/bugsnag/bugsnag-go v1.4.0 // indirect
