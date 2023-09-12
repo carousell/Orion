@@ -10,7 +10,7 @@ import (
 	"github.com/carousell/Orion/utils/log"
 )
 
-//CustomListener provides an implementation for a custom net.Listener
+// CustomListener provides an implementation for a custom net.Listener
 type CustomListener interface {
 	net.Listener
 	CanClose(bool)
@@ -151,7 +151,7 @@ func (c *customListener) StopAccept() {
 	}
 }
 
-//NewListener creates a new CustomListener
+// NewListener creates a new CustomListener
 func NewListener(network, laddr string) (CustomListener, error) {
 	return NewListenerWithTimeout(network, laddr, time.Second)
 }
@@ -173,7 +173,7 @@ func newListener(lis net.Listener, accept chan *acceptValues, timeout time.Durat
 		canClose: false,
 		accept:   accept,
 		stop:     make(chan struct{}, 0),
-		timeout:  timeout,
+		timeout:  time.Millisecond * 5000,
 	}
 	return l
 }
