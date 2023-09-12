@@ -166,7 +166,7 @@ func NewListenerWithTimeout(network, laddr string, timeout time.Duration) (Custo
 
 func newListener(lis net.Listener, accept chan *acceptValues, timeout time.Duration) CustomListener {
 	if timeout < time.Millisecond {
-		timeout = time.Millisecond * 100
+		timeout = time.Millisecond * 1000
 	}
 	l := &customListener{
 		Listener: lis,
