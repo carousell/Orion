@@ -1,0 +1,42 @@
+name: CI Checks
+
+on:
+  push:
+    branches:
+      - "master"
+  pull_request:
+    branches:
+      - "master"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    uses: carousell/cicd-workflows/.github/workflows/go-unit-tests.yml@main
+    with:
+      bu: cs
+      before_script: |
+        echo "----Enabling GoPath----"
+        env
+        printenv
+    secrets: inherit
+
+  ci-common:
+    uses: carousell/cicd-workflows/.github/workflows/ci-common.yml@main
+    with:
+      bu: cs
+    secrets: inherit
+
+  ci-status:
+    uses: carousell/cicd-workflows/.github/workflows/ci-status.yml@main
+    if: ${{ always() }}
+    needs:
+      - unit-tests
+      - ci-common
+    with:
+      bu: cs
+    secrets: inherit
+  
+
