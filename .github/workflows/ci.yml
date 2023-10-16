@@ -15,8 +15,7 @@ concurrency:
 jobs:
     build:
         runs-on:
-          group: ubuntu-latest
-
+            ubuntu-latest
 
 
         strategy:
