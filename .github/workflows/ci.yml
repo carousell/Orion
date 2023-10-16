@@ -15,7 +15,9 @@ concurrency:
 jobs:
     build:
         runs-on:
-          group: cs-ci-runners
+          group: ubuntu-latest
+
+
 
         strategy:
           matrix:
