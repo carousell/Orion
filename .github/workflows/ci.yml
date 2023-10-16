@@ -23,20 +23,11 @@ jobs:
         printenv
     secrets: inherit
 
-  ci-common:
-    uses: carousell/cicd-workflows/.github/workflows/ci-common.yml@main
-    with:
-      bu: cs
-    secrets: inherit
-
   ci-status:
     uses: carousell/cicd-workflows/.github/workflows/ci-status.yml@main
     if: ${{ always() }}
     needs:
       - unit-tests
-      - ci-common
     with:
       bu: cs
     secrets: inherit
-  
-
