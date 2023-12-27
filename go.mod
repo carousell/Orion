@@ -2,11 +2,6 @@ module github.com/carousell/Orion
 
 go 1.17
 
-replace (
-	git.apache.org/thrift.git => github.com/apache/thrift v0.12.0
-	github.com/openzipkin-contrib/zipkin-go-opentracing => github.com/openzipkin-contrib/zipkin-go-opentracing v0.3.5
-)
-
 require (
 	github.com/DataDog/datadog-go v0.0.0-20180822151419-281ae9f2d895 // indirect
 	github.com/Shopify/toxiproxy v2.1.4+incompatible // indirect
