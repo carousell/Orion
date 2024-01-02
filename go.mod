@@ -6,7 +6,7 @@ require (
 	github.com/DataDog/datadog-go v0.0.0-20180822151419-281ae9f2d895 // indirect
 	github.com/Shopify/toxiproxy v2.1.4+incompatible // indirect
 	github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5
-	github.com/apache/thrift v0.0.0-20190131011427-2ec93c8a2da2 // indirect
+	github.com/apache/thrift v0.13.0 // indirect
 	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/bugsnag/bugsnag-go v1.4.0
 	github.com/bugsnag/panicwrap v0.0.0-20180510051541-1d162ee1264c // indirect
