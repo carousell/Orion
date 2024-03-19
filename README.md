@@ -109,38 +109,18 @@ Install the dependencies tools.
 
 ### Usage
 
-#### (Default) Working with version of `protoc-gen-go` lower and equal than v1.5.2.
+#### Working with `protocgen` generation tool (shared-proto).
+Protogen generation tool is used for generating protobuffer for services using `shared-proto` repository. 
+It helps in generating protobuffer within the service itself.
+Please refer to this [link](https://carousell.atlassian.net/wiki/spaces/RFC/pages/434471178/How+to+onboard+your+service+to+protogen) for more details.
 
-1. Define your protocol buffers. Reference to the [example/example.proto](https://github.com/carousell/Orion/blob/master/protoc-gen-orion/testprotos/example/example.proto).
-2. Generate the stubs by `protoc`.
-```bash
-protoc \
-  --go_out="paths=source_relative:." \
-  --orion_out="." example/example.proto
-```
-3. The [sample](https://github.com/carousell/Orion/blob/master/protoc-gen-orion/testprotos/example/example.proto.orion.pb.go) of the result after you execute the command.
+**This tool is only used for services using `shared-proto` repository.**
 
-#### For version of `protoc-gen-go` higher and equal than v1.20.0.
-You should enable the **exported-service-desc** flag to get the correct service description.
-1. Define your protocol buffers. Reference to the [exported_service_desc/example.proto](https://github.com/carousell/Orion/blob/master/protoc-gen-orion/testprotos/exported_service_desc/example.proto)
-2. Generate the stubs by `protoc`. 
-```bash
-protoc \
-  --go_out="paths=source_relative:." \
-  --orion_out="exported-service-desc=true:." exported_service_desc/example.proto
-```
-Note: The complicate rpc defination in `example/example.proto` is also supported by exported-service-desc flag.
-
-If you want to place the *.orion.pb.go and *.pb.go into different folder. You can enable the **standalone-mode** flag.
-1. Define your protocol buffers. Reference to the [standalone_mode/example.proto](https://github.com/carousell/Orion/blob/master/protoc-gen-orion/testprotos/standalone_mode/example.proto)
-2. Generate the stubs by `protoc`.
-```bash
-protoc \
-  --go_out="paths=source_relative:." \
-  --orion_out="standalone-mode=true:." exported_service_desc/example.proto
-``` 
-3. Move the *.orion.pb.go to another place.
-Note: The *.orion.pb.go will import the service description from the package where you place the *.pg.go. 
+#### Working with `<bu>-proto-gen-go` generation tool (service-proto).
+`<bu>-proto-gen-go` generation tool is used for generating protobuffer for services using `<bu>-proto` repository.
+This tool automatically generates the protobuffer for the service and also generates the go mod to be imported for the
+generated protobuffers.
+Please refer to this [link](https://carousell.atlassian.net/wiki/spaces/CTF/pages/2216689780/Protobuffer+Management+Guide) for more details.
 
 ## Project Status
 Orion is in use at production at Carousell and powers multiple (100+) services serving thousands of requests per second,
