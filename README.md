@@ -79,18 +79,7 @@ install the protoc plugin for orion
 go get -u github.com/carousell/Orion/protoc-gen-orion
 ```
 
-## protoc-gen-orion
-
-### Installation
-
-Install the binary from source for golang version >= 1.17.
-```bash
-go install github.com/carousell/Orion/protoc-gen-orion@latest
-```
-Or, golang version < 1.17.
-```bash
-go get github.com/carousell/Orion/protoc-gen-orion 
-```
+## Protobuffer Generation
 
 ### Usage
 
