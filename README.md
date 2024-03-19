@@ -92,21 +92,6 @@ Or, golang version < 1.17.
 go get github.com/carousell/Orion/protoc-gen-orion 
 ```
 
-Install the dependencies tools.
-- `protoc-gen-go` is for generating the message structure which has two different repo.
-  - For version lower and equal than v1.5.2
-    ```bash
-    go install github.com/golang/protobuf@latest
-    ```
-  - For version higher and equal than v1.20.0.
-    ```bash
-    go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-    ```
-- `protoc-gen-go-grpc` is for generating the grpc service which works with the version of `protoc-gen-go` higher and equal than v1.20.0
-  ```bash
-  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-  ```
-
 ### Usage
 
 #### Working with `protocgen` generation tool (shared-proto).
