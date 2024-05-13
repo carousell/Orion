@@ -30,7 +30,7 @@ func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-// Deprecated: use GRPCLoggingInterceptor instead
+// Deprecated: cau use GRPCLoggingInterceptor instead
 // ResponseTimeLoggingInterceptor logs response time for each request on server
 func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
