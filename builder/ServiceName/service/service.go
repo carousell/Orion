@@ -7,12 +7,10 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	proto "github.com/carousell/Orion/builder/ServiceName/ServiceName_proto"
 	"github.com/carousell/Orion/interceptors"
 	"github.com/carousell/Orion/utils/headers"
-	"github.com/carousell/Orion/utils/worker"
 	"github.com/gorilla/mux"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
@@ -27,7 +25,6 @@ type svc struct {
 	appendText string
 	debug      bool
 	client     proto.ServiceNameClient
-	worker     worker.Worker
 }
 
 func (s *svc) GetRequestHeaders() []string {
@@ -47,29 +44,10 @@ func GetService(config Config) proto.ServiceNameServer {
 		log.Fatalln("did not connect: ", err)
 	}
 	s.client = proto.NewServiceNameClient(conn)
-	wConfig := worker.Config{}
-	wConfig.LocalMode = true
-	/*
-		wConfig.RabbitConfig = new(worker.RabbitMQConfig)
-		wConfig.RabbitConfig.Host = "192.168.99.100"
-		wConfig.RabbitConfig.QueueName = "test"
-		wConfig.RabbitConfig.UserName = "guest"
-		wConfig.RabbitConfig.Password = "guest"
-	*/
-	s.worker = worker.NewWorker(wConfig)
-	s.worker.RegisterTask("TestWorker", func(ctx context.Context, payload string) error {
-		time.Sleep(time.Millisecond * 200)
-		log.Println("worker", payload)
-		return nil
-	})
-	s.worker.RunWorker("Worker", 1)
 	return s
 }
 
 func DestroyService(obj interface{}) {
-	if s, ok := obj.(*svc); ok {
-		s.worker.CloseWorker()
-	}
 }
 
 func (s *svc) Echo(ctx context.Context, req *proto.EchoRequest) (*proto.EchoResponse, error) {
@@ -106,7 +84,6 @@ func (s *svc) Upper(ctx context.Context, req *proto.UpperRequest) (*proto.UpperR
 		defer sp.End()
 		time.Sleep(100 * time.Millisecond)
 	*/
-	go s.worker.Schedule(ctx, "TestWorker", req.GetMsg())
 	return resp, nil
 }
 

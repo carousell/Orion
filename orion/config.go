@@ -56,6 +56,10 @@ type Config struct {
 	DisableDefaultInterceptors bool
 	// Receive message Size is used to update the default limit of message that can be received
 	MaxRecvMsgSize int
+	// Read timeout http server, The time in seconds read request body timeout.
+	ReadTimeout int
+	// Write timeout http server, The time in seconds that start from read request complete to write the resp to client must be happened in this time.
+	WriteTimeout int
 
 	GRPCConfig GRPCConfig
 }

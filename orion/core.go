@@ -248,6 +248,8 @@ func (d *DefaultServerImpl) buildHandlers() []*handlerInfo {
 			EnableProtoURL:   d.config.EnableProtoURL,
 			DefaultJSONPB:    d.config.DefaultJSONPB,
 			NRHttpTxNameType: d.config.NewRelicConfig.HttpTxNameType,
+			ReadTimeout:      d.config.ReadTimeout,
+			WriteTimeout:     d.config.WriteTimeout,
 		}
 		handler := http.NewHTTPHandler(config)
 		hlrs = append(hlrs, &handlerInfo{
