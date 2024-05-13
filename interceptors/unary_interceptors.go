@@ -6,17 +6,18 @@ import (
 	"time"
 
 	"github.com/afex/hystrix-go/hystrix"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
+	newrelic "github.com/newrelic/go-agent"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
 	"github.com/carousell/Orion/orion/modifiers"
 	"github.com/carousell/Orion/utils"
 	"github.com/carousell/Orion/utils/errors"
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/log"
 	"github.com/carousell/Orion/utils/log/loggers"
-	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
-	newrelic "github.com/newrelic/go-agent"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 // DebugLoggingInterceptor is the interceptor that logs all request/response from a handler
@@ -70,7 +71,7 @@ func GRPCLoggingInterceptor(enableRequestLog, enableResponseLog bool) grpc.Unary
 				}
 
 				if hasErr {
-					log.Warn(ctx, args...)
+					log.Error(ctx, args...)
 				} else {
 					log.Info(ctx, args...)
 				}
