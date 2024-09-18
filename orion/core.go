@@ -513,6 +513,17 @@ func GetDefaultServer(name string, opts ...DefaultServerOption) Server {
 	return server
 }
 
+// GetDefaultServerWithConfigAndOpts returns a default server object that uses provided configuration
+func GetDefaultServerWithConfigAndOpts(config Config, opts ...DefaultServerOption) Server {
+	server := &DefaultServerImpl{
+		config: config,
+	}
+	for _, opt := range opts {
+		opt.apply(server)
+	}
+	return server
+}
+
 // GetDefaultServerWithConfig returns a default server object that uses provided configuration
 func GetDefaultServerWithConfig(config Config) Server {
 	return &DefaultServerImpl{
