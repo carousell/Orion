@@ -122,6 +122,8 @@ func BuildDefaultConfig(name string) Config {
 		DefaultJSONPB:              viper.GetBool("orion.DefaultJSONPB"),
 		DisableDefaultInterceptors: viper.GetBool("orion.DisableDefaultInterceptors"),
 		MaxRecvMsgSize:             viper.GetInt("orion.MaxRecvMsgSize"),
+		ReadTimeout:                viper.GetInt("orion.ReadTimeout"),
+		WriteTimeout:               viper.GetInt("orion.WriteTimeout"),
 	}
 }
 
