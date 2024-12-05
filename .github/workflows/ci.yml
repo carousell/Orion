@@ -20,7 +20,7 @@ jobs:
 
         strategy:
           matrix:
-            go: ["1.17.x", "1.18.x", "stable"]
+            go: [ "1.22.x", "stable"]
 
         steps:
         - uses: actions/checkout@v3
