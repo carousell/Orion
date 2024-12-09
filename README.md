@@ -79,6 +79,23 @@ install the protoc plugin for orion
 go get -u github.com/carousell/Orion/protoc-gen-orion
 ```
 
+## Protobuffer Generation
+
+### Usage
+
+#### Working with `protocgen` generation tool (shared-proto).
+Protogen generation tool is used for generating protobuffer for services using `shared-proto` repository. 
+It helps in generating protobuffer within the service itself.
+Please refer to this [link](https://carousell.atlassian.net/wiki/spaces/RFC/pages/434471178/How+to+onboard+your+service+to+protogen) for more details.
+
+**This tool is only used for services using `shared-proto` repository.**
+
+#### Working with `<bu>-proto-gen-go` generation tool (service-proto).
+`<bu>-proto-gen-go` generation tool is used for generating protobuffer for services using `<bu>-proto` repository.
+This tool automatically generates the protobuffer for the service and also generates the go mod to be imported for the
+generated protobuffers.
+Please refer to this [link](https://carousell.atlassian.net/wiki/spaces/CTF/pages/2216689780/Protobuffer+Management+Guide) for more details.
+
 ## Project Status
 Orion is in use at production at Carousell and powers multiple (100+) services serving thousands of requests per second,
 we ensure all updates are backward compatible unless it involves a major bug or security issue.
