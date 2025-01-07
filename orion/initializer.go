@@ -6,9 +6,7 @@ import (
 	"net"
 	"net/http"
 	_ "net/http/pprof" // import pprof
-	"os"
 	"strings"
-	"time"
 
 	"github.com/carousell/Orion/utils/hystrixprometheus"
 	"github.com/prometheus/client_golang/prometheus"
@@ -19,11 +17,8 @@ import (
 	"github.com/carousell/Orion/utils"
 	"github.com/carousell/Orion/utils/errors/notifier"
 	"github.com/carousell/Orion/utils/log"
-	logg "github.com/go-kit/kit/log"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	newrelic "github.com/newrelic/go-agent"
-	stdopentracing "github.com/opentracing/opentracing-go"
-	zipkin "github.com/openzipkin-contrib/zipkin-go-opentracing"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -31,7 +26,6 @@ var (
 	//DefaultInitializers are the initializers applied by orion as default
 	DefaultInitializers = []Initializer{
 		HystrixInitializer(),
-		ZipkinInitializer(),
 		NewRelicInitializer(),
 		PrometheusInitializer(),
 		PprofInitializer(),
@@ -39,32 +33,27 @@ var (
 	}
 )
 
-//HystrixInitializer returns a Initializer implementation for Hystrix
+// HystrixInitializer returns a Initializer implementation for Hystrix
 func HystrixInitializer() Initializer {
 	return &hystrixInitializer{}
 }
 
-//ErrorLoggingInitializer returns a Initializer implementation for error notifier
+// ErrorLoggingInitializer returns a Initializer implementation for error notifier
 func ErrorLoggingInitializer() Initializer {
 	return &errorLoggingInitializer{}
 }
 
-//ZipkinInitializer returns a Initializer implementation for Zipkin
-func ZipkinInitializer() Initializer {
-	return &zipkinInitializer{}
-}
-
-//NewRelicInitializer returns a Initializer implementation for NewRelic
+// NewRelicInitializer returns a Initializer implementation for NewRelic
 func NewRelicInitializer() Initializer {
 	return &newRelicInitializer{}
 }
 
-//PrometheusInitializer returns a Initializer implementation for Prometheus
+// PrometheusInitializer returns a Initializer implementation for Prometheus
 func PrometheusInitializer() Initializer {
 	return &prometheusInitializer{}
 }
 
-//PprofInitializer returns a Initializer implementation for Pprof
+// PprofInitializer returns a Initializer implementation for Pprof
 func PprofInitializer() Initializer {
 	return &pprofInitializer{}
 }
@@ -148,66 +137,6 @@ func (n *newRelicInitializer) Init(svr Server) error {
 
 func (n *newRelicInitializer) ReInit(svr Server) error {
 	return n.Init(svr)
-}
-
-type zipkinInitializer struct {
-	tracer    stdopentracing.Tracer
-	collector zipkin.Collector
-}
-
-func (z *zipkinInitializer) Init(svr Server) error {
-
-	oldCollector := z.collector
-
-	zipkinAddr := svr.GetOrionConfig().ZipkinConfig.Addr
-	serviceName := svr.GetOrionConfig().OrionServerName
-	if zipkinAddr != "" {
-		logger := logg.NewJSONLogger(os.Stdout)
-		logger = logg.With(logger, "time", logg.DefaultTimestampUTC)
-		logger.Log("zipkin-addr", zipkinAddr)
-		var err error
-		if strings.HasPrefix(zipkinAddr, "http") {
-			z.collector, err = zipkin.NewHTTPCollector(
-				zipkinAddr,
-				zipkin.HTTPLogger(logger),
-			)
-			zipkin.HTTPBatchSize(1)
-		} else {
-			z.collector, err = zipkin.NewKafkaCollector(
-				strings.Split(zipkinAddr, ","),
-				zipkin.KafkaLogger(logger),
-			)
-		}
-		if err != nil {
-			logger.Log("err", err)
-			return err
-		}
-
-		z.tracer, err = zipkin.NewTracer(
-			zipkin.NewRecorder(z.collector, true, utils.GetHostname(), serviceName),
-		)
-		if err != nil {
-			logger.Log("err", err)
-			return err
-		}
-		stdopentracing.SetGlobalTracer(z.tracer)
-		// close old collector
-		if oldCollector != nil {
-			go func(oldCollector zipkin.Collector) {
-				// close old collector after 5 seconds
-				time.Sleep(time.Second * 5)
-				oldCollector.Close()
-			}(oldCollector)
-		}
-	} else {
-		stdopentracing.SetGlobalTracer(stdopentracing.NoopTracer{})
-	}
-	return nil
-}
-
-func (z *zipkinInitializer) ReInit(svr Server) error {
-	// just do the same init on reinit
-	return z.Init(svr)
 }
 
 type prometheusInitializer struct {
