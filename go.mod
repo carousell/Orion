@@ -27,9 +27,7 @@ require (
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1 // indirect
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/newrelic/go-agent v2.3.0+incompatible
-	github.com/opentracing-contrib/go-observer v0.0.0-20170622124052-a52f23424492 // indirect
 	github.com/opentracing/opentracing-go v1.2.0
-	github.com/openzipkin-contrib/zipkin-go-opentracing v0.5.0
 	github.com/pborman/uuid v1.2.0
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_model v0.6.1 // indirect
@@ -69,9 +67,11 @@ require (
 	github.com/jtolds/gls v4.2.1+incompatible // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.1 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/magiconair/properties v1.8.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/openzipkin/zipkin-go v0.4.1 // indirect
+	github.com/onsi/ginkgo v1.16.5 // indirect
+	github.com/onsi/gomega v1.16.0 // indirect
 	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/smartystreets/assertions v0.0.0-20180820201707-7c9eb446e3cf // indirect
