@@ -7,11 +7,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/carousell/Orion/utils/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-
-	"github.com/carousell/Orion/utils/log"
 )
 
 // SessionContext is the decoded session metadata
@@ -42,15 +41,32 @@ type KafkaProducer interface {
 	PublishAsync(topic string, event interface{}) error
 }
 
+// GlobalKafkaProducer is the singleton producer used by the interceptor
+var GlobalKafkaProducer KafkaProducer
+
+// SetGlobalKafkaProducer sets the global kafka producer
+func SetGlobalKafkaProducer(p KafkaProducer) {
+	GlobalKafkaProducer = p
+}
+
 // SessionActivityInterceptor tracks all session activities and publishes to Kafka
 // Usage: Add to your gRPC server interceptors
-//
-//	sessionInterceptor := interceptors.SessionActivityInterceptor("user-svc", kafkaProducer)
-//	grpcServer := grpc.NewServer(
-//	    grpc.ChainUnaryInterceptor(sessionInterceptor, ...other interceptors),
-//	)
+// If producer is nil, it uses the GlobalKafkaProducer
 func SessionActivityInterceptor(serviceName string, kafkaProducer KafkaProducer) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+
+		log.Info(ctx, "session_activity", "session_activity_interceptor", "service_name", serviceName)
+
+		// Use global producer if specific one not provided
+		producer := kafkaProducer
+		if producer == nil {
+			producer = GlobalKafkaProducer
+		}
+
+		// If still no producer, skip tracking
+		if producer == nil {
+			return handler(ctx, req)
+		}
 
 		// Extract session context from incoming gRPC metadata
 		md, ok := metadata.FromIncomingContext(ctx)
@@ -67,12 +83,12 @@ func SessionActivityInterceptor(serviceName string, kafkaProducer KafkaProducer)
 
 		// Decode session context
 		sessionCtx, err := decodeSessionContext(encoded)
-		log.Info(ctx, "SessionActivityInterceptor", "decoded session context", "usid", uuidBytesToString(sessionCtx.Usid), "user_id", sessionCtx.UserId)
 		if err != nil {
-			log.Error(ctx, "failed to decode session context", "error", err)
 			// Don't fail the request, just skip tracking
 			return handler(ctx, req)
 		}
+
+		log.Info(ctx, "session_activity", "session_context", sessionCtx)
 
 		// Execute the actual business logic handler
 		startTime := time.Now()
@@ -97,17 +113,22 @@ func SessionActivityInterceptor(serviceName string, kafkaProducer KafkaProducer)
 			Timestamp:  time.Now().Unix(),
 		}
 
-		log.Info(ctx, "SessionActivityInterceptor", "publishing session activity event", "event", event)
-
 		// Publish to Kafka asynchronously (non-blocking)
 		go func() {
-			if err := kafkaProducer.PublishAsync("session-activities", event); err != nil {
+			log.Info(context.Background(), "session_activity", "publishing to kafka", "event", event)
+			if err := producer.PublishAsync("session-activities", event); err != nil {
 				log.Error(context.Background(), "failed to publish session activity", "error", err, "usid", event.USID)
 			}
 		}()
 
 		return resp, handlerErr
 	}
+}
+
+// GlobalSessionActivityInterceptor returns an interceptor that uses the GlobalKafkaProducer
+// It attempts to auto-detect service name from config or context if possible, otherwise uses "unknown"
+func GlobalSessionActivityInterceptor() grpc.UnaryServerInterceptor {
+	return SessionActivityInterceptor("unknown-service", nil)
 }
 
 // Helper functions
