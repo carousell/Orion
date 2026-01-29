@@ -34,6 +34,15 @@ func (s *sessionInitializer) Init(svr Server) error {
 		topic = "session-activities" // Default topic
 	}
 
+	// Get service name from server config (same pattern as NewRelic initializer)
+	serviceName := viper.GetString("orion.ServiceName")
+	if serviceName == "" {
+		serviceName = svr.GetOrionConfig().OrionServerName
+	}
+	if serviceName == "" {
+		serviceName = "unknown-service"
+	}
+
 	config := sarama.NewConfig()
 	config.Producer.Return.Errors = true // We want to log errors
 	config.Producer.RequiredAcks = sarama.WaitForLocal
@@ -60,7 +69,10 @@ func (s *sessionInitializer) Init(svr Server) error {
 		topic:    topic,
 	})
 
-	log.Info(context.Background(), "session_tracking", "initialized", "brokers", brokers, "topic", topic)
+	// Set the global service name in interceptors package
+	interceptors.SetGlobalServiceName(serviceName)
+
+	log.Info(context.Background(), "session_tracking", "initialized", "brokers", brokers, "topic", topic, "service_name", serviceName)
 	return nil
 }
 
@@ -90,6 +102,8 @@ func (w *orionKafkaWrapper) PublishAsync(topic string, event interface{}) error 
 		Topic: targetTopic,
 		Value: sarama.ByteEncoder(payload),
 	}
+
+	log.Info(context.Background(), "session_tracking", "publishing event", "topic", targetTopic, "event", string(payload))
 
 	w.producer.Input() <- message
 	return nil
