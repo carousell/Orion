@@ -95,13 +95,22 @@ func (s *SessionContext) Unmarshal(data []byte) error {
 
 // SessionActivityEvent is published to Kafka
 type SessionActivityEvent struct {
-	USID       string `json:"usid"`
-	UserID     uint64 `json:"user_id"`
-	Service    string `json:"service"`
-	Action     string `json:"action"`
-	Status     string `json:"status"`
-	DurationMs int64  `json:"duration_ms"`
-	Timestamp  int64  `json:"timestamp"`
+	USID       string                  `json:"usid"`
+	UserID     uint64                  `json:"user_id"`
+	Service    string                  `json:"service"`
+	Action     string                  `json:"action"`
+	Status     string                  `json:"status"`
+	DurationMs int64                   `json:"duration_ms"`
+	Metadata   SessionActivityMetadata `json:"metadata"`
+	Timestamp  int64                   `json:"timestamp"`
+}
+
+// SessionActivityMetadata contains contextual information for each activity
+type SessionActivityMetadata struct {
+	ClientIP string `json:"client_ip"`
+	Country  string `json:"country"`
+	Platform string `json:"platform"`
+	DeviceID string `json:"device_id"`
 }
 
 // KafkaProducer interface for publishing events
@@ -185,7 +194,7 @@ func SessionActivityInterceptor(serviceName string, kafkaProducer KafkaProducer)
 			statusCode = grpcStatus.Code().String() // e.g., "PERMISSION_DENIED", "INTERNAL"
 		}
 
-		// Build session activity event
+		// Build session activity event with metadata (PRD compliant)
 		event := SessionActivityEvent{
 			USID:       uuidBytesToString(sessionCtx.Usid),
 			UserID:     sessionCtx.UserId,
@@ -193,7 +202,13 @@ func SessionActivityInterceptor(serviceName string, kafkaProducer KafkaProducer)
 			Action:     info.FullMethod, // e.g., "/user.UserService/UpdateUsername"
 			Status:     statusCode,
 			DurationMs: duration.Milliseconds(),
-			Timestamp:  time.Now().Unix(),
+			Metadata: SessionActivityMetadata{
+				ClientIP: ipBytesToString(sessionCtx.Ip),
+				Country:  sessionCtx.Country,
+				Platform: sessionCtx.Platform,
+				DeviceID: sessionCtx.DeviceId,
+			},
+			Timestamp: time.Now().Unix(),
 		}
 
 		// Publish to Kafka asynchronously (non-blocking)
