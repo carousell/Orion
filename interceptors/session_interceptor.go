@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/carousell/Orion/utils/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+
+	"github.com/carousell/Orion/utils/log"
 )
 
 // SessionContextKey is the context key for storing the decoded session context
@@ -32,13 +33,14 @@ func FromContext(ctx context.Context) *SessionContext {
 
 // SessionContext is the decoded session metadata
 type SessionContext struct {
-	Usid      []byte `json:"usid"`
-	UserId    uint64 `json:"user_id"`
-	Ip        []byte `json:"ip"`
-	Country   string `json:"country"`
-	Platform  string `json:"platform"`
-	DeviceId  string `json:"device_id"`
-	Timestamp uint64 `json:"timestamp"`
+	Usid              []byte `json:"usid"`
+	UserId            uint64 `json:"user_id"`
+	Ip                []byte `json:"ip"`
+	Country           string `json:"country"`
+	Platform          string `json:"platform"`
+	DeviceId          string `json:"device_id"`
+	Timestamp         uint64 `json:"timestamp"`
+	IsTrackingEnabled bool   `json:"is_tracking_enabled"`
 }
 
 // Unmarshal decodes protobuf binary data into the SessionContext struct
@@ -64,6 +66,8 @@ func (s *SessionContext) Unmarshal(data []byte) error {
 				s.UserId = val
 			} else if tag == 7 {
 				s.Timestamp = val
+			} else if tag == 8 {
+				s.IsTrackingEnabled = val != 0
 			}
 		case 2: // Length-delimited
 			length, ln := decodeVarint(data)
@@ -91,6 +95,66 @@ func (s *SessionContext) Unmarshal(data []byte) error {
 		}
 	}
 	return nil
+}
+
+// Marshal encodes SessionContext into protobuf binary data
+func (s *SessionContext) Marshal() ([]byte, error) {
+	var data []byte
+
+	// Tag 1: Usid (bytes)
+	if len(s.Usid) > 0 {
+		data = append(data, encodeTag(1, 2)...)
+		data = append(data, encodeVarint(uint64(len(s.Usid)))...)
+		data = append(data, s.Usid...)
+	}
+
+	// Tag 2: UserId (varint)
+	if s.UserId != 0 {
+		data = append(data, encodeTag(2, 0)...)
+		data = append(data, encodeVarint(s.UserId)...)
+	}
+
+	// Tag 3: Ip (bytes)
+	if len(s.Ip) > 0 {
+		data = append(data, encodeTag(3, 2)...)
+		data = append(data, encodeVarint(uint64(len(s.Ip)))...)
+		data = append(data, s.Ip...)
+	}
+
+	// Tag 4: Country (string)
+	if len(s.Country) > 0 {
+		data = append(data, encodeTag(4, 2)...)
+		data = append(data, encodeVarint(uint64(len(s.Country)))...)
+		data = append(data, []byte(s.Country)...)
+	}
+
+	// Tag 5: Platform (string)
+	if len(s.Platform) > 0 {
+		data = append(data, encodeTag(5, 2)...)
+		data = append(data, encodeVarint(uint64(len(s.Platform)))...)
+		data = append(data, []byte(s.Platform)...)
+	}
+
+	// Tag 6: DeviceId (string)
+	if len(s.DeviceId) > 0 {
+		data = append(data, encodeTag(6, 2)...)
+		data = append(data, encodeVarint(uint64(len(s.DeviceId)))...)
+		data = append(data, []byte(s.DeviceId)...)
+	}
+
+	// Tag 7: Timestamp (varint)
+	if s.Timestamp != 0 {
+		data = append(data, encodeTag(7, 0)...)
+		data = append(data, encodeVarint(s.Timestamp)...)
+	}
+
+	// Tag 8: IsTrackingEnabled (varint/bool)
+	if s.IsTrackingEnabled {
+		data = append(data, encodeTag(8, 0)...)
+		data = append(data, encodeVarint(1)...)
+	}
+
+	return data, nil
 }
 
 // SessionActivityEvent is published to Kafka
@@ -179,6 +243,15 @@ func SessionActivityInterceptor(serviceName string, kafkaProducer KafkaProducer)
 
 		// Store in context for downstream access
 		ctx = context.WithValue(ctx, SessionContextKey, sessionCtx)
+
+		// Check if we should log this activity
+		// 1. If tracking is explicitly enabled in the session context
+		shouldLog := sessionCtx.IsTrackingEnabled
+
+		if !shouldLog {
+			// Skip logging, but we still propagated the context
+			return handler(ctx, req)
+		}
 
 		log.Info(ctx, "session_activity", "session_context", sessionCtx)
 
@@ -283,7 +356,19 @@ func decodeVarint(data []byte) (uint64, int) {
 	return 0, 0
 }
 
-// Helper functions that mirror AuthSvc's encoding logic
+func encodeVarint(x uint64) []byte {
+	var buf []byte
+	for x >= 1<<7 {
+		buf = append(buf, uint8(x&0x7f|0x80))
+		x >>= 7
+	}
+	buf = append(buf, uint8(x))
+	return buf
+}
+
+func encodeTag(fieldNumber int, wireType int) []byte {
+	return encodeVarint(uint64(fieldNumber<<3 | wireType))
+}
 
 func uuidBytesToString(uuidBytes []byte) string {
 	if len(uuidBytes) != 16 {

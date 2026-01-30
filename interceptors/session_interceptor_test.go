@@ -96,3 +96,44 @@ func TestDecodeSessionContext_JSONFallback(t *testing.T) {
 		t.Errorf("expected UserId 999, got %d", sc.UserId)
 	}
 }
+
+func TestSessionContext_TrackingAndMarshal(t *testing.T) {
+// Create a context with tracking enabled
+original := &SessionContext{
+UserId:            555,
+Country:           "US",
+IsTrackingEnabled: true,
+}
+
+// Marshal
+data, err := original.Marshal()
+if err != nil {
+t.Fatalf("Marshal failed: %v", err)
+}
+
+// Verify round-trip unmarshal
+decoded := &SessionContext{}
+err = decoded.Unmarshal(data)
+if err != nil {
+t.Fatalf("Unmarshal failed: %v", err)
+}
+
+if decoded.UserId != 555 {
+t.Errorf("UserId mismatch: expected 555, got %d", decoded.UserId)
+}
+if decoded.Country != "US" {
+t.Errorf("Country mismatch: expected US, got %s", decoded.Country)
+}
+if !decoded.IsTrackingEnabled {
+t.Errorf("IsTrackingEnabled should be true")
+}
+
+// Test false case
+original.IsTrackingEnabled = false
+data, _ = original.Marshal()
+decoded = &SessionContext{}
+decoded.Unmarshal(data)
+if decoded.IsTrackingEnabled {
+t.Errorf("IsTrackingEnabled should be false")
+}
+}
