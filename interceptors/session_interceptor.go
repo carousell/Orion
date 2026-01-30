@@ -240,12 +240,25 @@ func SessionActivityInterceptor(serviceName string, kafkaProducer KafkaProducer)
 		// Check if we should log this activity
 		// Reliance on "x-session-tracking" header from Gateway or upstream
 		trackingHeader := getMetadataValue(md, "x-session-tracking")
-		shouldLog := trackingHeader == "true"
+		shouldTrack := trackingHeader == "true"
 
-		if !shouldLog {
-			// Skip logging, but we still propagated the context
+		if !shouldTrack {
+			// Skip tracking - header not set or not "true"
+			// Execute handler without tracking
+			log.Debug(ctx, "session_activity", "skipped_tracking",
+				"service", serviceName,
+				"action", info.FullMethod,
+				"tracking_header_value", trackingHeader,
+				"tracking_header_present", trackingHeader != "",
+				"reason", "x-session-tracking header must be explicitly set to 'true'")
 			return handler(ctx, req)
 		}
+
+		// Header is explicitly set to "true" - proceed with tracking
+		log.Info(ctx, "session_activity", "tracking_enabled",
+			"service", serviceName,
+			"action", info.FullMethod,
+			"tracking_header", trackingHeader)
 
 		// Ensure propagation: Add header to outgoing context for downstream services
 		ctx = metadata.AppendToOutgoingContext(ctx, "x-session-tracking", "true")
