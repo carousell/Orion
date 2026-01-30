@@ -33,14 +33,13 @@ func FromContext(ctx context.Context) *SessionContext {
 
 // SessionContext is the decoded session metadata
 type SessionContext struct {
-	Usid              []byte `json:"usid"`
-	UserId            uint64 `json:"user_id"`
-	Ip                []byte `json:"ip"`
-	Country           string `json:"country"`
-	Platform          string `json:"platform"`
-	DeviceId          string `json:"device_id"`
-	Timestamp         uint64 `json:"timestamp"`
-	IsTrackingEnabled bool   `json:"is_tracking_enabled"`
+	Usid      []byte `json:"usid"`
+	UserId    uint64 `json:"user_id"`
+	Ip        []byte `json:"ip"`
+	Country   string `json:"country"`
+	Platform  string `json:"platform"`
+	DeviceId  string `json:"device_id"`
+	Timestamp uint64 `json:"timestamp"`
 }
 
 // Unmarshal decodes protobuf binary data into the SessionContext struct
@@ -66,8 +65,6 @@ func (s *SessionContext) Unmarshal(data []byte) error {
 				s.UserId = val
 			} else if tag == 7 {
 				s.Timestamp = val
-			} else if tag == 8 {
-				s.IsTrackingEnabled = val != 0
 			}
 		case 2: // Length-delimited
 			length, ln := decodeVarint(data)
@@ -146,12 +143,6 @@ func (s *SessionContext) Marshal() ([]byte, error) {
 	if s.Timestamp != 0 {
 		data = append(data, encodeTag(7, 0)...)
 		data = append(data, encodeVarint(s.Timestamp)...)
-	}
-
-	// Tag 8: IsTrackingEnabled (varint/bool)
-	if s.IsTrackingEnabled {
-		data = append(data, encodeTag(8, 0)...)
-		data = append(data, encodeVarint(1)...)
 	}
 
 	return data, nil
@@ -245,13 +236,19 @@ func SessionActivityInterceptor(serviceName string, kafkaProducer KafkaProducer)
 		ctx = context.WithValue(ctx, SessionContextKey, sessionCtx)
 
 		// Check if we should log this activity
-		// 1. If tracking is explicitly enabled in the session context
-		shouldLog := sessionCtx.IsTrackingEnabled
+
+		// Check if we should log this activity
+		// Reliance on "x-session-tracking" header from Gateway or upstream
+		trackingHeader := getMetadataValue(md, "x-session-tracking")
+		shouldLog := trackingHeader == "true"
 
 		if !shouldLog {
 			// Skip logging, but we still propagated the context
 			return handler(ctx, req)
 		}
+
+		// Ensure propagation: Add header to outgoing context for downstream services
+		ctx = metadata.AppendToOutgoingContext(ctx, "x-session-tracking", "true")
 
 		log.Info(ctx, "session_activity", "session_context", sessionCtx)
 
