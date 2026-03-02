@@ -74,6 +74,34 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 	}
 }
 
+// GlobalSessionActivityProducer, GlobalSessionServiceName, and GlobalSessionActivityTopic are
+// set by SessionInitializer and used by GlobalSessionActivityInterceptor.
+var GlobalSessionActivityProducer SessionActivityProducer
+var GlobalSessionServiceName string
+var GlobalSessionActivityTopic = DefaultSessionActivityTopic
+
+// SetGlobalSessionActivityProducer sets the producer used by GlobalSessionActivityInterceptor.
+func SetGlobalSessionActivityProducer(p SessionActivityProducer) { GlobalSessionActivityProducer = p }
+
+// SetGlobalSessionServiceName sets the service name used by GlobalSessionActivityInterceptor.
+func SetGlobalSessionServiceName(name string) { GlobalSessionServiceName = name }
+
+// SetGlobalSessionActivityTopic overrides the Kafka topic used by GlobalSessionActivityInterceptor.
+func SetGlobalSessionActivityTopic(topic string) { GlobalSessionActivityTopic = topic }
+
+// GlobalSessionActivityInterceptor is a convenience interceptor that delegates to
+// SessionActivityInterceptor using the globals configured by SessionInitializer.
+// Add this to GetInterceptors() in services that want session tracking.
+func GlobalSessionActivityInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		name := GlobalSessionServiceName
+		if name == "" {
+			name = "unknown-service"
+		}
+		return SessionActivityInterceptor(name, GlobalSessionActivityProducer, GlobalSessionActivityTopic)(ctx, req, info, handler)
+	}
+}
+
 func getMetadataValue(md metadata.MD, key string) string {
 	if values := md.Get(key); len(values) > 0 {
 		return values[0]
