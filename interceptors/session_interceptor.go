@@ -42,6 +42,7 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 		}
 		encoded := getMetadataValue(md, "x-session-context")
 		if encoded == "" {
+			log.Info(ctx, "Session context is missing; skipping further")
 			return handler(ctx, req)
 		}
 
