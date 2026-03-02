@@ -13,8 +13,8 @@ import (
 
 // Config keys for session tracking Kafka. If brokers are not set, Init is a no-op.
 const (
-	SessionInitializerConfigKeyBrokers = "orion.SessionTrackingKafkaBrokers"
-	SessionInitializerConfigKeyTopic   = "orion.SessionTopic"
+	SessionInitializerConfigKeyBrokers = "orion.session_tracking.kafka_brokers"
+	SessionInitializerConfigKeyTopic   = "orion.session_tracking.kafka_topic"
 )
 
 // SessionInitializer returns an Initializer that wires up the Kafka producer used by
