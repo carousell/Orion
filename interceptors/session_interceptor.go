@@ -29,3 +29,54 @@ type SessionActivityEvent struct {
 type SessionActivityProducer interface {
 	PublishAsync(topic string, event interface{}) error
 }
+
+// SessionActivityInterceptor is an optional gRPC server interceptor that publishes a
+// SessionActivityEvent to the given Kafka topic whenever x-session-context is present in
+// incoming metadata. It does not alter the handler path; publishing is fire-and-forget.
+// Services opt in by adding this interceptor to their GetInterceptors() chain.
+func SessionActivityInterceptor(serviceName string, producer SessionActivityProducer, topic string) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return handler(ctx, req)
+		}
+		encoded := getMetadataValue(md, "x-session-context")
+		if encoded == "" {
+			return handler(ctx, req)
+		}
+
+		startTime := time.Now()
+		resp, handlerErr := handler(ctx, req)
+		duration := time.Since(startTime)
+
+		if producer == nil {
+			return resp, handlerErr
+		}
+
+		statusCode := "OK"
+		if handlerErr != nil {
+			statusCode = status.Convert(handlerErr).Code().String()
+		}
+		event := SessionActivityEvent{
+			EncodedSessionContext: encoded,
+			Service:               serviceName,
+			Action:                info.FullMethod,
+			Status:                statusCode,
+			DurationMs:            duration.Milliseconds(),
+			Timestamp:             time.Now().Unix(),
+		}
+		go func() {
+			if err := producer.PublishAsync(topic, event); err != nil {
+				log.Error(context.Background(), "session_activity_publish_failed", "error", err, "service", serviceName, "action", info.FullMethod)
+			}
+		}()
+		return resp, handlerErr
+	}
+}
+
+func getMetadataValue(md metadata.MD, key string) string {
+	if values := md.Get(key); len(values) > 0 {
+		return values[0]
+	}
+	return ""
+}
