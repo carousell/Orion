@@ -4,17 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/spf13/viper"
-
 	"github.com/carousell/Orion/interceptors"
 	"github.com/carousell/Orion/utils/log"
 	"github.com/carousell/go-utils/kafka"
-)
-
-// Config keys for session tracking Kafka. If brokers are not set, Init is a no-op.
-const (
-	SessionInitializerConfigKeyBrokers = "orion.session_tracking.kafka_brokers"
-	SessionInitializerConfigKeyTopic   = "orion.session_tracking.kafka_topic"
 )
 
 // SessionInitializer returns an Initializer that wires up the Kafka producer used by
@@ -28,21 +20,19 @@ func SessionInitializer() Initializer {
 type sessionInitializer struct{}
 
 func (s *sessionInitializer) Init(svr Server) error {
-	brokers := viper.GetStringSlice(SessionInitializerConfigKeyBrokers)
+	cfg := svr.GetOrionConfig().SessionTrackingConfig
+	brokers := cfg.KafkaBrokers
 	if len(brokers) == 0 {
 		log.Debug(context.Background(), "session_tracking", "kafka brokers not configured, skipping")
 		return nil
 	}
 
-	topic := viper.GetString(SessionInitializerConfigKeyTopic)
+	topic := cfg.KafkaTopic
 	if topic == "" {
 		topic = interceptors.DefaultSessionActivityTopic
 	}
 
-	serviceName := viper.GetString("orion.ServiceName")
-	if serviceName == "" {
-		serviceName = svr.GetOrionConfig().OrionServerName
-	}
+	serviceName := svr.GetOrionConfig().OrionServerName
 	if serviceName == "" {
 		serviceName = "unknown-service"
 	}
