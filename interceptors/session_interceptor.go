@@ -14,8 +14,8 @@ import (
 // DefaultSessionActivityTopic is the default Kafka topic for session activity events.
 const DefaultSessionActivityTopic = "session-activities"
 
-// SessionActivityEvent is the event published to Kafka for AuthSvc consumption.
-// EncodedSessionContext is the raw base64-encoded session context (x-session-context);
+// SessionActivityEvent is published to Kafka whenever x-session-context is present.
+// EncodedSessionContext is the raw base64-encoded value forwarded as-is; consumers decode it.
 type SessionActivityEvent struct {
 	EncodedSessionContext string `json:"encoded_session_context"`
 	Service               string `json:"service"`
@@ -25,32 +25,16 @@ type SessionActivityEvent struct {
 	Timestamp             int64  `json:"timestamp"`
 }
 
-// SessionActivityProducer is the interface for publishing session activity events (testable).
+// SessionActivityProducer publishes session activity events to a Kafka topic.
 type SessionActivityProducer interface {
 	PublishAsync(topic string, event interface{}) error
 }
 
-// GlobalSessionActivityProducer is the singleton producer used by GlobalSessionActivityInterceptor.
-var GlobalSessionActivityProducer SessionActivityProducer
-
-// GlobalSessionServiceName is the service name used by GlobalSessionActivityInterceptor.
-var GlobalSessionServiceName string
-
-// SetGlobalSessionActivityProducer sets the global producer (used by SessionInitializer).
-func SetGlobalSessionActivityProducer(p SessionActivityProducer) {
-	GlobalSessionActivityProducer = p
-}
-
-// SetGlobalSessionServiceName sets the global service name (used by SessionInitializer).
-func SetGlobalSessionServiceName(name string) {
-	GlobalSessionServiceName = name
-}
-
-// SessionActivityInterceptor runs only when a service opts in via GetInterceptors().
-// It reads x-session-context from incoming metadata; if present and x-session-tracking is "true",
-// async-publishes a session activity event (with encoded_session_context as-is) to Kafka. AuthSvc decodes on consume.
-// Not added to DefaultInterceptors so only services that explicitly add it are affected.
-func SessionActivityInterceptor(serviceName string, producer SessionActivityProducer) grpc.UnaryServerInterceptor {
+// SessionActivityInterceptor is an optional gRPC server interceptor that publishes a
+// SessionActivityEvent to the given Kafka topic whenever x-session-context is present in
+// incoming metadata. It does not alter the handler path; publishing is fire-and-forget.
+// Services opt in by adding this interceptor to their GetInterceptors() chain.
+func SessionActivityInterceptor(serviceName string, producer SessionActivityProducer, topic string) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
@@ -61,17 +45,15 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 			log.Info(ctx, "Session context is missing; skipping further")
 			return handler(ctx, req)
 		}
-		trackingHeader := getMetadataValue(md, "x-session-tracking")
-		shouldTrack := trackingHeader == "true"
-		if shouldTrack {
-			ctx = metadata.AppendToOutgoingContext(ctx, "x-session-tracking", "true")
-		}
+
 		startTime := time.Now()
 		resp, handlerErr := handler(ctx, req)
 		duration := time.Since(startTime)
-		if !shouldTrack || producer == nil {
+
+		if producer == nil {
 			return resp, handlerErr
 		}
+
 		statusCode := "OK"
 		if handlerErr != nil {
 			statusCode = status.Convert(handlerErr).Code().String()
@@ -85,7 +67,7 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 			Timestamp:             time.Now().Unix(),
 		}
 		go func() {
-			if err := producer.PublishAsync(DefaultSessionActivityTopic, event); err != nil {
+			if err := producer.PublishAsync(topic, event); err != nil {
 				log.Error(context.Background(), "session_activity_publish_failed", "error", err, "service", serviceName, "action", info.FullMethod)
 			}
 		}()
@@ -93,21 +75,36 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 	}
 }
 
-// GlobalSessionActivityInterceptor returns an interceptor that uses GlobalSessionActivityProducer and GlobalSessionServiceName.
-// Services that opt in (e.g. UserSvc) add this to their GetInterceptors() and register SessionInitializer in main.
+// GlobalSessionActivityProducer, GlobalSessionServiceName, and GlobalSessionActivityTopic are
+// set by SessionInitializer and used by GlobalSessionActivityInterceptor.
+var GlobalSessionActivityProducer SessionActivityProducer
+var GlobalSessionServiceName string
+var GlobalSessionActivityTopic = DefaultSessionActivityTopic
+
+// SetGlobalSessionActivityProducer sets the producer used by GlobalSessionActivityInterceptor.
+func SetGlobalSessionActivityProducer(p SessionActivityProducer) { GlobalSessionActivityProducer = p }
+
+// SetGlobalSessionServiceName sets the service name used by GlobalSessionActivityInterceptor.
+func SetGlobalSessionServiceName(name string) { GlobalSessionServiceName = name }
+
+// SetGlobalSessionActivityTopic overrides the Kafka topic used by GlobalSessionActivityInterceptor.
+func SetGlobalSessionActivityTopic(topic string) { GlobalSessionActivityTopic = topic }
+
+// GlobalSessionActivityInterceptor is a convenience interceptor that delegates to
+// SessionActivityInterceptor using the globals configured by SessionInitializer.
+// Add this to GetInterceptors() in services that want session tracking.
 func GlobalSessionActivityInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		serviceName := GlobalSessionServiceName
-		if serviceName == "" {
-			serviceName = "unknown-service"
+		name := GlobalSessionServiceName
+		if name == "" {
+			name = "unknown-service"
 		}
-		return SessionActivityInterceptor(serviceName, GlobalSessionActivityProducer)(ctx, req, info, handler)
+		return SessionActivityInterceptor(name, GlobalSessionActivityProducer, GlobalSessionActivityTopic)(ctx, req, info, handler)
 	}
 }
 
 func getMetadataValue(md metadata.MD, key string) string {
-	values := md.Get(key)
-	if len(values) > 0 {
+	if values := md.Get(key); len(values) > 0 {
 		return values[0]
 	}
 	return ""

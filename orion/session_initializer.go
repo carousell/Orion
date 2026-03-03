@@ -4,23 +4,15 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/spf13/viper"
-
 	"github.com/carousell/Orion/interceptors"
 	"github.com/carousell/Orion/utils/log"
 	"github.com/carousell/go-utils/kafka"
 )
 
-// SessionInitializerConfigKey* are viper keys for session tracking Kafka. If not set, Init is a no-op.
-const (
-	SessionInitializerConfigKeyBrokers = "orion.SessionTrackingKafkaBrokers"
-	SessionInitializerConfigKeyTopic   = "orion.SessionTopic"
-)
-
-// SessionInitializer returns an Initializer that sets up the session activity Kafka producer
-// using go-utils/kafka and globals used by GlobalSessionActivityInterceptor. Only services
-// that opt in to session tracking (e.g. UserSvc) should add this initializer. If
-// orion.SessionTrackingKafkaBrokers is not configured, Init returns nil without error (no-op).
+// SessionInitializer returns an Initializer that wires up the Kafka producer used by
+// GlobalSessionActivityInterceptor. Services that want session tracking register this
+// initializer and add GlobalSessionActivityInterceptor to their interceptor chain.
+// If orion.SessionTrackingKafkaBrokers is not set, Init is a no-op.
 func SessionInitializer() Initializer {
 	return &sessionInitializer{}
 }
@@ -28,19 +20,19 @@ func SessionInitializer() Initializer {
 type sessionInitializer struct{}
 
 func (s *sessionInitializer) Init(svr Server) error {
-	brokers := viper.GetStringSlice(SessionInitializerConfigKeyBrokers)
+	cfg := svr.GetOrionConfig().SessionTrackingConfig
+	brokers := cfg.KafkaBrokers
 	if len(brokers) == 0 {
 		log.Debug(context.Background(), "session_tracking", "kafka brokers not configured, skipping")
 		return nil
 	}
-	topic := viper.GetString(SessionInitializerConfigKeyTopic)
+
+	topic := cfg.KafkaTopic
 	if topic == "" {
 		topic = interceptors.DefaultSessionActivityTopic
 	}
-	serviceName := viper.GetString("orion.ServiceName")
-	if serviceName == "" {
-		serviceName = svr.GetOrionConfig().OrionServerName
-	}
+
+	serviceName := svr.GetOrionConfig().OrionServerName
 	if serviceName == "" {
 		serviceName = "unknown-service"
 	}
@@ -57,10 +49,10 @@ func (s *sessionInitializer) Init(svr Server) error {
 	}
 	producer.Run()
 
-	wrapper := &sessionActivityProducerWrapper{producer: producer, defaultTopic: topic}
-	interceptors.SetGlobalSessionActivityProducer(wrapper)
+	interceptors.SetGlobalSessionActivityProducer(&sessionProducerAdapter{producer: producer, defaultTopic: topic})
 	interceptors.SetGlobalSessionServiceName(serviceName)
-	log.Info(context.Background(), "session_tracking", "initialized", "brokers", brokers, "topic", topic, "service_name", serviceName)
+	interceptors.SetGlobalSessionActivityTopic(topic)
+	log.Info(context.Background(), "session_tracking", "initialized", "brokers", brokers, "topic", topic, "service", serviceName)
 	return nil
 }
 
@@ -68,20 +60,20 @@ func (s *sessionInitializer) ReInit(svr Server) error {
 	return s.Init(svr)
 }
 
-// sessionActivityProducerWrapper adapts go-utils kafka.Producer to interceptors.SessionActivityProducer.
-type sessionActivityProducerWrapper struct {
+// sessionProducerAdapter adapts go-utils kafka.Producer to interceptors.SessionActivityProducer.
+type sessionProducerAdapter struct {
 	producer     *kafka.Producer
 	defaultTopic string
 }
 
-func (w *sessionActivityProducerWrapper) PublishAsync(topic string, event interface{}) error {
+func (a *sessionProducerAdapter) PublishAsync(topic string, event interface{}) error {
 	payload, err := json.Marshal(event)
 	if err != nil {
 		return err
 	}
 	t := topic
 	if t == "" {
-		t = w.defaultTopic
+		t = a.defaultTopic
 	}
-	return w.producer.Produce(context.Background(), t, nil, payload)
+	return a.producer.Produce(context.Background(), t, nil, payload)
 }
