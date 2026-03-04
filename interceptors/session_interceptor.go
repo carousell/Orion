@@ -2,6 +2,7 @@ package interceptors
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -42,7 +43,6 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 		}
 		encoded := getMetadataValue(md, "x-session-context")
 		if encoded == "" {
-			log.Info(ctx, "Session context is missing; skipping further")
 			return handler(ctx, req)
 		}
 
@@ -51,6 +51,11 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 		duration := time.Since(startTime)
 
 		if producer == nil {
+			warnNilProducerOnce.Do(func() {
+				log.Warn(ctx, "session_tracking_misconfigured",
+					"x-session-context present but no Kafka producer configured; events will be dropped. "+
+						"Register SessionInitializer and set orion.session_tracking.kafka_brokers.")
+			})
 			return resp, handlerErr
 		}
 
@@ -68,31 +73,34 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 		}
 		go func() {
 			if err := producer.PublishAsync(topic, event); err != nil {
-				log.Error(context.Background(), "session_activity_publish_failed", "error", err, "service", serviceName, "action", info.FullMethod)
+				log.Error(context.Background(), "session_activity_publish_failed",
+					"error", err, "service", serviceName, "action", info.FullMethod)
 			}
 		}()
 		return resp, handlerErr
 	}
 }
 
-// GlobalSessionActivityProducer, GlobalSessionServiceName, and GlobalSessionActivityTopic are
-// set by SessionInitializer and used by GlobalSessionActivityInterceptor.
+// warnNilProducerOnce emits a single warning when x-session-context arrives but
+// no producer has been configured, telling the developer exactly what to fix.
+var warnNilProducerOnce sync.Once
+
+// GlobalSessionActivityProducer, GlobalSessionServiceName, and GlobalSessionActivityTopic
+// are set by SessionInitializer.Init() before the gRPC server starts accepting connections.
+// SessionInitializer.ReInit() is intentionally a no-op (same as HystrixInitializer), so
+// these vars are written exactly once and are thereafter read-only — no synchronisation
+// is required, matching the pattern used by every other Orion initializer.
 var GlobalSessionActivityProducer SessionActivityProducer
 var GlobalSessionServiceName string
 var GlobalSessionActivityTopic = DefaultSessionActivityTopic
 
-// SetGlobalSessionActivityProducer sets the producer used by GlobalSessionActivityInterceptor.
 func SetGlobalSessionActivityProducer(p SessionActivityProducer) { GlobalSessionActivityProducer = p }
-
-// SetGlobalSessionServiceName sets the service name used by GlobalSessionActivityInterceptor.
-func SetGlobalSessionServiceName(name string) { GlobalSessionServiceName = name }
-
-// SetGlobalSessionActivityTopic overrides the Kafka topic used by GlobalSessionActivityInterceptor.
-func SetGlobalSessionActivityTopic(topic string) { GlobalSessionActivityTopic = topic }
+func SetGlobalSessionServiceName(name string)                     { GlobalSessionServiceName = name }
+func SetGlobalSessionActivityTopic(topic string)                  { GlobalSessionActivityTopic = topic }
 
 // GlobalSessionActivityInterceptor is a convenience interceptor that delegates to
-// SessionActivityInterceptor using the globals configured by SessionInitializer.
-// Add this to GetInterceptors() in services that want session tracking.
+// SessionActivityInterceptor using the globals set by SessionInitializer.
+// Add this to GetInterceptors() in any Orion service that requires session tracking.
 func GlobalSessionActivityInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		name := GlobalSessionServiceName
