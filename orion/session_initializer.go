@@ -67,8 +67,9 @@ type sessionInitializer struct {
 func (s *sessionInitializer) Init(svr Server) error {
 	cfg := svr.GetOrionConfig().SessionTrackingConfig
 	brokers := cfg.KafkaBrokers
+	log.Info(context.Background(), "session_tracking", "kafka brokers", "brokers", brokers)
 	if len(brokers) == 0 {
-		log.Debug(context.Background(), "session_tracking", "kafka brokers not configured, skipping")
+		log.Error(context.Background(), "session_tracking", "kafka brokers not configured, skipping")
 		return nil
 	}
 
@@ -134,6 +135,7 @@ func (s *sessionInitializer) Init(svr Server) error {
 		return nil
 	}
 	producer.Run()
+	log.Info(context.Background(), "session_tracking", "kafka producer run")
 
 	interceptors.SetGlobalSessionActivityProducer(&sessionProducerAdapter{producer: producer, defaultTopic: topic})
 	interceptors.SetGlobalSessionServiceName(serviceName)
@@ -148,6 +150,7 @@ func (s *sessionInitializer) Init(svr Server) error {
 // This mirrors HystrixInitializer which also skips ReInit with the comment
 // "do nothing, can't be reinited".
 func (s *sessionInitializer) ReInit(svr Server) error {
+	log.Info(context.Background(), "session_tracking", "reinit")
 	return nil
 }
 
@@ -175,6 +178,8 @@ func (a *sessionProducerAdapter) PublishAsync(topic string, event interface{}) e
 		timeout = kafkaProduceTimeout
 	}
 
+	log.Info(context.Background(), "session_tracking", "payload", string(payload))
+
 	// kafka.Producer.Produce sends onto Sarama's buffered input channel (default 256
 	// slots). When Kafka is unavailable the channel fills and Produce blocks indefinitely
 	// — go-utils/kafka ignores the context passed to Produce. Without a cap the
@@ -190,8 +195,10 @@ func (a *sessionProducerAdapter) PublishAsync(topic string, event interface{}) e
 	}()
 	select {
 	case err := <-errCh:
+		log.Info(context.Background(), "session_tracking", "kafka produce", "error", err)
 		return err
 	case <-time.After(timeout):
+		log.Info(context.Background(), "session_tracking", "kafka produce timed out", "timeout", timeout)
 		return fmt.Errorf("session_tracking: kafka produce timed out after %s (kafka may be unavailable); dropping event", timeout)
 	}
 }

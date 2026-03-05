@@ -43,6 +43,7 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 		}
 		encoded := getMetadataValue(md, "x-session-context")
 		if encoded == "" {
+			log.Info(ctx, "session_activity_interceptor", "service", serviceName, "action", info.FullMethod, "empty encoded session context")
 			return handler(ctx, req)
 		}
 
@@ -50,9 +51,11 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 		resp, handlerErr := handler(ctx, req)
 		duration := time.Since(startTime)
 
+		log.Info(ctx, "session_activity_interceptor", "service", serviceName, "action", info.FullMethod, "duration", duration.Milliseconds())
+
 		if producer == nil {
 			warnNilProducerOnce.Do(func() {
-				log.Warn(ctx, "session_tracking_misconfigured",
+				log.Error(ctx, "session_tracking_misconfigured",
 					"x-session-context present but no Kafka producer configured; events will be dropped. "+
 						"Register SessionInitializer and set orion.session_tracking.kafka_brokers.")
 			})
@@ -61,6 +64,7 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 
 		statusCode := "OK"
 		if handlerErr != nil {
+			log.Error(ctx, "session_activity_interceptor", "service", serviceName, "action", info.FullMethod, "error", handlerErr)
 			statusCode = status.Convert(handlerErr).Code().String()
 		}
 		event := SessionActivityEvent{
@@ -71,6 +75,7 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 			DurationMs:            duration.Milliseconds(),
 			Timestamp:             time.Now().Unix(),
 		}
+		log.Info(ctx, "session_activity_interceptor", "service", serviceName, "action", info.FullMethod, "event", event)
 		go func() {
 			if err := producer.PublishAsync(topic, event); err != nil {
 				log.Error(context.Background(), "session_activity_publish_failed",
@@ -90,13 +95,15 @@ var warnNilProducerOnce sync.Once
 // SessionInitializer.ReInit() is intentionally a no-op (same as HystrixInitializer), so
 // these vars are written exactly once and are thereafter read-only — no synchronisation
 // is required, matching the pattern used by every other Orion initializer.
-var GlobalSessionActivityProducer SessionActivityProducer
-var GlobalSessionServiceName string
-var GlobalSessionActivityTopic = DefaultSessionActivityTopic
+var (
+	GlobalSessionActivityProducer SessionActivityProducer
+	GlobalSessionServiceName      string
+	GlobalSessionActivityTopic    = DefaultSessionActivityTopic
+)
 
 func SetGlobalSessionActivityProducer(p SessionActivityProducer) { GlobalSessionActivityProducer = p }
-func SetGlobalSessionServiceName(name string)                     { GlobalSessionServiceName = name }
-func SetGlobalSessionActivityTopic(topic string)                  { GlobalSessionActivityTopic = topic }
+func SetGlobalSessionServiceName(name string)                    { GlobalSessionServiceName = name }
+func SetGlobalSessionActivityTopic(topic string)                 { GlobalSessionActivityTopic = topic }
 
 // GlobalSessionActivityInterceptor is a convenience interceptor that delegates to
 // SessionActivityInterceptor using the globals set by SessionInitializer.
@@ -107,6 +114,7 @@ func GlobalSessionActivityInterceptor() grpc.UnaryServerInterceptor {
 		if name == "" {
 			name = "unknown-service"
 		}
+		log.Info(ctx, "global_session_activity_interceptor", "service", name, "action", info.FullMethod)
 		return SessionActivityInterceptor(name, GlobalSessionActivityProducer, GlobalSessionActivityTopic)(ctx, req, info, handler)
 	}
 }
