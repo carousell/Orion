@@ -148,8 +148,8 @@ func BuildDefaultConfig(name string) Config {
 	}
 }
 
-// BuildDefaultSessionTrackingConfig builds the session tracking config from viper.
-// KafkaBrokers will be empty (and thus disabled) unless explicitly configured.
+// BuildDefaultSessionTrackingConfig reads session tracking config from viper.
+// Session tracking is disabled when KafkaBrokers is not set.
 func BuildDefaultSessionTrackingConfig() SessionTrackingConfig {
 	return SessionTrackingConfig{
 		KafkaBrokers: viper.GetStringSlice(SessionInitializerConfigKeyBrokers),

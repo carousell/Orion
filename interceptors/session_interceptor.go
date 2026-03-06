@@ -15,9 +15,7 @@ import (
 // DefaultSessionActivityTopic is the default Kafka topic for session activity events.
 const DefaultSessionActivityTopic = "session-activities"
 
-// SessionActivityEvent is published to Kafka whenever x-session-track is present and
-// x-session-context is non-empty. EncodedSessionContext is the raw base64-encoded value
-// forwarded as-is; the consumer decodes it.
+// SessionActivityEvent is the payload published to Kafka for each tracked session request.
 type SessionActivityEvent struct {
 	EncodedSessionContext string `json:"encoded_session_context"`
 	Service               string `json:"service"`
@@ -33,20 +31,14 @@ type SessionActivityProducer interface {
 }
 
 // SessionActivityInterceptor is a gRPC server interceptor that publishes a
-// SessionActivityEvent to the given Kafka topic when:
-//  1. x-session-track header is "true" (set by gateways for selected APIs), AND
-//  2. x-session-context is present in incoming metadata.
+// SessionActivityEvent to Kafka when both x-session-track="true" and x-session-context
+// are present in the incoming metadata.
 //
-// Strip-on-consume: After reading x-session-track and x-session-operation, the interceptor
-// removes them from the incoming metadata BEFORE calling handler(). This is critical because
-// ForwardMetadataInterceptor (a default client interceptor in DefaultClientInterceptors)
-// copies ALL incoming metadata to outgoing metadata. By stripping these headers, we prevent
-// session tracking from cascading into downstream service-to-service calls.
+// x-session-track and x-session-operation are stripped from metadata before calling the
+// handler, so they won't be forwarded to downstream services. x-session-context is kept
+// so downstream services can still use it if needed.
 //
-// The x-session-context header is intentionally NOT stripped — downstream services may need
-// it for other purposes (e.g., per-call re-injection via cheaders.WithSessionTracking).
-//
-// Services opt in by adding this interceptor to their GetInterceptors() chain.
+// Add this to GetInterceptors() in any service that requires session tracking.
 func SessionActivityInterceptor(serviceName string, producer SessionActivityProducer, topic string) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		md, ok := metadata.FromIncomingContext(ctx)
@@ -54,10 +46,7 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 			return handler(ctx, req)
 		}
 
-		// Guard 1: only fire when a gateway explicitly opted this request in.
-		// Internal service-to-service calls will NOT have this header because the
-		// interceptor strips it before calling handler(), and ForwardMetadataInterceptor
-		// only sees the stripped metadata.
+		// Only track requests explicitly opted in by a gateway.
 		if getMetadataValue(md, "x-session-track") != "true" {
 			return handler(ctx, req)
 		}
@@ -76,15 +65,12 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 			operation = info.FullMethod
 		}
 
-		// ── Strip consumed headers so ForwardMetadataInterceptor won't relay them ──
-		// This is the same mutation mechanism used by ObservabilityGatewayServerInterceptor
-		// in go-utils/cinterceptors, proven safe with ForwardMetadataInterceptor.
+		// Strip session tracking headers so they aren't forwarded to downstream services.
 		strippedMD := md.Copy()
 		strippedMD.Delete("x-session-track")
 		strippedMD.Delete("x-session-operation")
 		ctx = metadata.NewIncomingContext(ctx, strippedMD)
 
-		// ── Run handler with stripped ctx ──
 		startTime := time.Now()
 		resp, handlerErr := handler(ctx, req)
 		duration := time.Since(startTime)
@@ -127,15 +113,11 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 	}
 }
 
-// warnNilProducerOnce emits a single warning when x-session-track arrives but
-// no producer has been configured, telling the developer exactly what to fix.
+// warnNilProducerOnce ensures the misconfiguration warning is logged only once.
 var warnNilProducerOnce sync.Once
 
-// GlobalSessionActivityProducer, GlobalSessionServiceName, and GlobalSessionActivityTopic
-// are set by SessionInitializer.Init() before the gRPC server starts accepting connections.
-// SessionInitializer.ReInit() is intentionally a no-op (same as HystrixInitializer), so
-// these vars are written exactly once and are thereafter read-only — no synchronisation
-// is required, matching the pattern used by every other Orion initializer.
+// These globals are set once by SessionInitializer.Init() before the server starts.
+// They are read-only after that, so no synchronisation is needed.
 var (
 	GlobalSessionActivityProducer SessionActivityProducer
 	GlobalSessionServiceName      string
@@ -146,9 +128,8 @@ func SetGlobalSessionActivityProducer(p SessionActivityProducer) { GlobalSession
 func SetGlobalSessionServiceName(name string)                    { GlobalSessionServiceName = name }
 func SetGlobalSessionActivityTopic(topic string)                 { GlobalSessionActivityTopic = topic }
 
-// GlobalSessionActivityInterceptor is a convenience interceptor that delegates to
-// SessionActivityInterceptor using the globals set by SessionInitializer.
-// Add this to GetInterceptors() in any Orion service that requires session tracking.
+// GlobalSessionActivityInterceptor wraps SessionActivityInterceptor using the globals
+// set by SessionInitializer. Add this to GetInterceptors() to enable session tracking.
 func GlobalSessionActivityInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		name := GlobalSessionServiceName
