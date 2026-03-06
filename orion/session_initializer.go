@@ -6,35 +6,65 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Shopify/sarama"
 	"github.com/carousell/Orion/interceptors"
 	"github.com/carousell/Orion/utils/log"
-	"github.com/carousell/go-utils/kafka"
 )
 
-// kafkaProducerInitTimeout caps how long Init waits for sarama.NewAsyncProducer.
-// sarama.NewAsyncProducer calls NewClient which performs a real TCP connection + metadata
-// fetch. With Sarama's defaults (DialTimeout=30s, Metadata.Retry.Max=3) an unreachable
-// broker stalls for ~120 seconds. We run it in a goroutine and abandon after this
-// deadline so service startup is never blocked by Kafka.
-// The orphaned goroutine exits on its own when Sarama's own dial timeout fires.
+// kafkaProducerInitTimeout is the max time to wait for the Kafka producer to connect on startup.
+// If it times out, session tracking is disabled but the service starts normally.
 const kafkaProducerInitTimeout = 10 * time.Second
 
-// kafkaProduceTimeout caps how long PublishAsync waits to enqueue one message.
-// kafka.Producer.Produce does a blocking channel send onto Sarama's input channel
-// (default buffer: 256 messages). When Kafka is down the buffer fills and every
-// Produce call blocks indefinitely — the context parameter is ignored by go-utils/kafka.
-// Without this cap, each interceptor goroutine that calls PublishAsync would leak for the
-// entire duration of the outage. With the cap the goroutine returns an error after
-// kafkaProduceTimeout and the interceptor logs a single "dropped event" line.
-// The inner goroutine that wraps Produce is still blocked on the Sarama channel, but it
-// self-resolves when Kafka recovers and the channel drains.
+// kafkaProduceTimeout is the max time to wait when enqueuing a message to Kafka.
+// Without this cap, PublishAsync can block indefinitely if Kafka is unavailable.
 const kafkaProduceTimeout = 5 * time.Second
 
-// rawProducer is the subset of kafka.Producer used internally.
-// Defined as an interface so tests can inject fakes without touching go-utils/kafka.
+// rawProducer is the internal interface for the Kafka producer.
+// Defined as an interface so tests can inject fakes.
 type rawProducer interface {
 	Run()
 	Produce(ctx context.Context, topic string, key []byte, msg []byte) error
+}
+
+// saramaProducer implements rawProducer using a Sarama AsyncProducer.
+type saramaProducer struct {
+	p            sarama.AsyncProducer
+	errorHandler func(error)
+}
+
+func newSaramaProducer(brokers []string, errorHandler func(error)) (rawProducer, error) {
+	cfg := sarama.NewConfig()
+	cfg.Producer.Return.Errors = true
+	cfg.Producer.Return.Successes = false
+	cfg.Producer.Retry.Max = 3
+	p, err := sarama.NewAsyncProducer(brokers, cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &saramaProducer{p: p, errorHandler: errorHandler}, nil
+}
+
+func (sp *saramaProducer) Run() {
+	go func() {
+		for err := range sp.p.Errors() {
+			if sp.errorHandler != nil {
+				sp.errorHandler(err)
+			}
+		}
+	}()
+}
+
+func (sp *saramaProducer) Produce(_ context.Context, topic string, key []byte, msg []byte) error {
+	var k sarama.Encoder
+	if len(key) > 0 {
+		k = sarama.ByteEncoder(key)
+	}
+	sp.p.Input() <- &sarama.ProducerMessage{
+		Topic: topic,
+		Key:   k,
+		Value: sarama.ByteEncoder(msg),
+	}
+	return nil
 }
 
 // SessionInitializer returns an Initializer that wires up the Kafka producer used by
@@ -53,14 +83,10 @@ func SessionInitializer() Initializer {
 	return &sessionInitializer{}
 }
 
-// sessionInitializer has no exported state — identical to hystrixInitializer.
-// All configuration is written to package-level globals in Init() before the
-// gRPC server starts accepting connections, so no synchronisation is needed.
-//
-// newProducer and initTimeout are zero-valued in production and overridden in tests
-// to avoid real Kafka connections and slow timer waits.
+// sessionInitializer holds no exported state. newProducer and initTimeout are
+// zero-valued in production and overridden in tests.
 type sessionInitializer struct {
-	newProducer func(brokers []string, opts ...kafka.Option) (rawProducer, error)
+	newProducer func(brokers []string, errorHandler func(error)) (rawProducer, error)
 	initTimeout time.Duration
 }
 
@@ -85,9 +111,7 @@ func (s *sessionInitializer) Init(svr Server) error {
 
 	factory := s.newProducer
 	if factory == nil {
-		factory = func(brokers []string, opts ...kafka.Option) (rawProducer, error) {
-			return kafka.NewProducer(brokers, opts...)
-		}
+		factory = newSaramaProducer
 	}
 
 	initTimeout := s.initTimeout
@@ -95,24 +119,17 @@ func (s *sessionInitializer) Init(svr Server) error {
 		initTimeout = kafkaProducerInitTimeout
 	}
 
-	// sarama.NewAsyncProducer (called inside kafka.NewProducer) dials every broker to
-	// fetch cluster metadata. With default Sarama timeouts (DialTimeout=30s,
-	// Metadata.Retry.Max=3) an unreachable cluster stalls for up to ~120 seconds.
-	// Run the call in a goroutine and abandon it after initTimeout so the service
-	// always starts promptly. The abandoned goroutine exits on its own once Sarama's
-	// internal dial timeout fires.
+	// Run producer creation in a goroutine so a slow or unreachable Kafka cluster
+	// doesn't block service startup beyond initTimeout.
 	type producerResult struct {
 		p   rawProducer
 		err error
 	}
 	ch := make(chan producerResult, 1)
 	go func() {
-		p, err := factory(brokers,
-			kafka.WithMaxRetries(3),
-			kafka.WithErrorHandler(func(err error) {
-				log.Error(context.Background(), "session_tracking", "kafka producer error", "error", err)
-			}),
-		)
+		p, err := factory(brokers, func(err error) {
+			log.Error(context.Background(), "session_tracking", "kafka producer error", "error", err)
+		})
 		ch <- producerResult{p, err}
 	}()
 
@@ -120,9 +137,7 @@ func (s *sessionInitializer) Init(svr Server) error {
 	select {
 	case res := <-ch:
 		if res.err != nil {
-			// Non-fatal: the service starts without session tracking. The interceptor
-			// emits a single misconfiguration warning on the first request that carries
-			// x-session-context.
+			// Non-fatal: service starts without session tracking.
 			log.Error(context.Background(), "session_tracking",
 				"failed to create kafka producer; session tracking disabled", "error", res.err)
 			return nil
@@ -145,18 +160,14 @@ func (s *sessionInitializer) Init(svr Server) error {
 	return nil
 }
 
-// ReInit is intentionally a no-op.
-// Kafka broker or topic changes require a redeployment (new process → fresh Init).
-// This mirrors HystrixInitializer which also skips ReInit with the comment
-// "do nothing, can't be reinited".
+// ReInit is a no-op. Kafka config changes require a redeployment.
 func (s *sessionInitializer) ReInit(svr Server) error {
 	log.Info(context.Background(), "session_tracking", "reinit")
 	return nil
 }
 
-// sessionProducerAdapter adapts go-utils kafka.Producer to interceptors.SessionActivityProducer.
-// produceTimeout is zero-valued in production (falls back to kafkaProduceTimeout) and
-// overridden in tests to avoid slow timer waits.
+// sessionProducerAdapter wraps the raw Kafka producer to implement SessionActivityProducer.
+// produceTimeout is overridden in tests; production uses kafkaProduceTimeout.
 type sessionProducerAdapter struct {
 	producer       rawProducer
 	defaultTopic   string
@@ -180,15 +191,8 @@ func (a *sessionProducerAdapter) PublishAsync(topic string, event interface{}) e
 
 	log.Info(context.Background(), "session_tracking", "payload", string(payload))
 
-	// kafka.Producer.Produce sends onto Sarama's buffered input channel (default 256
-	// slots). When Kafka is unavailable the channel fills and Produce blocks indefinitely
-	// — go-utils/kafka ignores the context passed to Produce. Without a cap the
-	// interceptor goroutine (go func() { PublishAsync(...) }()) leaks for the duration
-	// of the outage, accumulating memory proportional to traffic × outage length.
-	//
-	// Wrapping in a goroutine + select bounds the caller to timeout.
-	// The inner goroutine is still blocked on the Sarama channel but is bounded to
-	// (traffic rate × timeout) goroutines and self-resolves when Kafka recovers.
+	// Produce can block indefinitely if Kafka is down. Run it in a goroutine and
+	// return an error if it doesn't complete within the timeout.
 	errCh := make(chan error, 1)
 	go func() {
 		errCh <- a.producer.Produce(context.Background(), t, nil, payload)

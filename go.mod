@@ -55,21 +55,13 @@ require (
 )
 
 require (
-	github.com/carousell/go-utils/kafka v1.0.3
+	github.com/Shopify/sarama v1.38.1
 	github.com/prometheus/client_golang v1.20.4
 )
 
 require (
-	github.com/Shopify/sarama v1.38.1 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/carousell/go-logging v0.0.0-20230322093349-63592a690170 // indirect
-	github.com/carousell/go-notifier v0.0.0-20250319030624-4e2fc654b3b8 // indirect
-	github.com/carousell/go-notifier/rollbar v0.0.0-20250319030624-4e2fc654b3b8 // indirect
-	github.com/carousell/go-notifier/sentry v0.0.0-20250319030624-4e2fc654b3b8 // indirect
-	github.com/carousell/go-utils/errors v1.0.4 // indirect
-	github.com/carousell/go-utils/logging v1.0.2 // indirect
-	github.com/carousell/go-utils/notifier v1.1.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/elastic/go-windows v1.0.0 // indirect
