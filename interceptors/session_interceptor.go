@@ -15,8 +15,9 @@ import (
 // DefaultSessionActivityTopic is the default Kafka topic for session activity events.
 const DefaultSessionActivityTopic = "session-activities"
 
-// SessionActivityEvent is published to Kafka whenever x-session-context is present.
-// EncodedSessionContext is the raw base64-encoded value forwarded as-is; consumers decode it.
+// SessionActivityEvent is published to Kafka whenever x-session-track is present and
+// x-session-context is non-empty. EncodedSessionContext is the raw base64-encoded value
+// forwarded as-is; the consumer decodes it.
 type SessionActivityEvent struct {
 	EncodedSessionContext string `json:"encoded_session_context"`
 	Service               string `json:"service"`
@@ -31,9 +32,20 @@ type SessionActivityProducer interface {
 	PublishAsync(topic string, event interface{}) error
 }
 
-// SessionActivityInterceptor is an optional gRPC server interceptor that publishes a
-// SessionActivityEvent to the given Kafka topic whenever x-session-context is present in
-// incoming metadata. It does not alter the handler path; publishing is fire-and-forget.
+// SessionActivityInterceptor is a gRPC server interceptor that publishes a
+// SessionActivityEvent to the given Kafka topic when:
+//  1. x-session-track header is "true" (set by gateways for selected APIs), AND
+//  2. x-session-context is present in incoming metadata.
+//
+// Strip-on-consume: After reading x-session-track and x-session-operation, the interceptor
+// removes them from the incoming metadata BEFORE calling handler(). This is critical because
+// ForwardMetadataInterceptor (a default client interceptor in DefaultClientInterceptors)
+// copies ALL incoming metadata to outgoing metadata. By stripping these headers, we prevent
+// session tracking from cascading into downstream service-to-service calls.
+//
+// The x-session-context header is intentionally NOT stripped — downstream services may need
+// it for other purposes (e.g., per-call re-injection via cheaders.WithSessionTracking).
+//
 // Services opt in by adding this interceptor to their GetInterceptors() chain.
 func SessionActivityInterceptor(serviceName string, producer SessionActivityProducer, topic string) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
@@ -41,22 +53,49 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 		if !ok {
 			return handler(ctx, req)
 		}
-		encoded := getMetadataValue(md, "x-session-context")
-		if encoded == "" {
-			log.Info(ctx, "session_activity_interceptor", "service", serviceName, "action", info.FullMethod, "empty encoded session context")
+
+		// Guard 1: only fire when a gateway explicitly opted this request in.
+		// Internal service-to-service calls will NOT have this header because the
+		// interceptor strips it before calling handler(), and ForwardMetadataInterceptor
+		// only sees the stripped metadata.
+		if getMetadataValue(md, "x-session-track") != "true" {
 			return handler(ctx, req)
 		}
 
+		// Guard 2: encoded session context must be present.
+		encoded := getMetadataValue(md, "x-session-context")
+		if encoded == "" {
+			log.Info(ctx, "session_activity_interceptor", "service", serviceName,
+				"action", info.FullMethod, "msg", "x-session-track present but x-session-context empty, skipping")
+			return handler(ctx, req)
+		}
+
+		// Read optional operation label before stripping.
+		operation := getMetadataValue(md, "x-session-operation")
+		if operation == "" {
+			operation = info.FullMethod
+		}
+
+		// ── Strip consumed headers so ForwardMetadataInterceptor won't relay them ──
+		// This is the same mutation mechanism used by ObservabilityGatewayServerInterceptor
+		// in go-utils/cinterceptors, proven safe with ForwardMetadataInterceptor.
+		strippedMD := md.Copy()
+		strippedMD.Delete("x-session-track")
+		strippedMD.Delete("x-session-operation")
+		ctx = metadata.NewIncomingContext(ctx, strippedMD)
+
+		// ── Run handler with stripped ctx ──
 		startTime := time.Now()
 		resp, handlerErr := handler(ctx, req)
 		duration := time.Since(startTime)
 
-		log.Info(ctx, "session_activity_interceptor", "service", serviceName, "action", info.FullMethod, "duration", duration.Milliseconds())
+		log.Info(ctx, "session_activity_interceptor", "service", serviceName,
+			"action", operation, "duration_ms", duration.Milliseconds())
 
 		if producer == nil {
 			warnNilProducerOnce.Do(func() {
 				log.Error(ctx, "session_tracking_misconfigured",
-					"x-session-context present but no Kafka producer configured; events will be dropped. "+
+					"x-session-track present but no Kafka producer configured; events will be dropped. "+
 						"Register SessionInitializer and set orion.session_tracking.kafka_brokers.")
 			})
 			return resp, handlerErr
@@ -64,29 +103,31 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 
 		statusCode := "OK"
 		if handlerErr != nil {
-			log.Error(ctx, "session_activity_interceptor", "service", serviceName, "action", info.FullMethod, "error", handlerErr)
+			log.Error(ctx, "session_activity_interceptor", "service", serviceName,
+				"action", operation, "error", handlerErr)
 			statusCode = status.Convert(handlerErr).Code().String()
 		}
 		event := SessionActivityEvent{
 			EncodedSessionContext: encoded,
 			Service:               serviceName,
-			Action:                info.FullMethod,
+			Action:                operation,
 			Status:                statusCode,
 			DurationMs:            duration.Milliseconds(),
 			Timestamp:             time.Now().Unix(),
 		}
-		log.Info(ctx, "session_activity_interceptor", "service", serviceName, "action", info.FullMethod, "event", event)
+		log.Info(ctx, "session_activity_interceptor", "service", serviceName,
+			"action", operation, "event", event)
 		go func() {
 			if err := producer.PublishAsync(topic, event); err != nil {
 				log.Error(context.Background(), "session_activity_publish_failed",
-					"error", err, "service", serviceName, "action", info.FullMethod)
+					"error", err, "service", serviceName, "action", operation)
 			}
 		}()
 		return resp, handlerErr
 	}
 }
 
-// warnNilProducerOnce emits a single warning when x-session-context arrives but
+// warnNilProducerOnce emits a single warning when x-session-track arrives but
 // no producer has been configured, telling the developer exactly what to fix.
 var warnNilProducerOnce sync.Once
 
@@ -114,7 +155,6 @@ func GlobalSessionActivityInterceptor() grpc.UnaryServerInterceptor {
 		if name == "" {
 			name = "unknown-service"
 		}
-		log.Info(ctx, "global_session_activity_interceptor", "service", name, "action", info.FullMethod)
 		return SessionActivityInterceptor(name, GlobalSessionActivityProducer, GlobalSessionActivityTopic)(ctx, req, info, handler)
 	}
 }
