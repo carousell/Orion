@@ -3,6 +3,7 @@ package orion
 import (
 	"context"
 	"errors"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -44,15 +45,19 @@ func (p *errorProducer) Produce(_ context.Context, _ string, _ []byte, _ []byte)
 	return p.err
 }
 
-// blockingProducer blocks Produce until release is closed.
+// blockingProducer blocks Produce until release is closed or context is cancelled.
 type blockingProducer struct {
 	release chan struct{}
 }
 
 func (p *blockingProducer) Run() {}
-func (p *blockingProducer) Produce(_ context.Context, _ string, _ []byte, _ []byte) error {
-	<-p.release
-	return nil
+func (p *blockingProducer) Produce(ctx context.Context, _ string, _ []byte, _ []byte) error {
+	select {
+	case <-p.release:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 // ── factory helpers ───────────────────────────────────────────────────────────
@@ -344,5 +349,40 @@ func TestSessionInitializer_Constructor_ReturnsInitializer(t *testing.T) {
 	}
 	if _, ok := i.(*sessionInitializer); !ok {
 		t.Fatalf("expected *sessionInitializer, got %T", i)
+	}
+}
+
+// ── T1: Goroutine leak test ───────────────────────────────────────────────────
+
+func TestAdapter_PublishAsync_NoGoroutineLeak_OnTimeout(t *testing.T) {
+	resetSessionGlobals(t)
+
+	bp := &blockingProducer{release: make(chan struct{})}
+	// Don't close release — simulate permanently blocked Kafka.
+
+	timeout := 50 * time.Millisecond
+	a := &sessionProducerAdapter{producer: bp, defaultTopic: "t", produceTimeout: timeout}
+
+	// Snapshot goroutine count before.
+	before := runtime.NumGoroutine()
+
+	// Fire multiple publishes that will all time out.
+	const n = 20
+	for i := 0; i < n; i++ {
+		err := a.PublishAsync("", "event")
+		if err == nil || !strings.Contains(err.Error(), "timed out") {
+			t.Fatalf("iteration %d: expected timeout error, got %v", i, err)
+		}
+	}
+
+	// Allow goroutines to be cleaned up.
+	time.Sleep(50 * time.Millisecond)
+
+	after := runtime.NumGoroutine()
+	leaked := after - before
+	// Allow a small margin for runtime fluctuations, but not n goroutines.
+	if leaked > 5 {
+		t.Errorf("goroutine leak detected: %d goroutines leaked after %d timed-out publishes (before=%d, after=%d)",
+			leaked, n, before, after)
 	}
 }

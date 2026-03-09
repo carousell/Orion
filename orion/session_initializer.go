@@ -51,17 +51,21 @@ func (sp *saramaProducer) Run() {
 	}()
 }
 
-func (sp *saramaProducer) Produce(_ context.Context, topic string, key []byte, msg []byte) error {
+func (sp *saramaProducer) Produce(ctx context.Context, topic string, key []byte, msg []byte) error {
 	var k sarama.Encoder
 	if len(key) > 0 {
 		k = sarama.ByteEncoder(key)
 	}
-	sp.p.Input() <- &sarama.ProducerMessage{
+	select {
+	case sp.p.Input() <- &sarama.ProducerMessage{
 		Topic: topic,
 		Key:   k,
 		Value: sarama.ByteEncoder(msg),
+	}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
 	}
-	return nil
 }
 
 // SessionInitializer wires up the Kafka producer for session tracking.
@@ -175,17 +179,17 @@ func (a *sessionProducerAdapter) PublishAsync(topic string, event interface{}) e
 
 	log.Debug(context.Background(), "session_tracking", "payload", string(payload))
 
-	// Produce with timeout to avoid blocking if Kafka is down.
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- a.producer.Produce(context.Background(), t, nil, payload)
-	}()
-	select {
-	case err := <-errCh:
-		log.Debug(context.Background(), "session_tracking", "kafka produce", "error", err)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	err = a.producer.Produce(ctx, t, nil, payload)
+	if err != nil {
+		if ctx.Err() != nil {
+			log.Error(context.Background(), "session_tracking", "kafka produce timed out", "timeout", timeout)
+			return fmt.Errorf("session_tracking: kafka produce timed out after %s (kafka may be unavailable); dropping event", timeout)
+		}
+		log.Debug(context.Background(), "session_tracking", "kafka produce error", "error", err)
 		return err
-	case <-time.After(timeout):
-		log.Error(context.Background(), "session_tracking", "kafka produce timed out", "timeout", timeout)
-		return fmt.Errorf("session_tracking: kafka produce timed out after %s (kafka may be unavailable); dropping event", timeout)
 	}
+	return nil
 }
