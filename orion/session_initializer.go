@@ -173,7 +173,7 @@ func (a *sessionProducerAdapter) PublishAsync(topic string, event interface{}) e
 		timeout = kafkaProduceTimeout
 	}
 
-	log.Info(context.Background(), "session_tracking", "payload", string(payload))
+	log.Debug(context.Background(), "session_tracking", "payload", string(payload))
 
 	// Produce with timeout to avoid blocking if Kafka is down.
 	errCh := make(chan error, 1)
@@ -182,10 +182,10 @@ func (a *sessionProducerAdapter) PublishAsync(topic string, event interface{}) e
 	}()
 	select {
 	case err := <-errCh:
-		log.Info(context.Background(), "session_tracking", "kafka produce", "error", err)
+		log.Debug(context.Background(), "session_tracking", "kafka produce", "error", err)
 		return err
 	case <-time.After(timeout):
-		log.Info(context.Background(), "session_tracking", "kafka produce timed out", "timeout", timeout)
+		log.Error(context.Background(), "session_tracking", "kafka produce timed out", "timeout", timeout)
 		return fmt.Errorf("session_tracking: kafka produce timed out after %s (kafka may be unavailable); dropping event", timeout)
 	}
 }

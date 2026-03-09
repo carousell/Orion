@@ -70,7 +70,7 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 		resp, handlerErr := handler(ctx, req)
 		duration := time.Since(startTime)
 
-		log.Info(ctx, "session_activity_interceptor", "service", serviceName,
+		log.Debug(ctx, "session_activity_interceptor", "service", serviceName,
 			"action", operation, "duration_ms", duration.Milliseconds())
 
 		if producer == nil {
@@ -96,7 +96,7 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 			DurationMs:            duration.Milliseconds(),
 			Timestamp:             time.Now().Unix(),
 		}
-		log.Info(ctx, "session_activity_interceptor", "service", serviceName,
+		log.Debug(ctx, "session_activity_interceptor", "service", serviceName,
 			"action", operation, "event", event)
 		go func() {
 			if err := producer.PublishAsync(topic, event); err != nil {
