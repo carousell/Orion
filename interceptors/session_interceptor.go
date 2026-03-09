@@ -15,7 +15,7 @@ import (
 // DefaultSessionActivityTopic is the default Kafka topic for session activity events.
 const DefaultSessionActivityTopic = "session-activities"
 
-// SessionActivityEvent is the payload published to Kafka for each tracked session request.
+// SessionActivityEvent is published to Kafka for each tracked session request.
 type SessionActivityEvent struct {
 	EncodedSessionContext string `json:"encoded_session_context"`
 	Service               string `json:"service"`
@@ -30,15 +30,10 @@ type SessionActivityProducer interface {
 	PublishAsync(topic string, event interface{}) error
 }
 
-// SessionActivityInterceptor is a gRPC server interceptor that publishes a
-// SessionActivityEvent to Kafka when both x-session-track="true" and x-session-context
-// are present in the incoming metadata.
-//
-// x-session-track and x-session-operation are stripped from metadata before calling the
-// handler, so they won't be forwarded to downstream services. x-session-context is kept
-// so downstream services can still use it if needed.
-//
-// Add this to GetInterceptors() in any service that requires session tracking.
+// SessionActivityInterceptor publishes a SessionActivityEvent to Kafka when
+// x-session-track="true" and x-session-context are present in incoming metadata.
+// x-session-track and x-session-operation are stripped before calling the handler
+// to prevent forwarding to downstream services.
 func SessionActivityInterceptor(serviceName string, producer SessionActivityProducer, topic string) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		md, ok := metadata.FromIncomingContext(ctx)
@@ -46,12 +41,12 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 			return handler(ctx, req)
 		}
 
-		// Only track requests explicitly opted in by a gateway.
+		// Only track requests opted in by a gateway.
 		if getMetadataValue(md, "x-session-track") != "true" {
 			return handler(ctx, req)
 		}
 
-		// Guard 2: encoded session context must be present.
+		// Session context must be present.
 		encoded := getMetadataValue(md, "x-session-context")
 		if encoded == "" {
 			log.Info(ctx, "session_activity_interceptor", "service", serviceName,
@@ -59,13 +54,13 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 			return handler(ctx, req)
 		}
 
-		// Read optional operation label before stripping.
+		// Use operation label if provided, otherwise fall back to method name.
 		operation := getMetadataValue(md, "x-session-operation")
 		if operation == "" {
 			operation = info.FullMethod
 		}
 
-		// Strip session tracking headers so they aren't forwarded to downstream services.
+		// Strip tracking headers to prevent forwarding to downstream services.
 		strippedMD := md.Copy()
 		strippedMD.Delete("x-session-track")
 		strippedMD.Delete("x-session-operation")
@@ -113,11 +108,9 @@ func SessionActivityInterceptor(serviceName string, producer SessionActivityProd
 	}
 }
 
-// warnNilProducerOnce ensures the misconfiguration warning is logged only once.
 var warnNilProducerOnce sync.Once
 
-// These globals are set once by SessionInitializer.Init() before the server starts.
-// They are read-only after that, so no synchronisation is needed.
+// Globals set by SessionInitializer.Init() before the server starts; read-only after.
 var (
 	GlobalSessionActivityProducer SessionActivityProducer
 	GlobalSessionServiceName      string
@@ -128,8 +121,8 @@ func SetGlobalSessionActivityProducer(p SessionActivityProducer) { GlobalSession
 func SetGlobalSessionServiceName(name string)                    { GlobalSessionServiceName = name }
 func SetGlobalSessionActivityTopic(topic string)                 { GlobalSessionActivityTopic = topic }
 
-// GlobalSessionActivityInterceptor wraps SessionActivityInterceptor using the globals
-// set by SessionInitializer. Add this to GetInterceptors() to enable session tracking.
+// GlobalSessionActivityInterceptor delegates to SessionActivityInterceptor using
+// the globals set by SessionInitializer.
 func GlobalSessionActivityInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		name := GlobalSessionServiceName

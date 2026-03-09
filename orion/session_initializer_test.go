@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/carousell/Orion/interceptors"
-	kafka "github.com/carousell/go-utils/kafka"
 	"google.golang.org/grpc"
 )
 
@@ -58,16 +57,16 @@ func (p *blockingProducer) Produce(_ context.Context, _ string, _ []byte, _ []by
 
 // ── factory helpers ───────────────────────────────────────────────────────────
 
-func factoryFor(p rawProducer) func([]string, ...kafka.Option) (rawProducer, error) {
-	return func(_ []string, _ ...kafka.Option) (rawProducer, error) { return p, nil }
+func factoryFor(p rawProducer) func([]string, func(error)) (rawProducer, error) {
+	return func(_ []string, _ func(error)) (rawProducer, error) { return p, nil }
 }
 
-func errorFactory(err error) func([]string, ...kafka.Option) (rawProducer, error) {
-	return func(_ []string, _ ...kafka.Option) (rawProducer, error) { return nil, err }
+func errorFactory(err error) func([]string, func(error)) (rawProducer, error) {
+	return func(_ []string, _ func(error)) (rawProducer, error) { return nil, err }
 }
 
-func blockingFactory(release chan struct{}) func([]string, ...kafka.Option) (rawProducer, error) {
-	return func(_ []string, _ ...kafka.Option) (rawProducer, error) {
+func blockingFactory(release chan struct{}) func([]string, func(error)) (rawProducer, error) {
+	return func(_ []string, _ func(error)) (rawProducer, error) {
 		<-release
 		return &capturingProducer{}, nil
 	}
@@ -84,7 +83,7 @@ func resetSessionGlobals(t *testing.T) {
 	})
 }
 
-func newTestInitializer(factory func([]string, ...kafka.Option) (rawProducer, error), initTimeout time.Duration) *sessionInitializer {
+func newTestInitializer(factory func([]string, func(error)) (rawProducer, error), initTimeout time.Duration) *sessionInitializer {
 	return &sessionInitializer{newProducer: factory, initTimeout: initTimeout}
 }
 
