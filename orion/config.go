@@ -18,8 +18,8 @@ var (
 // Config keys for optional session tracking via Kafka.
 // If KafkaBrokers is empty the SessionInitializer is a no-operation
 const (
-	SessionInitializerConfigKeyBrokers = "orion.session_tracking.kafka_brokers"
-	SessionInitializerConfigKeyTopic   = "orion.session_tracking.kafka_topic"
+	SessionInitializerConfigKeyBrokers = "orion.SessionTracking.KafkaBrokers"
+	SessionInitializerConfigKeyTopic   = "orion.SessionTracking.KafkaTopic"
 )
 
 // SessionTrackingConfig holds optional Kafka-based session tracking settings.
