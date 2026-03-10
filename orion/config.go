@@ -15,6 +15,23 @@ var (
 	configPaths = []string{".", "/opt/config/"}
 )
 
+// Config keys for optional session tracking via Kafka.
+// If KafkaBrokers is empty the SessionInitializer is a no-operation
+const (
+	SessionInitializerConfigKeyBrokers = "orion.SessionTracking.KafkaBrokers"
+	SessionInitializerConfigKeyTopic   = "orion.SessionTracking.KafkaTopic"
+)
+
+// SessionTrackingConfig holds optional Kafka-based session tracking settings.
+// Leave KafkaBrokers empty to disable session tracking entirely.
+type SessionTrackingConfig struct {
+	// KafkaBrokers is the list of Kafka broker addresses. Required to enable session tracking.
+	KafkaBrokers []string
+	// KafkaTopic is the Kafka topic to publish session events to.
+	// Defaults to interceptors.DefaultSessionActivityTopic when empty.
+	KafkaTopic string
+}
+
 // Config is the configuration used by Orion core
 type Config struct {
 	//OrionServerName is the name of this orion server that is tracked
@@ -60,6 +77,9 @@ type Config struct {
 	ReadTimeout int
 	// Write timeout http server, The time in seconds that start from read request complete to write the resp to client must be happened in this time.
 	WriteTimeout int
+	// SessionTrackingConfig is the optional configuration for Kafka-based session tracking.
+	// SessionInitializer is a no-op when KafkaBrokers is empty.
+	SessionTrackingConfig SessionTrackingConfig
 }
 
 // HystrixConfig is configuration used by hystrix
@@ -124,6 +144,16 @@ func BuildDefaultConfig(name string) Config {
 		MaxRecvMsgSize:             viper.GetInt("orion.MaxRecvMsgSize"),
 		ReadTimeout:                viper.GetInt("orion.ReadTimeout"),
 		WriteTimeout:               viper.GetInt("orion.WriteTimeout"),
+		SessionTrackingConfig:      BuildDefaultSessionTrackingConfig(),
+	}
+}
+
+// BuildDefaultSessionTrackingConfig reads session tracking config from viper.
+// Session tracking is disabled when KafkaBrokers is not set.
+func BuildDefaultSessionTrackingConfig() SessionTrackingConfig {
+	return SessionTrackingConfig{
+		KafkaBrokers: viper.GetStringSlice(SessionInitializerConfigKeyBrokers),
+		KafkaTopic:   viper.GetString(SessionInitializerConfigKeyTopic),
 	}
 }
 
