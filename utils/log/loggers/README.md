@@ -133,7 +133,7 @@ LogFields contains all fields that have to be added to logs
 ``` go
 func FromContext(ctx context.Context) LogFields
 ```
-FromContext fetchs log fields from provided context
+FromContext fetches log fields from provided context
 
 ### <a name="LogFields.Add">func</a> (LogFields) [Add](./fields.go#L17)
 ``` go

@@ -86,13 +86,13 @@ DefaultStreamInterceptors are the set of default interceptors that should be app
 ``` go
 func GRPCClientInterceptor() grpc.UnaryClientInterceptor
 ```
-GRPCClientInterceptor is the interceptor that intercepts all cleint requests and adds tracing info to them
+GRPCClientInterceptor is the interceptor that intercepts all client requests and adds tracing info to them
 
 ## <a name="HystrixClientInterceptor">func</a> [HystrixClientInterceptor](./interceptors.go#L183)
 ``` go
 func HystrixClientInterceptor() grpc.UnaryClientInterceptor
 ```
-HystrixClientInterceptor is the interceptor that intercepts all cleint requests and adds hystrix info to them
+HystrixClientInterceptor is the interceptor that intercepts all client requests and adds hystrix info to them
 
 ## <a name="NewRelicClientInterceptor">func</a> [NewRelicClientInterceptor](./interceptors.go#L165)
 ``` go

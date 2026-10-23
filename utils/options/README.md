@@ -38,7 +38,7 @@ Options are request options passed from Orion to server
 ``` go
 func FromContext(ctx context.Context) Options
 ```
-FromContext fetchs options from provided context
+FromContext fetches options from provided context
 
 ### <a name="Options.Add">func</a> (Options) [Add](./options.go#L41)
 ``` go

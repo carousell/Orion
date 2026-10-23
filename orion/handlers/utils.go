@@ -103,7 +103,7 @@ func GetStreamInterceptors(svc interface{}, config CommonConfig) grpc.StreamServ
 	return chainStreamServer(getStreamInterceptors(svc, config)...)
 }
 
-//GetInterceptorsWithMethodMiddlewares fetchs all middleware including those provided by method middlewares
+//GetInterceptorsWithMethodMiddlewares fetches all middleware including those provided by method middlewares
 func GetInterceptorsWithMethodMiddlewares(svc interface{}, config CommonConfig, middlewares []string) grpc.UnaryServerInterceptor {
 	return chainUnaryServer(getInterceptors(svc, config, middlewares)...)
 }
