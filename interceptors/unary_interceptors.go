@@ -22,7 +22,7 @@ import (
 //DebugLoggingInterceptor is the interceptor that logs all request/response from a handler
 func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		fmt.Println(info, "requst", req)
+		fmt.Println(info, "request", req)
 		resp, err := handler(ctx, req)
 		fmt.Println(info, "response", resp, "err", err)
 		return resp, err
@@ -32,7 +32,7 @@ func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 //ResponseTimeLoggingInterceptor logs response time for each request on server
 func ResponseTimeLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		// dont log for HTTP request, let HTTP Handler manage it
+		// don't log for HTTP request, let HTTP Handler manage it
 		if !modifiers.IsHTTPRequest(ctx) {
 			defer func(begin time.Time) {
 				log.Info(ctx, "method", info.FullMethod, "error", err, "took", time.Since(begin))
@@ -120,12 +120,12 @@ func NewRelicClientInterceptor(address string) grpc.UnaryClientInterceptor {
 	}
 }
 
-//GRPCClientInterceptor is the interceptor that intercepts all cleint requests and adds tracing info to them
+//GRPCClientInterceptor is the interceptor that intercepts all client requests and adds tracing info to them
 func GRPCClientInterceptor() grpc.UnaryClientInterceptor {
 	return grpc_opentracing.UnaryClientInterceptor()
 }
 
-//HystrixClientInterceptor is the interceptor that intercepts all cleint requests and adds hystrix info to them
+//HystrixClientInterceptor is the interceptor that intercepts all client requests and adds hystrix info to them
 func HystrixClientInterceptor() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		options := hystrixOptions{

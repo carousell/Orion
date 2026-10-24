@@ -71,7 +71,7 @@ func NewPrometheusCollector(namespace string, reg prometheus.Registerer, duratio
 		timeouts: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "timeouts_total",
-			Help:      "The number of requests that are timeouted in the circuit breaker.",
+			Help:      "The number of requests that timed out in the circuit breaker.",
 		}, []string{"command"}),
 		fallbackSuccesses: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
@@ -102,7 +102,7 @@ func NewPrometheusCollector(namespace string, reg prometheus.Registerer, duratio
 		runDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: namespace,
 			Name:      "run_duration_seconds",
-			Help:      "The duration of Hystrix command execution. This only measure the command only, without Hystrix overhead.",
+			Help:      "The duration of Hystrix command execution. This measures the command only, without Hystrix overhead.",
 			Buckets:   durationBuckets,
 		}, []string{"command"}),
 	}

@@ -40,7 +40,7 @@ func AddToLogContext(ctx context.Context, key string, value interface{}) context
 	return ctx
 }
 
-//FromContext fetchs log fields from provided context
+//FromContext fetches log fields from provided context
 func FromContext(ctx context.Context) LogFields {
 	if ctx == nil {
 		return nil
