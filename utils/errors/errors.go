@@ -149,12 +149,12 @@ func NewWithStatus(msg string, status *grpcstatus.Status) ErrorExt {
 
 //NewWithSkip creates a new error skipping the number of function on the stack
 func NewWithSkip(msg string, skip int) ErrorExt {
-	return WrapWithSkip(fmt.Errorf(msg), "", skip+1)
+	return WrapWithSkip(fmt.Errorf("%s", msg), "", skip+1)
 }
 
 //NewWithSkipAndStatus creates a new error skipping the number of function on the stack and GRPC status
 func NewWithSkipAndStatus(msg string, skip int, status *grpcstatus.Status) ErrorExt {
-	return WrapWithSkipAndStatus(fmt.Errorf(msg), "", skip+1, status)
+	return WrapWithSkipAndStatus(fmt.Errorf("%s", msg), "", skip+1, status)
 }
 
 // NewWithGRPCCode creates a new error with statck information and GRPC status with the given GRPC code
