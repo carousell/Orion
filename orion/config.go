@@ -86,6 +86,8 @@ type Config struct {
 type HystrixConfig struct {
 	//Port is the port to start hystrix stream handler on
 	Port string
+	//StreamEnabled starts the hystrix stream handler on Port
+	StreamEnabled bool
 	//CommandConfig is configuration for individual commands
 	CommandConfig map[string]hystrix.CommandConfig
 	//StatsdAddr is the address of the statsd hosts to send hystrix data to
@@ -161,6 +163,7 @@ func BuildDefaultSessionTrackingConfig() SessionTrackingConfig {
 func BuildDefaultHystrixConfig() HystrixConfig {
 	return HystrixConfig{
 		Port:                         viper.GetString("orion.HystrixPort"),
+		StreamEnabled:                viper.GetBool("orion.HystrixStreamEnabled"),
 		CommandConfig:                make(map[string]hystrix.CommandConfig),
 		StatsdAddr:                   viper.GetString("orion.HystrixStatsd"),
 		DefaultTimeout:               viper.GetInt("orion.HystrixDefaultTimeout"),
@@ -206,6 +209,7 @@ func setConfigDefaults() {
 	viper.SetDefault("orion.Env", "development")
 	viper.SetDefault("orion.DefaultJSONPB", false)
 
+	viper.SetDefault("orion.HystrixStreamEnabled", false)
 	viper.SetDefault("orion.HystrixDefaultTimeout", 1000)
 	viper.SetDefault("orion.HystrixDefaultMaxConcurrent", 300)
 	viper.SetDefault("orion.HystrixDefaultVolumeThreshold", 75)

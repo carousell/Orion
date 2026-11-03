@@ -471,6 +471,8 @@ HTTPHandler is the http interceptor
 type HystrixConfig struct {
     //Port is the port to start hystrix stream handler on
     Port string
+    //StreamEnabled starts the hystrix stream handler on Port
+    StreamEnabled bool
     //CommandConfig is configuration for individual commands
     CommandConfig map[string]hystrix.CommandConfig
     //StatsdAddr is the address of the statsd hosts to send hystrix data to
