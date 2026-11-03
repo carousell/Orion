@@ -14,7 +14,7 @@ var (
 // Options are request options passed from Orion to server
 type Options map[string]interface{}
 
-//FromContext fetchs options from provided context
+//FromContext fetches options from provided context
 func FromContext(ctx context.Context) Options {
 	if h := ctx.Value(optionsKey); h != nil {
 		if options, ok := h.(Options); ok {

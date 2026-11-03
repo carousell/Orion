@@ -57,7 +57,7 @@ GetInterceptors fetches interceptors from a given GRPC service
 ``` go
 func GetInterceptorsWithMethodMiddlewares(svc interface{}, config CommonConfig, middlewares []string) grpc.UnaryServerInterceptor
 ```
-GetInterceptorsWithMethodMiddlewares fetchs all middleware including those provided by method middlewares
+GetInterceptorsWithMethodMiddlewares fetches all middleware including those provided by method middlewares
 
 ## <a name="GetMethodInterceptors">func</a> [GetMethodInterceptors](./utils.go#L165)
 ``` go
