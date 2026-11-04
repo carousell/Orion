@@ -101,11 +101,13 @@ func (h *hystrixInitializer) Init(svr Server) error {
 	promC := hystrixprometheus.NewPrometheusCollector("hystrix", nil, prometheus.DefBuckets)
 	metricCollector.Registry.Register(promC.Collector)
 
-	hystrixStreamHandler := hystrix.NewStreamHandler()
-	hystrixStreamHandler.Start()
-	port := config.HystrixConfig.Port
-	log.Info(context.Background(), "HystrixPort", port)
-	go http.ListenAndServe(net.JoinHostPort("", port), hystrixStreamHandler)
+	if config.HystrixConfig.StreamEnabled {
+		hystrixStreamHandler := hystrix.NewStreamHandler()
+		hystrixStreamHandler.Start()
+		port := config.HystrixConfig.Port
+		log.Info(context.Background(), "HystrixPort", port)
+		go http.ListenAndServe(net.JoinHostPort("", port), hystrixStreamHandler)
+	}
 	return nil
 }
 
